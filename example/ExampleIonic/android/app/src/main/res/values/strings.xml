@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">ExampleIonic</string>
+    <string name="title_activity_main">ExampleIonic</string>
+    <string name="package_name">com.reteno.sample</string>
+    <string name="custom_url_scheme">com.reteno.sample</string>
+</resources>

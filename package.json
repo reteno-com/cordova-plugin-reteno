@@ -1,0 +1,22 @@
+{
+  "name": "cordova-plugin-reteno",
+  "version": "0.0.1",
+  "description": "The Reteno Cordova Plugin for Mobile Customer Engagement and Analytics solutions",
+  "types": "./types/index.ts",
+  "cordova": {
+    "id": "cordova-plugin-reteno",
+    "platforms": [
+      "android"
+    ]
+  },
+  "keywords": [
+    "ecosystem:cordova",
+    "cordova-android",    
+    "cordova-ios"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@cordova/eslint-config": "^5.0.0"
+  }
+}

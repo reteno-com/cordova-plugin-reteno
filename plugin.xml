@@ -1,0 +1,69 @@
+<?xml version='1.0' encoding='utf-8'?>
+<plugin id="cordova-plugin-reteno" version="0.0.1" 
+        xmlns="http://apache.org/cordova/ns/plugins/1.0" 
+        xmlns:android="http://schemas.android.com/apk/res/android">
+    <name>Reteno Plugin</name>
+    <js-module name="cordova-plugin-reteno" src="www/cordova-plugin-reteno.js">
+        <clobbers target="RetenoPlugin" />
+    </js-module>
+
+<engines>
+		<engine name="cordova" version=">=9" />
+		<engine name="cordova-android" version=">=8" />
+		<engine name="cordova-ios" version=">=5" />
+</engines>
+	
+<platform name="android">
+  <config-file target="config.xml" parent="/*">
+    <feature name="RetenoPlugin">
+      <param name="android-package" 
+             value="com.reteno.plugin.RetenoPlugin"/>
+    </feature>
+  </config-file>
+  
+  <framework src="src/android/reteno.gradle" custom="true" type="gradleReference" />
+  
+  <source-file 
+      src="src/android/app/src/main/java/com/reteno/plugin/RetenoPlugin.java" 
+      target-dir="src/com/reteno/plugin" />
+  <source-file 
+      src="src/android/app/src/main/java/com/reteno/plugin/RetenoEvent.java" 
+      target-dir="src/com/reteno/plugin" />
+  <source-file 
+      src="src/android/app/src/main/java/com/reteno/plugin/RetenoUserAttributes.java" 
+      target-dir="src/com/reteno/plugin" />
+  <source-file 
+      src="src/android/app/src/main/java/com/reteno/plugin/RetenoUtil.java" 
+      target-dir="src/com/reteno/plugin" />
+  <source-file 
+      src="src/android/app/src/main/java/com/reteno/plugin/RetenoPushReceiver.java" 
+      target-dir="src/com/reteno/plugin" />
+  <source-file 
+      src="src/android/app/src/main/java/com/reteno/plugin/CordovaRetenoApplication.java" 
+      target-dir="src/com/reteno/plugin" />
+</platform>
+
+<platform name="ios">
+  <config-file target="config.xml" parent="/*">
+  <preference name="deployment-target" value="12.0"/>
+  <preference name="SwiftVersion" value="5"/>
+    <feature name="RetenoPlugin">
+      <param name="ios-package" value="RetenoPlugin" />
+    </feature>
+  </config-file>
+  <source-file src="src/ios/RetenoPlugin.swift" />
+  <source-file src="src/ios/RetenoEvent.swift" />
+  <header-file src="src/ios/RetenoPlugin-Bridging-Header.h" />
+  <source-file src="src/ios/RetenoUserAttributes.swift" />
+  <source-file src="src/ios/RetenoUtils.swift" />
+
+	<podspec>
+		<config>
+			<source url="https://cdn.cocoapods.org/"/>
+		</config>
+		<pods use-frameworks="true">
+			<pod name="Reteno" spec="1.6.6"/>
+		</pods>
+	</podspec>
+</platform>
+</plugin>

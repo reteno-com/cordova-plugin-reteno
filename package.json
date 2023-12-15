@@ -1,6 +1,6 @@
 {
   "name": "cordova-plugin-reteno",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "The Reteno Cordova Plugin for Mobile Customer Engagement and Analytics solutions",
   "types": "./types/index.d.ts",
   "cordova": {

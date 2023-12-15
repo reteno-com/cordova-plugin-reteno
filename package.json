@@ -28,7 +28,8 @@
   "scripts": {
     "test": "npm run test:ios && npm run test:android",
     "test:ios": "bash ./test/test-default.sh 9.0.0 ios 5.0.1",
-    "test:android": "bash ./test/test-default.sh 9.0.0 android 8.1.0 && bash ./test/test-with-3-plugins.sh 9.0.0 android 8.1.0 cordova-plugin-request-location-accuracy cordova-android-play-services-gradle-release cordova-android-reteno-gradle-release"
+    "test:android": "bash ./test/test-default.sh 9.0.0 android 8.1.0 && bash ./test/test-with-3-plugins.sh 9.0.0 android 8.1.0 cordova-plugin-request-location-accuracy cordova-android-play-services-gradle-release cordova-android-reteno-gradle-release",
+    "release": "release-it"
   },
   "repository": {
     "type": "git",
@@ -37,5 +38,27 @@
   "bugs": {
     "url": "https://github.com/reteno-com/cordova-plugin-reteno/issues"
   },
-  "homepage": "https://github.com/reteno-com/cordova-plugin-reteno#readme"
+  "homepage": "https://github.com/reteno-com/cordova-plugin-reteno#readme",
+  "release-it": {
+    "git": {
+      "commitMessage": "chore: release ${version}",
+      "tagName": "v${version}",
+      "pushRepo": "https://github.com/reteno-com/cordova-plugin-reteno.git"
+    },
+    "npm": {
+      "publish": true
+    },
+    "github": {
+      "release": true
+    },
+    "plugins": {
+      "@release-it/conventional-changelog": {
+        "preset": "angular"
+      }
+    }
+  },
+  "devDependencies": {
+    "@release-it/conventional-changelog": "^8.0.1",
+    "release-it": "^17.0.1"
+  }
 }

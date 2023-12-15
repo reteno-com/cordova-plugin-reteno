@@ -5,12 +5,12 @@ export type Address = {
     postcode?: string | null;
 };
 
-type Field = {
+export type Field = {
     key: string;
     value: string;
 };
 
-type Fields = Field[];
+export type Fields = Field[];
 
 export type UserAttributes = {
     phone?: string | null;
@@ -30,6 +30,20 @@ export type User = {
     groupNamesExclude?: String[] | null;
 };
 
+export type AnonymousUserAttributes = {
+    user: {
+        userAttributes: Pick<
+            UserAttributes,
+            | "firstName"
+            | "lastName"
+            | "languageCode"
+            | "timeZone"
+            | "address"
+            | "fields"
+        >;
+    };
+};
+
 export type SetUserAttributesPayload = {
     externalUserId: string;
     user: User;
@@ -40,57 +54,57 @@ export type CustomEventParameter = {
     value?: string;
 };
 
-
+export interface LogEvent {
+    eventName: string;
+    date: string;
+    parameters: CustomEventParameter[];
+    forcePush?: boolean;
+}
 
 export interface RetenoPlugin {
-    setApiKey (
+    /**
+     * @deprecated this method of Reteno initialization is deprecated, becuase it led to incorrect initializations of native libraries,
+     * please refer to new documentation https://docs.reteno.com/reference/cordova-sdk-setup, IOS and Android SDK Setup sections
+     */
+    setApiKey(
         apiKey: string,
         success?: () => void,
         error?: (err: string) => void
-    ): void
+    ): void;
 
-    logEvent(
-        eventName: string,
-        date: string,
-        // date parameter should be in ISO8601 format
-        parameters: CustomEventParameter[],
-        forcePush?: boolean
-    ) : void
+    /**
+     *
+     * @param eventName
+     * @param date date parameter should be in ISO8601 format
+     * @param parameters array of {@link CustomEventParameter}
+     * @param forcePush
+     */
+    logEvent(payload: LogEvent): void;
 
-    setUserAttributes(
-        payload: SetUserAttributesPayload
-    ) :void
+    setUserAttributes(payload: SetUserAttributesPayload): void;
 
-    setAnonymousUserAttributes(
-        payload: User
-    ) :void
+    setAnonymousUserAttributes(payload: AnonymousUserAttributes): void;
 
     getInitialNotification(
         success: (value: object) => void,
         error: (err: string) => void
-    ) : void
+    ): void;
 
-    setOnRetenoPushReceivedListener (
+    setOnRetenoPushReceivedListener(
         success: (value: object) => void,
         error: (err: string) => void
-    ) : void
+    ): void;
 
     performRemoteToken(
         apiKey: string,
         success?: () => void,
         error?: (err: string) => void
-    ) : void
+    ): void;
 
-    setDeviceToken (
-        deviceToken: string
-    ) : void
+    setDeviceToken(deviceToken: string): void;
 
-    registerApplicationDidBecomeActiveListener(
-        fn: () => void,
-    ): void
-    registerApplicationDidEnterBackgroundListener(
-        fn: () => void,
-    ): void
+    registerApplicationDidBecomeActiveListener(fn: () => void): void;
+    registerApplicationDidEnterBackgroundListener(fn: () => void): void;
 }
 
 declare global {

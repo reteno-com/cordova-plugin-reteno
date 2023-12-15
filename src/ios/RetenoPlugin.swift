@@ -3,36 +3,13 @@ import Reteno
 import SwiftUI
 import UserNotifications
 import Reteno
-import Sentry
 
 @objc(RetenoPlugin) class RetenoPlugin : CDVPlugin {
-    var retenoStarted = false
     
-    override func pluginInitialize() {
-       
-    }
-    
-  @objc(setApiKey:)
-  func setApiKey(command: CDVInvokedUrlCommand) {
+  override func pluginInitialize() {
       
-    var pluginResult = CDVPluginResult(
-      status: CDVCommandStatus_ERROR	
-    )
-    let key = command.arguments[0] as? String ?? ""
-      if (!retenoStarted){
-          Reteno.start(apiKey: key, isDebugMode: true)
-          Reteno.userNotificationService.registerForRemoteNotifications()
-          retenoStarted = true
-      }
-      pluginResult = CDVPluginResult(
-        status: CDVCommandStatus_OK,
-        messageAs: key
-      )
-    self.commandDelegate!.send(
-      pluginResult,
-      callbackId: command.callbackId
-    )
   }
+    
 
   @objc(logEvent:)
   func logEvent(command: CDVInvokedUrlCommand) {

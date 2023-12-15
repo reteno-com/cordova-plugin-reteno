@@ -29,10 +29,6 @@ import java.util.Set;
 public class RetenoPlugin extends CordovaPlugin {
   protected static final String TAG = "RetenoPlugin";
 
-  public void setApiKey(String key){
-    ((CordovaRetenoApplication)this.cordova.getActivity().getApplication()).initReteno(key);
-  }
-
   public Reteno getRetenoInstance() {
     return ((RetenoApplication)this.cordova.getActivity().getApplication()).getRetenoInstance();
   }
@@ -41,10 +37,6 @@ public class RetenoPlugin extends CordovaPlugin {
   public boolean execute(
     String action, JSONArray args, CallbackContext callbackContext
   ) throws JSONException {
-    if ("setApiKey".equals(action)){
-      setApiKey(args.getString(0));
-      return true;
-    }
     if ("logEvent".equals(action)){
       cordova.getThreadPool().execute(new Runnable() {
         @Override
@@ -120,7 +112,8 @@ public class RetenoPlugin extends CordovaPlugin {
     try {
       JSONObject payload = (JSONObject)args.get(0);
       String externalId = payload.getString("externalUserId");
-      User user = RetenoUserAttributes.buildUserFromPayload(payload);
+      JSONObject userJSON = payload.getJSONObject("user");
+      User user = RetenoUserAttributes.buildUserFromPayload(userJSON);
       getRetenoInstance().setUserAttributes(externalId, user);
     } catch (Exception e) {
       Log.e("RetenoPlugin", e.getLocalizedMessage(), e);
@@ -132,7 +125,8 @@ public class RetenoPlugin extends CordovaPlugin {
   public PluginResult createAnonymousUser(JSONArray args) {
     try {
       JSONObject payload = (JSONObject)args.get(0);
-      UserAttributesAnonymous userAttributes = RetenoUserAttributes.buildAnonymousUserFromPayload(payload);
+      JSONObject userJSON = payload.getJSONObject("user");
+      UserAttributesAnonymous userAttributes = RetenoUserAttributes.buildAnonymousUserFromPayload(userJSON);
       getRetenoInstance().setAnonymousUserAttributes(userAttributes);
     } catch (Exception e) {
       Log.e("RetenoPlugin", e.getLocalizedMessage(), e);

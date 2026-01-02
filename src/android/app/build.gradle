@@ -11,13 +11,13 @@ if (project.hasProperty('ANDROID_RETENO_FCM_VERSION')) {
 
 android {
     namespace 'com.reteno.plugin'
-    compileSdk 34
+    compileSdk 35
     //buildToolsVersion '30.0.3'
 
     defaultConfig {
         applicationId "com.reteno.plugin"
         minSdk 26
-        targetSdk 34
+        targetSdk 35
         versionCode 1
         versionName "1.0"
 

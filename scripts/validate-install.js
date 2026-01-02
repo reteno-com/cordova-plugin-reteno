@@ -5,14 +5,32 @@
 module.exports = function (context) {
   const opts = (context && context.opts) || {};
 
-  // Cordova/plugman variants
+  function readVarFromCmdLine(varName) {
+    const cmdLine = (context && context.cmdLine) ? String(context.cmdLine) : '';
+    if (!cmdLine) return undefined;
+
+    // Supports: --variable NAME=value
+    // Also tolerates quotes around the whole NAME=value token.
+    const re = new RegExp(`(?:^|\\s)--variable\\s+(["']?)${varName}=([^\\s"']+)\\1`);
+    const m = cmdLine.match(re);
+    return m ? m[2] : undefined;
+  }
+
+  // Cordova/plugman variants (cordova-lib has changed where it stores variables across versions)
   const variables =
     (opts.plugin && opts.plugin.variables) ||
     opts.cli_variables ||
+    opts.variables ||
+    opts.pluginVariables ||
     (opts.options && opts.options.plugin && opts.options.plugin.variables) ||
+    (opts.options && opts.options.cli_variables) ||
+    (opts.options && opts.options.options && opts.options.options.cli_variables) ||
     {};
 
-  const accessKey = variables.SDK_ACCESS_KEY;
+  const accessKey =
+    variables.SDK_ACCESS_KEY ||
+    readVarFromCmdLine('SDK_ACCESS_KEY') ||
+    process.env.SDK_ACCESS_KEY;
   const accessKeyStr = accessKey == null ? '' : String(accessKey).trim();
 
   if (accessKeyStr.length === 0) {

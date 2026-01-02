@@ -1,6 +1,9 @@
 <?xml version='1.0' encoding='utf-8'?>
 <plugin id="reteno-cordova-plugin" version="0.0.1" xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
     <name>cordova-plugin-reteno</name>
+    <engines>
+        <engine name="cordova-android" version=">=12.0.0" />
+    </engines>
     <!-- Android Reteno SDK (FCM) version override -->
     <preference name="ANDROID_RETENO_FCM_VERSION" default="2.8.9" />
     <preference name="SDK_ACCESS_KEY" default="" />

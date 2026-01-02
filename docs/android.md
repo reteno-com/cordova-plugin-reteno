@@ -1,5 +1,7 @@
 ## Installation
 
+> Requirement: `cordova-android >= 12.0.0`. Older Cordova Android platforms will refuse to install the plugin.
+
 1. Run next command from root of your project:
 
 ```sh

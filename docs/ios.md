@@ -2,8 +2,8 @@
 
 1. Follow `Step 1` described in iOS SDK setup guide: [link](https://docs.reteno.com/reference/ios#step-1-add-the-notification-service-extension)
 
-
 2. Modify your cocoapod file to contain next dependencies:
+
 ```
 
 target 'NotificationServiceExtension' do
@@ -19,4 +19,3 @@ target 'RetenoSdkExample' do
 end
 
 ```
-

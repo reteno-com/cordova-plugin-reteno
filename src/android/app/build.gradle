@@ -1,14 +1,23 @@
 apply plugin: 'com.android.application'
 
+def retenoFcmVersion = null
+if (project.hasProperty('ANDROID_RETENO_FCM_VERSION')) {
+    retenoFcmVersion = project.property('ANDROID_RETENO_FCM_VERSION')
+} else if (rootProject.ext.has('retenoFcmVersion')) {
+    retenoFcmVersion = rootProject.ext.retenoFcmVersion
+} else {
+    retenoFcmVersion = '2.8.9'
+}
+
 android {
     namespace 'com.reteno.plugin'
-    compileSdk 33
+    compileSdk 34
     //buildToolsVersion '30.0.3'
 
     defaultConfig {
         applicationId "com.reteno.plugin"
         minSdk 26
-        targetSdk 33
+        targetSdk 34
         versionCode 1
         versionName "1.0"
 
@@ -30,7 +39,7 @@ android {
 dependencies {
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.5.0'
-    implementation "com.reteno:fcm:1.6.4"
+    implementation "com.reteno:fcm:${retenoFcmVersion}"
     implementation "com.google.firebase:firebase-messaging:23.1.0"
     implementation "com.google.firebase:firebase-messaging-ktx:23.1.0"
     implementation "org.apache.cordova:framework:11.0.0"

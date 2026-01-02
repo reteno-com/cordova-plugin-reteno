@@ -1,13 +1,27 @@
 allprojects {
     repositories {
-        jcenter()
-        maven {
-            url "https://maven.google.com"
-        }
+        google()
+        mavenCentral()
     }
 }
 
+def retenoFcmVersion = null
+if (project.hasProperty('ANDROID_RETENO_FCM_VERSION')) {
+  retenoFcmVersion = project.property('ANDROID_RETENO_FCM_VERSION')
+} else if (project.hasProperty('cordovaConfig')) {
+  // Supports overriding via `cordova plugin add ... --variable ANDROID_RETENO_FCM_VERSION=...`
+  def pref = cordovaConfig.getPreferenceValue('ANDROID_RETENO_FCM_VERSION', null)
+  if (pref != null && pref.toString().trim().length() > 0) {
+    retenoFcmVersion = pref.toString().trim()
+  }
+} else if (rootProject.ext.has('retenoFcmVersion')) {
+  retenoFcmVersion = rootProject.ext.retenoFcmVersion
+} else {
+  // Keep pinned by default for reproducible builds.
+  retenoFcmVersion = '2.8.9'
+}
+
 dependencies {
-  implementation "com.reteno:fcm:1.6.4"
+  implementation "com.reteno:fcm:${retenoFcmVersion}"
   implementation "com.google.code.gson:gson:2.8.9"
 }

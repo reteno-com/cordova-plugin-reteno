@@ -1,11 +1,23 @@
 <?xml version='1.0' encoding='utf-8'?>
 <plugin id="reteno-cordova-plugin" version="0.0.1" xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
     <name>cordova-plugin-reteno</name>
+    <!-- Android Reteno SDK (FCM) version override -->
+    <preference name="ANDROID_RETENO_FCM_VERSION" default="2.8.9" />
+    <preference name="SDK_ACCESS_KEY" default="" />
+    <hook type="before_plugin_install" src="scripts/validate-install.js" />
     <js-module name="cordova-plugin-reteno" src="www/cordova-plugin-reteno.js">
         <clobbers target="retenosdk" />
     </js-module>
 
 <platform name="android">
+    <config-file target="AndroidManifest.xml" parent="/manifest">
+        <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    </config-file>
+
+    <config-file target="AndroidManifest.xml" parent="/manifest/application">
+        <meta-data android:name="com.reteno.SDK_ACCESS_KEY" android:value="$SDK_ACCESS_KEY" />
+    </config-file>
+
   <config-file target="config.xml" parent="/*">
     <feature name="RetenoPlugin">
       <param name="android-package" 

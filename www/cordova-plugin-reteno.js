@@ -91,6 +91,18 @@ var PLUGIN_NAME = 'RetenoPlugin';
       exec(success, error, PLUGIN_NAME, 'setUserAttributes', [payload]);
     },
 
+    /*
+        payload: UserAttributesAnonymous
+        */
+    setAnonymousUserAttributes: function (arg0, success, error) {
+      // Accept either `payload` or legacy `[payload]`.
+      var payload = Array.isArray(arg0) ? arg0[0] : arg0;
+      if (!payload || typeof payload !== 'object') {
+        throw new Error('Missing argument: payload');
+      }
+      exec(success, error, PLUGIN_NAME, 'setAnonymousUserAttributes', [payload]);
+    },
+
     getInitialNotification: function (arg0, success, error) {
       exec(success, error, PLUGIN_NAME, 'getInitialNotification', [arg0]);
     },

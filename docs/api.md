@@ -3,6 +3,7 @@
 | Method                                                             | Supported platform | Description                                                    |
 | ------------------------------------------------------------------ | ------------------ | -------------------------------------------------------------- |
 | [setUserAttributes](../www/cordova-plugin-reteno.js)               | iOS, Android       | [Types](../types/index.ts)                                     |
+| [setAnonymousUserAttributes](../www/cordova-plugin-reteno.js)      | Android            | [Types](../types/index.ts)                                     |
 | [logEvent](../www/cordova-plugin-reteno.js)                        | iOS, Android       | [Types](../types/index.ts)                                     |
 | [getInitialNotification](../www/cordova-plugin-reteno.js)          | iOS, Android       | Returns push notification that triggered creating app instance |
 | [setOnRetenoPushReceivedListener](../www/cordova-plugin-reteno.js) | iOS, Android       | Sets listener for newly received push notification;            |
@@ -40,5 +41,29 @@ retenosdk.setUserAttributes(
 	},
 	() => console.log('setUserAttributes: OK'),
 	(err) => console.error('setUserAttributes: ERROR', err)
+);
+```
+
+### setAnonymousUserAttributes payload example
+
+```js
+// Anonymous attributes are used before contact identification.
+// Note: Unlike setUserAttributes, this payload does NOT include phone/email.
+retenosdk.setAnonymousUserAttributes(
+	{
+		firstName: 'John',
+		lastName: 'Doe',
+		languageCode: 'en',
+		timeZone: 'Europe/Kyiv',
+		address: {
+			region: 'Kyivska',
+			town: 'Kyiv',
+			address: 'Khreshchatyk St, 1',
+			postcode: '01001',
+		},
+		fields: [{ key: 'utm_source', value: 'google' }],
+	},
+	() => console.log('setAnonymousUserAttributes: OK'),
+	(err) => console.error('setAnonymousUserAttributes: ERROR', err)
 );
 ```

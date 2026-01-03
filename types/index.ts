@@ -12,9 +12,7 @@ type Field = {
 
 type Fields = Field[];
 
-export type UserAttributes = {
-  phone?: string | null;
-  email?: string | null;
+export type UserAttributesAnonymous = {
   firstName?: string | null;
   lastName?: string | null;
   languageCode?: string | null;
@@ -22,6 +20,11 @@ export type UserAttributes = {
   address?: Address | null;
   fields?: Fields | null;
 };
+
+export type UserAttributes = {
+  phone?: string | null;
+  email?: string | null;
+} & UserAttributesAnonymous;
 
 export type User = {
   userAttributes?: UserAttributes | null;

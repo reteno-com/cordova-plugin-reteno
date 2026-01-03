@@ -32,7 +32,7 @@ export type User = {
 
 export type SetUserAttributesPayload = {
   externalUserId: string;
-  user: User;
+  user?: User | null;
 };
 
 export type CustomEventParameter = {

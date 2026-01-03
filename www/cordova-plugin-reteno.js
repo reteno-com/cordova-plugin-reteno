@@ -79,14 +79,16 @@ var PLUGIN_NAME = 'RetenoPlugin';
         payload: SetUserAttributesPayload
         */
     setUserAttributes: function (arg0, success, error) {
-      var payload = arg0 && arg0[0];
+      // Accept either `payload` or legacy `[payload]`.
+      var payload = Array.isArray(arg0) ? arg0[0] : arg0;
       if (
+        !payload ||
         !payload.externalUserId ||
         (payload.externalUserId && payload.externalUserId.length === 0)
       ) {
         throw new Error('Missing argument: "externalUserId"');
       }
-      exec(success, error, PLUGIN_NAME, 'setUserAttributes', [arg0]);
+      exec(success, error, PLUGIN_NAME, 'setUserAttributes', [payload]);
     },
 
     getInitialNotification: function (arg0, success, error) {

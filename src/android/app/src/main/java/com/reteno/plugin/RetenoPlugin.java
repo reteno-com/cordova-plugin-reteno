@@ -55,8 +55,48 @@ public class RetenoPlugin extends CordovaPlugin {
     if ("setUserAttributes".equals(action)){
       echo(action + "\n" + args.toString(), callbackContext);
 
-      User user = new Gson().fromJson(args.toString(), User.class);
-      setUserAttributes(user, callbackContext);
+      JSONObject payload = null;
+      if (args != null && args.length() > 0) {
+        Object arg0 = args.opt(0);
+        if (arg0 instanceof JSONObject) {
+          payload = (JSONObject) arg0;
+        } else if (arg0 instanceof JSONArray) {
+          payload = ((JSONArray) arg0).optJSONObject(0);
+        } else if (arg0 instanceof String) {
+          try {
+            payload = new JSONObject((String) arg0);
+          } catch (Exception ignored) {
+            payload = null;
+          }
+        }
+      }
+
+      if (payload == null) {
+        callbackContext.error("Invalid setUserAttributes payload.");
+        return true;
+      }
+
+      String externalUserId = payload.optString("externalUserId", null);
+      if (externalUserId != null) {
+        externalUserId = externalUserId.trim();
+      }
+      if (externalUserId == null || externalUserId.length() == 0) {
+        callbackContext.error("Missing argument: externalUserId");
+        return true;
+      }
+
+      User user = null;
+      if (payload.has("user") && !payload.isNull("user")) {
+        JSONObject userJson = payload.optJSONObject("user");
+        if (userJson == null) {
+          // If it's not a JSONObject (unexpected type), treat as invalid.
+          callbackContext.error("Invalid setUserAttributes payload: user must be an object.");
+          return true;
+        }
+        user = new Gson().fromJson(userJson.toString(), User.class);
+      }
+
+      setUserAttributes(externalUserId, user, callbackContext);
       return true;
     }
     if ("getInitialNotification".equals(action)){
@@ -194,11 +234,11 @@ public class RetenoPlugin extends CordovaPlugin {
 
   }
 
-  public void setUserAttributes(User user, CallbackContext callbackContext) throws JSONException {
+  public void setUserAttributes(String externalUserId, User user, CallbackContext callbackContext) throws JSONException {
     try {
       Object reteno = getRetenoInstanceOrThrow();
       Method setUserAttributes = reteno.getClass().getMethod("setUserAttributes", String.class, User.class);
-      setUserAttributes.invoke(reteno, "", user);
+      setUserAttributes.invoke(reteno, externalUserId, user);
     } catch (Exception e) {
       callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
       return;

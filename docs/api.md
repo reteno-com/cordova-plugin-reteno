@@ -110,3 +110,19 @@ retenosdk.init(
 	(err) => console.error('retenosdk.init: ERROR', err)
 );
 ```
+
+### setOnRetenoPushReceivedListener example
+
+Subscribe to push received events while the app is running.
+
+Notes:
+- On Android this is based on Reteno SDK notification events (`com.reteno.Receiver.PushReceived`).
+- This listener is not a replacement for `getInitialNotification()` (cold start): if the app was launched by tapping a notification, use `getInitialNotification()`.
+
+```js
+retenosdk.setOnRetenoPushReceivedListener(function (event) {
+	// `event` contains the payload fields from intent extras.
+	// The exact keys depend on what Reteno/FCM delivered.
+	console.log('reteno-push-received:', event);
+});
+```

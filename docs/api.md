@@ -69,6 +69,26 @@ retenosdk.setAnonymousUserAttributes(
 );
 ```
 
+### logEvent payload example
+
+Payload type: `LogEventPayload` in [types](../types/index.ts).
+
+```js
+retenosdk.logEvent(
+	{
+		eventName: 'purchase',
+		// Optional ISO 8601 string. If omitted, Android uses current time (API 26+).
+		date: new Date().toISOString(),
+		parameters: [
+			{ name: 'orderId', value: 'A-123' },
+			{ name: 'amount', value: '19.99' },
+		],
+	},
+	() => console.log('logEvent: OK'),
+	(err) => console.error('logEvent: ERROR', err)
+);
+```
+
 ### setDeviceToken example
 
 If you obtain the FCM token on the JS side (for example via another plugin/SDK), you can forward it to Reteno so it can register the device for push.

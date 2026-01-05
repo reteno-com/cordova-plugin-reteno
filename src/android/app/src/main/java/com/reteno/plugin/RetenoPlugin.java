@@ -47,8 +47,7 @@ public class RetenoPlugin extends CordovaPlugin {
     }
 
     if ("logEvent".equals(action)){
-      echo(action + "\n" + args.toString(), callbackContext);
-      //logEvent(args, callbackContext);
+      logEvent(args, callbackContext);
       return true;
     }
     if ("setUserAttributes".equals(action)){
@@ -197,13 +196,29 @@ public class RetenoPlugin extends CordovaPlugin {
       try {
         Object reteno = getRetenoInstanceOrThrow();
         Object event = RetenoEvent.buildEventFromPayload(args.getJSONObject(0));
-        Method logEvent = reteno.getClass().getMethod("logEvent", event.getClass());
+
+        Method logEvent = null;
+        for (Method m : reteno.getClass().getMethods()) {
+          if (!"logEvent".equals(m.getName())) {
+            continue;
+          }
+          Class<?>[] pts = m.getParameterTypes();
+          if (pts.length == 1 && pts[0].isAssignableFrom(event.getClass())) {
+            logEvent = m;
+            break;
+          }
+        }
+
+        if (logEvent == null) {
+          throw new NoSuchMethodException("Reteno.logEvent(Event) method not found");
+        }
+
         logEvent.invoke(reteno, event);
       } catch (Exception e) {
         callbackContext. error("Reteno Android SDK Error " + e.getLocalizedMessage());
         return;
       }
-      callbackContext.success(args);
+      callbackContext.success(1);
     }
   }
 

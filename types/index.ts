@@ -43,6 +43,15 @@ export type CustomEventParameter = {
   value?: string;
 };
 
+export type LogEventPayload = {
+  /** Event name as defined in Reteno */
+  eventName: string;
+  /** ISO 8601 date string; if omitted on Android API 26+ current time is used */
+  date?: string | null;
+  /** Optional list of parameters */
+  parameters?: CustomEventParameter[] | null;
+};
+
 export type RequestNotificationPermissionResult = 0 | 1;
 
 export type LifecycleTrackingOptions = 'ALL' | 'NONE' | string;

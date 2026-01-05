@@ -4,6 +4,7 @@
 | ------------------------------------------------------------------ | ------------------ | -------------------------------------------------------------- |
 | [setUserAttributes](../www/cordova-plugin-reteno.js)               | iOS, Android       | [Types](../types/index.ts)                                     |
 | [setAnonymousUserAttributes](../www/cordova-plugin-reteno.js)      | Android            | [Types](../types/index.ts)                                     |
+| [setDeviceToken](../www/cordova-plugin-reteno.js)                  | Android            | Forwards FCM token to Reteno (use when another plugin owns FCM callbacks/token, e.g. Firebasex messaging enabled). |
 | [logEvent](../www/cordova-plugin-reteno.js)                        | iOS, Android       | [Types](../types/index.ts)                                     |
 | [getInitialNotification](../www/cordova-plugin-reteno.js)          | iOS, Android       | Returns push notification that triggered creating app instance |
 | [setOnRetenoPushReceivedListener](../www/cordova-plugin-reteno.js) | iOS, Android       | Sets listener for newly received push notification;            |
@@ -65,5 +66,27 @@ retenosdk.setAnonymousUserAttributes(
 	},
 	() => console.log('setAnonymousUserAttributes: OK'),
 	(err) => console.error('setAnonymousUserAttributes: ERROR', err)
+);
+```
+
+### setDeviceToken example
+
+If you obtain the FCM token on the JS side (for example via another plugin/SDK), you can forward it to Reteno so it can register the device for push.
+
+Note: if Reteno receives FCM callbacks directly on Android, you generally don't need to call `setDeviceToken`.
+
+```js
+// 1) Initialize Reteno first.
+retenosdk.init(
+	() => {
+		// Forward token from your token source (replace this with your integration).
+		getFcmTokenFromSomewhere(
+			(token) => {
+				if (token) retenosdk.setDeviceToken(token);
+			},
+			(err) => console.error('getFcmTokenFromSomewhere: ERROR', err)
+		);
+	},
+	(err) => console.error('retenosdk.init: ERROR', err)
 );
 ```

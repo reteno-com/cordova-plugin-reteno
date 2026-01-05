@@ -84,10 +84,43 @@ If you need advanced Reteno configuration (custom `RetenoConfig`, custom device 
 5. Set up Firebase for Cloud Messaging (create Firebase project, add `google-services.json`, etc):
    [link](https://docs.reteno.com/reference/setting-up-your-firebase-application-for-firebase-cloud-messaging).
 
-6. Install Firebase Plugin:
+### Without Firebasex (Cordova)
 
-```sh
-cordova plugin add cordova-plugin-firebasex
-```
+If you **do not need** `cordova-plugin-firebasex` features, you can still use Reteno Push on Android.
+For FCM to work, your Cordova Android project must have:
 
-and follow instructions [link](https://www.npmjs.com/package/cordova-plugin-firebasex?activeTab=readme) how to use it from application;
+1) `google-services.json` (from Firebase Console)
+
+- Download it from Firebase Console → Project settings → Your apps (Android) → `google-services.json`.
+- Put it into your Cordova project in one of these locations (the plugin will copy it into `platforms/android/app/` automatically):
+  - `<projectRoot>/google-services.json`
+  - `<projectRoot>/resources/android/google-services.json`
+  - `<projectRoot>/resources/google-services.json`
+
+2) Google Services Gradle plugin applied (`com.google.gms.google-services`)
+
+The plugin automatically applies Google Services Gradle plugin during `after_platform_add` and `after_prepare`.
+
+How to verify:
+
+- Check that `platforms/android/app/google-services.json` exists.
+- Check `platforms/android/app/build.gradle` contains `com.google.gms.google-services`.
+- If your Gradle build logs contain a message like “google-services.json not found, google-services plugin not applied. Push Notifications won't work”, then the plugin is NOT applied and push won’t work.
+
+### Warning: Reteno + Firebasex (Android)
+
+If you use `cordova-plugin-firebasex` in the same app, be aware it can register its own `FirebaseMessagingService`.
+On Android, only one service may receive `com.google.firebase.MESSAGING_EVENT`, so Firebasex can prevent Reteno from receiving `onNewToken` / `onMessageReceived` callbacks.
+
+Recommendation: don’t install Firebasex “just for push”. Install it only if you need its other Firebase features.
+
+### Custom FCM service (Android)
+
+In most Cordova apps you **do not need** a custom `FirebaseMessagingService`.
+Only add one if you have your **own native push handling** (or another SDK that requires a custom FCM service).
+
+If you do add a custom service, follow Reteno guidance: extend `RetenoFirebaseMessagingService` (not `FirebaseMessagingService`) and call `super` methods.
+
+See Reteno docs:
+- https://docs.reteno.com/reference/android-sdk-setup
+- https://docs.reteno.com/reference/android-push-handling

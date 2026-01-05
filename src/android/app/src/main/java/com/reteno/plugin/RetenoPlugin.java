@@ -86,8 +86,7 @@ public class RetenoPlugin extends CordovaPlugin {
     if ("setDeviceToken".equals(action)){
       echo(action + "\n" + args.toString(), callbackContext);
 
-
-      //setDeviceToken(args, callbackContext);
+      setDeviceToken(args, callbackContext);
       return true;
     }
 
@@ -141,10 +140,8 @@ public class RetenoPlugin extends CordovaPlugin {
     }
 
     if (cordova.hasPermission(PERMISSION_POST_NOTIFICATIONS)) {
-      try {
-        updateRetenoPushPermissionStatus();
-      } catch (Exception ignored) {
-        // Permission is granted; Reteno status update is best-effort.
+      if (!updateRetenoPushPermissionStatus(callbackContext)) {
+        return;
       }
       callbackContext.success(1);
       return;
@@ -170,10 +167,7 @@ public class RetenoPlugin extends CordovaPlugin {
     }
 
     if (granted) {
-      try {
-        updateRetenoPushPermissionStatus();
-      } catch (Exception e) {
-        cb.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
+      if (!updateRetenoPushPermissionStatus(cb)) {
         return;
       }
       cb.success(1);
@@ -182,13 +176,17 @@ public class RetenoPlugin extends CordovaPlugin {
     }
   }
 
-  private void updateRetenoPushPermissionStatus() {
+  private boolean updateRetenoPushPermissionStatus(CallbackContext callbackContext) {
     try {
       Object reteno = getRetenoInstanceOrThrow();
       Method update = reteno.getClass().getMethod("updatePushPermissionStatus");
       update.invoke(reteno);
+      return true;
     } catch (Exception e) {
-      // Best-effort: permission is granted/declined regardless; SDK sync is optional.
+      if (callbackContext != null) {
+        callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
+      }
+      return false;
     }
   }
 
@@ -210,7 +208,46 @@ public class RetenoPlugin extends CordovaPlugin {
   }
 
   public void setDeviceToken(JSONArray args, CallbackContext callbackContext) {
+    try {
+      // Ensure Reteno is initialized (consistent with other SDK calls).
+      getRetenoInstanceOrThrow();
 
+      String deviceToken = null;
+      if (args != null && args.length() > 0) {
+        Object arg0 = args.opt(0);
+        if (arg0 instanceof String) {
+          deviceToken = (String) arg0;
+        } else if (arg0 instanceof JSONObject) {
+          JSONObject obj = (JSONObject) arg0;
+          deviceToken = obj.optString("deviceToken", null);
+          if (TextUtils.isEmpty(deviceToken)) {
+            deviceToken = obj.optString("token", null);
+          }
+        } else if (arg0 instanceof JSONArray) {
+          deviceToken = ((JSONArray) arg0).optString(0, null);
+        }
+      }
+
+      if (deviceToken != null) {
+        deviceToken = deviceToken.trim();
+      }
+      if (TextUtils.isEmpty(deviceToken)) {
+        callbackContext.error("Missing argument: deviceToken");
+        return;
+      }
+
+      // Forward token to Reteno's internal FCM pipeline.
+      // We use reflection to avoid hard compile-time coupling to optional modules.
+      Context appContext = cordova.getActivity().getApplicationContext();
+      Class<?> serviceClass = Class.forName("com.reteno.push.RetenoNotificationService");
+      Object service = serviceClass.getConstructor(Context.class).newInstance(appContext);
+      Method onNewToken = serviceClass.getMethod("onNewToken", String.class);
+      onNewToken.invoke(service, deviceToken);
+
+      callbackContext.success(1);
+    } catch (Exception e) {
+      callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
+    }
   }
 
   private void setAnonymousUserAttributes(JSONObject payload, CallbackContext callbackContext) {

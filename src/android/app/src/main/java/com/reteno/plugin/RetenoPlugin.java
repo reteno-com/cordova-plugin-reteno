@@ -1,6 +1,7 @@
 package com.reteno.plugin;
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CallbackContext;
+import org.apache.cordova.PluginResult;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONException;
@@ -32,7 +33,20 @@ public class RetenoPlugin extends CordovaPlugin {
 
   private JSONObject pendingInitOptions;
 
+  private JSONObject initialNotification;
+
   private volatile boolean initialized = false;
+
+  @Override
+  protected void pluginInitialize() {
+    captureInitialNotificationFromIntent();
+  }
+
+  @Override
+  public void onNewIntent(Intent intent) {
+    super.onNewIntent(intent);
+    captureInitialNotificationFromIntent(intent);
+  }
 
   @Override
   public boolean execute(
@@ -78,8 +92,7 @@ public class RetenoPlugin extends CordovaPlugin {
       return true;
     }
     if ("getInitialNotification".equals(action)){
-      echo(action + "\n" + args.toString(), callbackContext);
-     // getInitialNotification(callbackContext);
+      getInitialNotification(callbackContext);
       return true;
     }
     if ("setDeviceToken".equals(action)){
@@ -346,12 +359,82 @@ public class RetenoPlugin extends CordovaPlugin {
   }
 */
   public void getInitialNotification(CallbackContext callbackContext){
-    Activity activity = this.cordova.getActivity();
-    if(activity == null){
-      callbackContext.error("No activity");
+    JSONObject payload = initialNotification;
+    initialNotification = null;
+
+    if (payload == null) {
+      // No initial notification captured.
+      callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK, new JSONObject()));
       return;
     }
-   //parseIntent(activity.getIntent());
+
+    callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK, payload));
+  }
+
+  private void captureInitialNotificationFromIntent() {
+    Activity activity = this.cordova.getActivity();
+    if (activity == null) {
+      return;
+    }
+    captureInitialNotificationFromIntent(activity.getIntent());
+  }
+
+  private void captureInitialNotificationFromIntent(Intent intent) {
+    if (intent == null) {
+      return;
+    }
+    Bundle extras = intent.getExtras();
+    if (extras == null || extras.isEmpty()) {
+      return;
+    }
+
+    // Best-effort: capture all extras. Host apps can decide how to interpret/filter them.
+    initialNotification = bundleToJson(extras);
+  }
+
+  private JSONObject bundleToJson(Bundle bundle) {
+    JSONObject json = new JSONObject();
+    if (bundle == null) {
+      return json;
+    }
+
+    for (String key : bundle.keySet()) {
+      try {
+        Object value = bundle.get(key);
+        json.put(key, bundleValueToJson(value));
+      } catch (Exception ignored) {
+        // Best-effort: skip keys that can't be serialized.
+      }
+    }
+    return json;
+  }
+
+  private Object bundleValueToJson(Object value) throws JSONException {
+    if (value == null) {
+      return JSONObject.NULL;
+    }
+    if (value instanceof Bundle) {
+      return bundleToJson((Bundle) value);
+    }
+    if (value instanceof CharSequence) {
+      return value.toString();
+    }
+    if (value instanceof String || value instanceof Boolean || value instanceof Integer || value instanceof Long || value instanceof Double) {
+      return value;
+    }
+    if (value instanceof Float) {
+      return ((Float) value).doubleValue();
+    }
+    if (value instanceof String[]) {
+      JSONArray arr = new JSONArray();
+      for (String s : (String[]) value) {
+        arr.put(s);
+      }
+      return arr;
+    }
+
+    // Fallback for Parcelables and other types.
+    return value.toString();
   }
 
   private String readAccessKeyFromManifest() throws Exception {

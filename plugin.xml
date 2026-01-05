@@ -21,6 +21,15 @@
 
     <config-file target="AndroidManifest.xml" parent="/manifest/application">
         <meta-data android:name="com.reteno.SDK_ACCESS_KEY" android:value="$SDK_ACCESS_KEY" />
+
+        <!-- Reteno push events: forward PushReceived to plugin receiver -->
+        <receiver
+            android:name="com.reteno.plugin.RetenoPushReceiver"
+            android:enabled="true"
+            android:exported="true" />
+        <meta-data
+            android:name="com.reteno.Receiver.PushReceived"
+            android:value="com.reteno.plugin.RetenoPushReceiver" />
     </config-file>
 
   <config-file target="config.xml" parent="/*">

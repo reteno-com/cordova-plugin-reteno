@@ -35,11 +35,49 @@ public class RetenoPlugin extends CordovaPlugin {
 
   private JSONObject initialNotification;
 
+  private static volatile RetenoPlugin activeInstance;
+
   private volatile boolean initialized = false;
 
   @Override
   protected void pluginInitialize() {
+    activeInstance = this;
     captureInitialNotificationFromIntent();
+  }
+
+  @Override
+  public void onDestroy() {
+    if (activeInstance == this) {
+      activeInstance = null;
+    }
+    super.onDestroy();
+  }
+
+  public static void emitJsEvent(String eventName, JSONObject payload) {
+    RetenoPlugin instance = activeInstance;
+    if (instance == null || instance.webView == null) {
+      return;
+    }
+
+    if (eventName == null) {
+      return;
+    }
+
+    String safeEventName = JSONObject.quote(eventName);
+    String payloadJson = (payload == null) ? "{}" : payload.toString();
+
+    final String js = "cordova.fireDocumentEvent(" + safeEventName + ", " + payloadJson + ");";
+
+    try {
+      instance.webView.getEngine().evaluateJavascript(js, null);
+    } catch (Exception ignored) {
+      // Fallback for older engines.
+      try {
+        instance.webView.loadUrl("javascript:" + js);
+      } catch (Exception ignored2) {
+        // ignore
+      }
+    }
   }
 
   @Override

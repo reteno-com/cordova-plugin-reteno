@@ -107,8 +107,13 @@ var PLUGIN_NAME = 'RetenoPlugin';
       exec(success, error, PLUGIN_NAME, 'getInitialNotification', [arg0]);
     },
 
-    setOnRetenoPushReceivedListener: function (reteno, listener) {
-      reteno.addEventListener('reteno-push-received', listener);
+    setOnRetenoPushReceivedListener: function (arg0, arg1) {
+      // Back-compat:
+      // - setOnRetenoPushReceivedListener(listener)
+      // - setOnRetenoPushReceivedListener(reteno, listener) (legacy)
+      var listener = typeof arg0 === 'function' ? arg0 : arg1;
+      if (typeof listener !== 'function') return;
+      document.addEventListener('reteno-push-received', listener);
     },
     /*
         deviceToken: string

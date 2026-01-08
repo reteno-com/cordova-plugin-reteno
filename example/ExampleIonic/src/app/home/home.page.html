@@ -121,7 +121,9 @@
     Send form data
   </ion-button>
 
-  <ion-text *ngIf="status" class="status">
-    <p>{{ status }}</p>
-  </ion-text>
+  @if (status) {
+    <ion-text class="status">
+      <p>{{ status }}</p>
+    </ion-text>
+  }
 </ion-content>

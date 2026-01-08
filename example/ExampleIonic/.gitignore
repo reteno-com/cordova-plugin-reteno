@@ -23,6 +23,10 @@ log.txt
 /platforms
 /plugins
 
+# Capacitor native projects (generated via `npx cap add` / `npx cap sync`)
+/android/
+/ios/
+
 # Compiled output
 /dist
 /tmp
@@ -66,3 +70,4 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+

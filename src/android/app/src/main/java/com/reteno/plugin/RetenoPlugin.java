@@ -163,7 +163,11 @@ public class RetenoPlugin extends CordovaPlugin {
 
       String accessKey = readAccessKeyFromManifest();
       if (TextUtils.isEmpty(accessKey)) {
-        callbackContext.error("Missing SDK_ACCESS_KEY. Reinstall plugin with --variable SDK_ACCESS_KEY=YOUR_KEY");
+        callbackContext.error(
+          "Missing SDK_ACCESS_KEY. " +
+          "Provide it when installing the Cordova plugin (e.g. --variable SDK_ACCESS_KEY=YOUR_KEY) " +
+          "or ensure AndroidManifest meta-data 'com.reteno.SDK_ACCESS_KEY' is set."
+        );
         return;
       }
 
@@ -490,6 +494,12 @@ public class RetenoPlugin extends CordovaPlugin {
       return null;
     }
     key = key.trim();
+
+    // If Cordova variable was not provided, plugin.xml injects a literal "$SDK_ACCESS_KEY".
+    // Treat that placeholder as missing to avoid a confusing "initialized" state.
+    if ("$SDK_ACCESS_KEY".equals(key)) {
+      return null;
+    }
     return key.length() == 0 ? null : key;
   }
 

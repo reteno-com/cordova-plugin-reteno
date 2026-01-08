@@ -1,5 +1,5 @@
 {
-  "name": "com.reteno.sample",
+  "name": "example-cordova",
   "displayName": "ExampleCordova",
   "version": "1.0.0",
   "description": "A sample Apache Cordova application that responds to the deviceready event.",
@@ -13,13 +13,21 @@
   "author": "Apache Cordova Team",
   "license": "Apache-2.0",
   "devDependencies": {
+    "cordova": "^13.0.0",
     "cordova-android": "^14.0.1",
-    "cordova-ios": "^6.3.0"
+    "cordova-ios": "^6.3.0",
+    "cordova-plugin-reteno": "file:../.."
   },
   "cordova": {
     "platforms": [
       "android",
       "ios"
-    ]
+    ],
+    "plugins": {
+      "cordova-plugin-reteno": {
+        "SDK_ACCESS_KEY": "8a1b2f46-ac32-46af-9194-d2575f8d5487",
+        "ANDROID_RETENO_FCM_VERSION": "2.8.9"
+      }
+    }
   }
 }

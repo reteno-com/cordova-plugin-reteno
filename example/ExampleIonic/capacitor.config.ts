@@ -6,6 +6,11 @@ const config: CapacitorConfig = {
   webDir: 'src',
   server: {
     androidScheme: 'https'
+  },
+  cordova: {
+    preferences: {
+      SDK_ACCESS_KEY: '8a1b2f46-ac32-46af-9194-d2575f8d5487'
+    }
   }
 };
 

@@ -5,6 +5,28 @@
 module.exports = function (context) {
   const opts = (context && context.opts) || {};
 
+  function readVarFromPackageJson(varName) {
+    const projectRoot =
+      (opts && opts.projectRoot) ||
+      (opts && opts.cordova && opts.cordova.project && opts.cordova.project.root) ||
+      null;
+    if (!projectRoot) return undefined;
+
+    try {
+      // eslint-disable-next-line global-require, import/no-dynamic-require
+      const pkg = require(require('path').join(projectRoot, 'package.json'));
+      const pluginCfg =
+        pkg &&
+        pkg.cordova &&
+        pkg.cordova.plugins &&
+        pkg.cordova.plugins['cordova-plugin-reteno'];
+      const val = pluginCfg ? pluginCfg[varName] : undefined;
+      return val;
+    } catch (_) {
+      return undefined;
+    }
+  }
+
   function readVarFromCmdLine(varName) {
     const cmdLine = (context && context.cmdLine) ? String(context.cmdLine) : '';
     if (!cmdLine) return undefined;
@@ -30,6 +52,7 @@ module.exports = function (context) {
   const accessKey =
     variables.SDK_ACCESS_KEY ||
     readVarFromCmdLine('SDK_ACCESS_KEY') ||
+    readVarFromPackageJson('SDK_ACCESS_KEY') ||
     process.env.SDK_ACCESS_KEY;
   const accessKeyStr = accessKey == null ? '' : String(accessKey).trim();
 

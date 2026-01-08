@@ -67,3 +67,7 @@ testem.log
 .DS_Store
 Thumbs.db
 
+# Firebase
+google-services.json
+android/app/google-services.json
+

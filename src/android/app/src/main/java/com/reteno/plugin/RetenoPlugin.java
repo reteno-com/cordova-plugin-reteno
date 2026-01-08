@@ -487,20 +487,43 @@ public class RetenoPlugin extends CordovaPlugin {
     PackageManager pm = context.getPackageManager();
     ApplicationInfo info = pm.getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
     if (info == null || info.metaData == null) {
-      return null;
+      return readAccessKeyFromCordovaPreferences();
     }
     String key = info.metaData.getString(SDK_ACCESS_KEY_META);
+    String normalized = normalizeAccessKey(key);
+    if (normalized != null) {
+      return normalized;
+    }
+
+    // Capacitor's Cordova plugins module may not substitute $SDK_ACCESS_KEY into AndroidManifest meta-data.
+    // In that case, fall back to Cordova preferences (populated from capacitor.config.*).
+    return readAccessKeyFromCordovaPreferences();
+  }
+
+  private String readAccessKeyFromCordovaPreferences() {
+    try {
+      String key = this.preferences != null ? this.preferences.getString("SDK_ACCESS_KEY", null) : null;
+      return normalizeAccessKey(key);
+    } catch (Exception ignored) {
+      return null;
+    }
+  }
+
+  private String normalizeAccessKey(String key) {
     if (key == null) {
       return null;
     }
     key = key.trim();
+    if (key.length() == 0) {
+      return null;
+    }
 
     // If Cordova variable was not provided, plugin.xml injects a literal "$SDK_ACCESS_KEY".
     // Treat that placeholder as missing to avoid a confusing "initialized" state.
     if ("$SDK_ACCESS_KEY".equals(key)) {
       return null;
     }
-    return key.length() == 0 ? null : key;
+    return key;
   }
 
   private void initRetenoWithConfig(String accessKey, JSONObject options) throws Exception {

@@ -14,22 +14,22 @@ export class HomePage {
   status: string | null = null;
 
   form = this.formBuilder.group({
-    externalUserId: this.formBuilder.control<string>('', {
+    externalUserId: this.formBuilder.control<string>('demo_user_123', {
       validators: [Validators.required],
       nonNullable: true,
     }),
-    email: this.formBuilder.control<string>(''),
-    phone: this.formBuilder.control<string>(''),
-    firstName: this.formBuilder.control<string>(''),
-    lastName: this.formBuilder.control<string>(''),
-    languageCode: this.formBuilder.control<string>(''),
-    timeZone: this.formBuilder.control<string>(''),
-    region: this.formBuilder.control<string>(''),
-    town: this.formBuilder.control<string>(''),
-    address: this.formBuilder.control<string>(''),
-    postcode: this.formBuilder.control<string>(''),
-    fieldKey: this.formBuilder.control<string>(''),
-    fieldValue: this.formBuilder.control<string>(''),
+    email: this.formBuilder.control<string>('john.doe@example.com'),
+    phone: this.formBuilder.control<string>('+1234567890'),
+    firstName: this.formBuilder.control<string>('John'),
+    lastName: this.formBuilder.control<string>('Doe'),
+    languageCode: this.formBuilder.control<string>('en'),
+    timeZone: this.formBuilder.control<string>('Europe/Kyiv'),
+    region: this.formBuilder.control<string>('Kyiv'),
+    town: this.formBuilder.control<string>('Kyiv'),
+    address: this.formBuilder.control<string>('Main street 1'),
+    postcode: this.formBuilder.control<string>('01001'),
+    fieldKey: this.formBuilder.control<string>('plan'),
+    fieldValue: this.formBuilder.control<string>('premium'),
   });
 
   constructor(

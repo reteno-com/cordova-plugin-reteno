@@ -26,4 +26,115 @@ function onDeviceReady() {
 
     console.log('Running cordova-' + cordova.platformId + '@' + cordova.version);
     document.getElementById('deviceready').classList.add('ready');
+
+    var statusEl = document.getElementById('retenoStatus');
+    var externalUserIdEl = document.getElementById('retenoExternalUserId');
+    var userJsonEl = document.getElementById('retenoUserJson');
+    var btn = document.getElementById('retenoSetUserAttributesBtn');
+
+    // Prefill defaults for demo convenience (don't override user's edits).
+    if (externalUserIdEl && !String(externalUserIdEl.value || '').trim()) {
+        externalUserIdEl.value = 'demo_user_123';
+    }
+
+    if (userJsonEl && !String(userJsonEl.value || '').trim()) {
+        userJsonEl.value = JSON.stringify(
+            {
+                userAttributes: {
+                    email: 'john.doe@example.com',
+                    phone: '+1234567890',
+                    firstName: 'John',
+                    lastName: 'Doe',
+                    languageCode: 'en',
+                    timeZone: 'Europe/Kyiv',
+                    address: {
+                        region: 'Kyiv',
+                        town: 'Kyiv',
+                        address: 'Main street 1',
+                        postcode: '01001',
+                    },
+                    fields: [{ key: 'plan', value: 'premium' }],
+                },
+            },
+            null,
+            2
+        );
+    }
+
+    function setStatus(text) {
+        if (statusEl) {
+            statusEl.textContent = text;
+        }
+    }
+
+    function getRetenoSdk() {
+        return (window && window.retenosdk) ? window.retenosdk : null;
+    }
+
+    // Best-effort auto init for demo purposes.
+    var sdk = getRetenoSdk();
+    if (sdk && typeof sdk.init === 'function') {
+        try {
+            sdk.init(
+                {},
+                function () {
+                    setStatus('Reteno initialized');
+                },
+                function (err) {
+                    setStatus('Reteno init error: ' + (err && err.message ? err.message : String(err)));
+                }
+            );
+        } catch (e) {
+            setStatus('Reteno init exception: ' + (e && e.message ? e.message : String(e)));
+        }
+    } else {
+        setStatus('Reteno SDK is not available (window.retenosdk missing).');
+    }
+
+    if (btn) {
+        btn.addEventListener('click', function () {
+            var sdk2 = getRetenoSdk();
+            if (!sdk2 || typeof sdk2.setUserAttributes !== 'function') {
+                setStatus('Reteno setUserAttributes is not available.');
+                return;
+            }
+
+            var externalUserId = externalUserIdEl ? String(externalUserIdEl.value || '').trim() : '';
+            if (!externalUserId) {
+                setStatus('Please provide externalUserId.');
+                return;
+            }
+
+            var user = null;
+            var rawUserJson = userJsonEl ? String(userJsonEl.value || '').trim() : '';
+            if (rawUserJson) {
+                try {
+                    user = JSON.parse(rawUserJson);
+                } catch (e) {
+                    setStatus('Invalid JSON in user field: ' + (e && e.message ? e.message : String(e)));
+                    return;
+                }
+            }
+
+            var payload = {
+                externalUserId: externalUserId,
+                user: user,
+            };
+
+            setStatus('Sending setUserAttributes...');
+            try {
+                sdk2.setUserAttributes(
+                    payload,
+                    function () {
+                        setStatus('setUserAttributes: success');
+                    },
+                    function (err) {
+                        setStatus('setUserAttributes: error: ' + (err && err.message ? err.message : String(err)));
+                    }
+                );
+            } catch (e2) {
+                setStatus('setUserAttributes exception: ' + (e2 && e2.message ? e2.message : String(e2)));
+            }
+        });
+    }
 }

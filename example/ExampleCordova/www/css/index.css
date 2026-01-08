@@ -40,25 +40,87 @@ body {
 /* Portrait layout (default) */
 .app {
     background:url(../img/logo.png) no-repeat center top; /* 170px x 200px */
-    position:absolute;             /* position in the center of the screen */
-    left:50%;
-    top:50%;
-    height:50px;                   /* text area height */
-    width:225px;                   /* text area width */
+    position:relative;
+    left:auto;
+    top:auto;
+    height:auto;
+    width:min(92vw, 420px);
     text-align:center;
-    padding:180px 0px 0px 0px;     /* image height is 200px (bottom 20px are overlapped with text) */
-    margin:-115px 0px 0px -112px;  /* offset vertical: half of image height and text area height */
-                                   /* offset horizontal: half of text area width */
+    padding:180px 16px 24px 16px;
+    margin:24px auto;
+    box-sizing:border-box;
 }
 
 /* Landscape layout (with min-width) */
 @media screen and (min-aspect-ratio: 1/1) and (min-width:400px) {
     .app {
         background-position:left center;
-        padding:75px 0px 75px 170px;  /* padding-top + padding-bottom + text area = image height */
-        margin:-90px 0px 0px -198px;  /* offset vertical: half of image height */
-                                      /* offset horizontal: half of image width and text area width */
+        padding:75px 16px 24px 186px;
+        margin:24px auto;
     }
+}
+
+.reteno-form {
+    margin-top:16px;
+    padding:12px;
+    border-radius:8px;
+    background:rgba(255,255,255,0.85);
+    text-align:left;
+    text-transform:none;
+    -webkit-user-select:text;
+    user-select:text;
+}
+
+.reteno-form h2 {
+    margin:0 0 10px 0;
+    font-size:14px;
+    font-weight:600;
+}
+
+.reteno-label {
+    display:block;
+    margin:10px 0 6px 0;
+    font-size:11px;
+    color:#333;
+}
+
+.reteno-input,
+.reteno-textarea {
+    width:100%;
+    box-sizing:border-box;
+    padding:8px;
+    border-radius:6px;
+    border:1px solid rgba(0,0,0,0.25);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size:12px;
+    background:#fff;
+    color:#111;
+}
+
+.reteno-textarea {
+    resize:vertical;
+}
+
+.reteno-button {
+    width:100%;
+    margin-top:12px;
+    padding:10px;
+    border-radius:6px;
+    border:0;
+    background:#4B946A;
+    color:#fff;
+    font-size:12px;
+}
+
+.reteno-status {
+    margin:12px 0 0 0;
+    padding:10px;
+    background:rgba(0,0,0,0.05);
+    border-radius:6px;
+    font-size:11px;
+    white-space:pre-wrap;
+    word-break:break-word;
+    min-height:24px;
 }
 
 h1 {

@@ -43,6 +43,34 @@
                 <p class="event listening">Connecting to Device</p>
                 <p class="event received">Device is Ready</p>
             </div>
+
+            <div class="reteno-form" aria-label="Reteno setUserAttributes form">
+                <h2>Reteno: setUserAttributes</h2>
+
+                <label class="reteno-label" for="retenoExternalUserId">externalUserId</label>
+                <input
+                    id="retenoExternalUserId"
+                    class="reteno-input"
+                    type="text"
+                    placeholder="e.g. user_123"
+                    autocomplete="off"
+                />
+
+                <label class="reteno-label" for="retenoUserJson">user (JSON, optional)</label>
+                <textarea
+                    id="retenoUserJson"
+                    class="reteno-textarea"
+                    rows="6"
+                    spellcheck="false"
+                    placeholder='{"userAttributes":{"email":"test@example.com","firstName":"John"}}'
+                ></textarea>
+
+                <button id="retenoSetUserAttributesBtn" class="reteno-button" type="button">
+                    Send setUserAttributes
+                </button>
+
+                <pre id="retenoStatus" class="reteno-status" aria-live="polite"></pre>
+            </div>
         </div>
         <script src="cordova.js"></script>
         <script src="js/index.js"></script>

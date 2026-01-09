@@ -103,8 +103,6 @@ public class RetenoPlugin extends CordovaPlugin {
       return true;
     }
     if ("setUserAttributes".equals(action)){
-      echo(action + "\n" + args.toString(), callbackContext);
-
       RetenoUserAttributes.SetUserAttributesParsed parsed =
         RetenoUserAttributes.parseSetUserAttributesArgs(args);
       if (!parsed.isOk()) {
@@ -117,8 +115,6 @@ public class RetenoPlugin extends CordovaPlugin {
     }
 
     if ("setAnonymousUserAttributes".equals(action)) {
-      echo(action + "\n" + args.toString(), callbackContext);
-
       RetenoUserAttributes.ParsedPayload parsed =
         RetenoUserAttributes.parseAnonymousUserAttributesArgs(args);
       if (!parsed.isOk()) {
@@ -134,8 +130,6 @@ public class RetenoPlugin extends CordovaPlugin {
       return true;
     }
     if ("setDeviceToken".equals(action)){
-      echo(action + "\n" + args.toString(), callbackContext);
-
       setDeviceToken(args, callbackContext);
       return true;
     }

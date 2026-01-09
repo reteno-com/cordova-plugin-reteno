@@ -8,17 +8,57 @@ allprojects {
 def retenoFcmVersion = null
 if (project.hasProperty('ANDROID_RETENO_FCM_VERSION')) {
   retenoFcmVersion = project.property('ANDROID_RETENO_FCM_VERSION')
-} else if (project.hasProperty('cordovaConfig')) {
-  // Supports overriding via `cordova plugin add ... --variable ANDROID_RETENO_FCM_VERSION=...`
-  def pref = cordovaConfig.getPreferenceValue('ANDROID_RETENO_FCM_VERSION', null)
+} else {
+  // Cordova-android 14+ exposes config preferences via `cdvHelpers.getConfigPreference`.
+  // Older versions used a ConfigParser-like object; in 14+ `cordovaConfig` is a JsonSlurper map.
+  def pref = null
+
+  def cdvHelpers = null
+  if (project.hasProperty('cdvHelpers')) {
+    cdvHelpers = project.cdvHelpers
+  } else if (rootProject.ext.has('cdvHelpers')) {
+    cdvHelpers = rootProject.ext.cdvHelpers
+  }
+
+  if (cdvHelpers != null && cdvHelpers.getConfigPreference != null) {
+    pref = cdvHelpers.getConfigPreference('ANDROID_RETENO_FCM_VERSION', null)
+  } else {
+    def cordovaConfig = null
+    if (project.hasProperty('cordovaConfig')) {
+      cordovaConfig = project.cordovaConfig
+    } else if (rootProject.ext.has('cordovaConfig')) {
+      cordovaConfig = rootProject.ext.cordovaConfig
+    }
+
+    if (cordovaConfig != null) {
+      if (cordovaConfig instanceof Map) {
+        if (cordovaConfig.containsKey('ANDROID_RETENO_FCM_VERSION')) {
+          pref = cordovaConfig['ANDROID_RETENO_FCM_VERSION']
+        } else if (cordovaConfig.containsKey('preferences') && (cordovaConfig.preferences instanceof Map) && cordovaConfig.preferences.containsKey('ANDROID_RETENO_FCM_VERSION')) {
+          pref = cordovaConfig.preferences['ANDROID_RETENO_FCM_VERSION']
+        }
+      } else {
+        def mc = null
+        try {
+          mc = cordovaConfig.metaClass
+        } catch (Exception ignored) {
+          mc = null
+        }
+        if (mc != null && mc.respondsTo(cordovaConfig, 'getPreferenceValue', String, Object)) {
+          pref = cordovaConfig.getPreferenceValue('ANDROID_RETENO_FCM_VERSION', null)
+        }
+      }
+    }
+  }
+
   if (pref != null && pref.toString().trim().length() > 0) {
     retenoFcmVersion = pref.toString().trim()
+  } else if (rootProject.ext.has('retenoFcmVersion')) {
+    retenoFcmVersion = rootProject.ext.retenoFcmVersion
+  } else {
+    // Keep pinned by default for reproducible builds.
+    retenoFcmVersion = '2.8.9'
   }
-} else if (rootProject.ext.has('retenoFcmVersion')) {
-  retenoFcmVersion = rootProject.ext.retenoFcmVersion
-} else {
-  // Keep pinned by default for reproducible builds.
-  retenoFcmVersion = '2.8.9'
 }
 
 dependencies {

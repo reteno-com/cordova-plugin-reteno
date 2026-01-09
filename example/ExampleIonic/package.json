@@ -4,6 +4,8 @@
   "author": "Ionic Framework",
   "homepage": "https://ionicframework.com/",
   "scripts": {
+    "build:android:debug": "npm run build && npx cap sync android && cd android && ./gradlew :app:assembleDebug",
+    "build:android:release": "npm run build && npx cap sync android && cd android && ./gradlew :app:bundleRelease",
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",

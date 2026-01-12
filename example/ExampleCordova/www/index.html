@@ -56,14 +56,74 @@
                     autocomplete="off"
                 />
 
-                <label class="reteno-label" for="retenoUserJson">user (JSON, optional)</label>
-                <textarea
-                    id="retenoUserJson"
-                    class="reteno-textarea"
-                    rows="6"
-                    spellcheck="false"
-                    placeholder='{"userAttributes":{"email":"test@example.com","firstName":"John"}}'
-                ></textarea>
+                <div class="reteno-section">
+                    <div class="reteno-section-title">User attributes</div>
+
+                    <div class="reteno-grid">
+                        <div>
+                            <label class="reteno-label" for="retenoEmail">email</label>
+                            <input id="retenoEmail" class="reteno-input" type="email" autocomplete="off" placeholder="john.doe@example.com" />
+                        </div>
+                        <div>
+                            <label class="reteno-label" for="retenoPhone">phone</label>
+                            <input id="retenoPhone" class="reteno-input" type="tel" autocomplete="off" placeholder="+1234567890" />
+                        </div>
+
+                        <div>
+                            <label class="reteno-label" for="retenoFirstName">firstName</label>
+                            <input id="retenoFirstName" class="reteno-input" type="text" autocomplete="off" placeholder="John" />
+                        </div>
+                        <div>
+                            <label class="reteno-label" for="retenoLastName">lastName</label>
+                            <input id="retenoLastName" class="reteno-input" type="text" autocomplete="off" placeholder="Doe" />
+                        </div>
+
+                        <div>
+                            <label class="reteno-label" for="retenoLanguageCode">languageCode</label>
+                            <input id="retenoLanguageCode" class="reteno-input" type="text" autocomplete="off" placeholder="en" />
+                        </div>
+                        <div>
+                            <label class="reteno-label" for="retenoTimeZone">timeZone</label>
+                            <input id="retenoTimeZone" class="reteno-input" type="text" autocomplete="off" placeholder="Europe/Kyiv" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="reteno-section">
+                    <div class="reteno-section-title">Address (optional)</div>
+                    <div class="reteno-grid">
+                        <div>
+                            <label class="reteno-label" for="retenoAddressRegion">region</label>
+                            <input id="retenoAddressRegion" class="reteno-input" type="text" autocomplete="off" placeholder="Kyiv" />
+                        </div>
+                        <div>
+                            <label class="reteno-label" for="retenoAddressTown">town</label>
+                            <input id="retenoAddressTown" class="reteno-input" type="text" autocomplete="off" placeholder="Kyiv" />
+                        </div>
+                        <div>
+                            <label class="reteno-label" for="retenoAddressLine">address</label>
+                            <input id="retenoAddressLine" class="reteno-input" type="text" autocomplete="off" placeholder="Main street 1" />
+                        </div>
+                        <div>
+                            <label class="reteno-label" for="retenoAddressPostcode">postcode</label>
+                            <input id="retenoAddressPostcode" class="reteno-input" type="text" autocomplete="off" placeholder="01001" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="reteno-section">
+                    <div class="reteno-section-title">Custom field (optional)</div>
+                    <div class="reteno-grid">
+                        <div>
+                            <label class="reteno-label" for="retenoFieldKey">key</label>
+                            <input id="retenoFieldKey" class="reteno-input" type="text" autocomplete="off" placeholder="plan" />
+                        </div>
+                        <div>
+                            <label class="reteno-label" for="retenoFieldValue">value</label>
+                            <input id="retenoFieldValue" class="reteno-input" type="text" autocomplete="off" placeholder="premium" />
+                        </div>
+                    </div>
+                </div>
 
                 <button id="retenoSetUserAttributesBtn" class="reteno-button" type="button">
                     Send setUserAttributes

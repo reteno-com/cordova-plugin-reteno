@@ -89,7 +89,7 @@ If you need advanced Reteno configuration (custom `RetenoConfig`, custom device 
 If you **do not need** `cordova-plugin-firebasex` features, you can still use Reteno Push on Android.
 For FCM to work, your Cordova Android project must have:
 
-1) `google-services.json` (from Firebase Console)
+1. `google-services.json` (from Firebase Console)
 
 - Download it from Firebase Console → Project settings → Your apps (Android) → `google-services.json`.
 - Put it into your Cordova project in one of these locations (the plugin will copy it into `platforms/android/app/` automatically):
@@ -97,7 +97,7 @@ For FCM to work, your Cordova Android project must have:
   - `<projectRoot>/resources/android/google-services.json`
   - `<projectRoot>/resources/google-services.json`
 
-2) Google Services Gradle plugin applied (`com.google.gms.google-services`)
+2. Google Services Gradle plugin applied (`com.google.gms.google-services`)
 
 The plugin automatically applies Google Services Gradle plugin during `after_platform_add` and `after_prepare`.
 
@@ -122,5 +122,6 @@ Only add one if you have your **own native push handling** (or another SDK that 
 If you do add a custom service, follow Reteno guidance: extend `RetenoFirebaseMessagingService` (not `FirebaseMessagingService`) and call `super` methods.
 
 See Reteno docs:
+
 - https://docs.reteno.com/reference/android-sdk-setup
 - https://docs.reteno.com/reference/android-push-handling

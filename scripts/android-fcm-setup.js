@@ -48,9 +48,11 @@ function upsertLineOnce(text, needle, insertAfterRe, lineToInsert) {
 function ensureGoogleServicesClasspath(platformsAndroidBuildGradlePath, googleServicesVersion) {
   if (!exists(platformsAndroidBuildGradlePath)) return false;
 
-  const needle = "com.google.gms:google-services";
+  const hasClasspath = (text) =>
+    /classpath\s+['"]com\.google\.gms:google-services:/.test(text);
+
   const original = readText(platformsAndroidBuildGradlePath);
-  if (original.includes(needle)) return false;
+  if (hasClasspath(original)) return false;
 
   // Try to insert into buildscript { dependencies { ... } }
   // Common Cordova pattern: buildscript { repositories { ... } dependencies { ... } }
@@ -59,7 +61,7 @@ function ensureGoogleServicesClasspath(platformsAndroidBuildGradlePath, googleSe
   // Prefer inserting after the line that opens the buildscript dependencies block.
   const result = upsertLineOnce(
     original,
-    needle,
+    classpathLine,
     /^\s*dependencies\s*\{\s*$/,
     classpathLine
   );
@@ -75,12 +77,13 @@ function ensureGoogleServicesClasspath(platformsAndroidBuildGradlePath, googleSe
 function ensureGoogleServicesApplied(platformsAndroidAppBuildGradlePath) {
   if (!exists(platformsAndroidAppBuildGradlePath)) return false;
 
-  const needle = "com.google.gms.google-services";
+  const guardNeedle = "plugins.hasPlugin('com.google.gms.google-services')";
   const original = readText(platformsAndroidAppBuildGradlePath);
-  if (original.includes(needle)) return false;
+  if (original.includes(guardNeedle)) return false;
 
-  // Cordova uses Groovy build.gradle; safest is to append at end.
-  const appended = `${original.replace(/\s*$/, '')}\n\napply plugin: 'com.google.gms.google-services'\n`;
+  // Cordova's template may already contain a conditional apply based on cordovaConfig.
+  // Add our own guard so the plugin is applied whenever google-services.json exists.
+  const appended = `${original.replace(/\s*$/, '')}\n\nif (!project.plugins.hasPlugin('com.google.gms.google-services')) {\n    apply plugin: 'com.google.gms.google-services'\n}\n`;
   writeText(platformsAndroidAppBuildGradlePath, appended);
   return true;
 }
@@ -149,8 +152,12 @@ module.exports = function (context) {
   }
 
   const copyResult = copyGoogleServicesJson(projectRoot, androidAppDir);
-  const classpathChanged = ensureGoogleServicesClasspath(
+  const classpathChangedRoot = ensureGoogleServicesClasspath(
     platformsAndroidBuildGradlePath,
+    googleServicesVersion
+  );
+  const classpathChangedApp = ensureGoogleServicesClasspath(
+    platformsAndroidAppBuildGradlePath,
     googleServicesVersion
   );
   const applyChanged = ensureGoogleServicesApplied(platformsAndroidAppBuildGradlePath);
@@ -160,7 +167,7 @@ module.exports = function (context) {
     [
       'cordova-plugin-reteno: Android FCM setup:',
       `google-services.json=${copyResult.reason}`,
-      `google-services-classpath=${classpathChanged ? 'added' : 'ok'}`,
+      `google-services-classpath=${classpathChangedRoot || classpathChangedApp ? 'added' : 'ok'}`,
       `google-services-apply=${applyChanged ? 'added' : 'ok'}`,
     ].join(' ')
   );

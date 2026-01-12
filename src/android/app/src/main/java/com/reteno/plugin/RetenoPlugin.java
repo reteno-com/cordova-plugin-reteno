@@ -15,10 +15,12 @@ import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.widget.Toast;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 
 import com.google.gson.Gson;
 import com.reteno.core.RetenoApplication;
@@ -28,6 +30,7 @@ public class RetenoPlugin extends CordovaPlugin {
   private static final int REQ_CODE_POST_NOTIFICATIONS = 10001;
   private static final String PERMISSION_POST_NOTIFICATIONS = "android.permission.POST_NOTIFICATIONS";
   private static final String SDK_ACCESS_KEY_META = "com.reteno.SDK_ACCESS_KEY";
+  private static final String TAG = "RetenoPlugin";
 
   private CallbackContext notificationPermissionCallback;
 
@@ -176,8 +179,42 @@ public class RetenoPlugin extends CordovaPlugin {
       initialized = true;
       callbackContext.success(1);
     } catch (Exception e) {
-      callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
+      Log.e(TAG, "Reteno initialization failed", e);
+      callbackContext.error("Reteno Android SDK Error: " + describeException(e));
     }
+  }
+
+  private String describeException(Throwable t) {
+    if (t == null) {
+      return "Unknown error";
+    }
+
+    // Unwrap common reflection wrapper to expose the real cause.
+    Throwable root = t;
+    if (t instanceof java.lang.reflect.InvocationTargetException) {
+      Throwable cause = ((java.lang.reflect.InvocationTargetException) t).getTargetException();
+      if (cause != null) {
+        root = cause;
+      }
+    }
+
+    String message = root.getMessage();
+    if (message != null) {
+      message = message.trim();
+    }
+    if (TextUtils.isEmpty(message)) {
+      message = root.toString();
+    }
+
+    Throwable cause = root.getCause();
+    if (cause != null && cause != root) {
+      String causeMsg = cause.toString();
+      if (!TextUtils.isEmpty(causeMsg)) {
+        return message + " (caused by: " + causeMsg + ")";
+      }
+    }
+
+    return message;
   }
 
   private void requestNotificationPermission(CallbackContext callbackContext) {
@@ -535,30 +572,61 @@ public class RetenoPlugin extends CordovaPlugin {
     Method buildMethod = builderClass.getMethod("build");
     Object config = buildMethod.invoke(builder);
 
+    // Try to find an initWithConfig method compatible with this config instance.
     Method init = null;
     for (Method m : retenoClass.getMethods()) {
-      if ("initWithConfig".equals(m.getName()) && m.getParameterTypes().length == 1) {
-        init = m;
-        break;
+      if (!"initWithConfig".equals(m.getName())) {
+        continue;
       }
+      Class<?>[] pts = m.getParameterTypes();
+      if (pts.length != 1) {
+        continue;
+      }
+      if (!pts[0].isAssignableFrom(config.getClass())) {
+        continue;
+      }
+      init = m;
+      break;
     }
 
-    if (init != null) {
-      try {
-        init.invoke(null, config);
-        return;
-      } catch (Exception ignored) {
-        // fall through
-      }
-    }
-
-    // Kotlin object fallback: Reteno.INSTANCE.initWithConfig(config)
-    Field instanceField = retenoClass.getField("INSTANCE");
-    Object retenoObject = instanceField.get(null);
     if (init == null) {
-      init = retenoObject.getClass().getMethod("initWithConfig", config.getClass());
+      throw new NoSuchMethodException("Reteno.initWithConfig(RetenoConfig) not found");
     }
-    init.invoke(retenoObject, config);
+
+    // If it's static, invoke on the class.
+    if (Modifier.isStatic(init.getModifiers())) {
+      init.invoke(null, config);
+      return;
+    }
+
+    // Otherwise, invoke on Kotlin object/companion receiver if present.
+    Object receiver = tryGetKotlinObjectInstance(retenoClass);
+    if (receiver == null) {
+      receiver = tryGetKotlinCompanion(retenoClass);
+    }
+    if (receiver == null) {
+      throw new NoSuchFieldException("Reteno receiver not found (INSTANCE/Companion)");
+    }
+
+    init.invoke(receiver, config);
+  }
+
+  private Object tryGetKotlinObjectInstance(Class<?> cls) {
+    try {
+      Field f = cls.getField("INSTANCE");
+      return f.get(null);
+    } catch (Exception ignored) {
+      return null;
+    }
+  }
+
+  private Object tryGetKotlinCompanion(Class<?> cls) {
+    try {
+      Field f = cls.getField("Companion");
+      return f.get(null);
+    } catch (Exception ignored) {
+      return null;
+    }
   }
 
   private void applyOptionalInitOptions(Class<?> builderClass, Object builder, JSONObject options) {
@@ -652,7 +720,7 @@ public class RetenoPlugin extends CordovaPlugin {
     }
 
     throw new IllegalStateException(
-      "Reteno SDK is not initialized. Call retenosdk.initialize() before using the plugin."
+      "Reteno SDK is not initialized. Call retenosdk.init(...) before using the plugin (and make sure SDK_ACCESS_KEY is provided)."
     );
   }
 
@@ -682,13 +750,32 @@ public class RetenoPlugin extends CordovaPlugin {
     try {
       Class<?> retenoClass = Class.forName("com.reteno.core.Reteno");
 
-      // Kotlin object: Reteno.INSTANCE.getInstance()
-      Field objField = retenoClass.getField("INSTANCE");
-      Object retenoObject = objField.get(null);
+      // 1) Static: Reteno.getInstance()
       try {
-        Method getInstance = retenoObject.getClass().getMethod("getInstance");
-        Object instance = getInstance.invoke(retenoObject);
-        return instance;
+        Method staticGetInstance = retenoClass.getMethod("getInstance");
+        if (Modifier.isStatic(staticGetInstance.getModifiers())) {
+          Object instance = staticGetInstance.invoke(null);
+          if (instance != null) {
+            return instance;
+          }
+        }
+      } catch (Exception ignored) {
+        // continue
+      }
+
+      // 2) Kotlin object: Reteno.INSTANCE.getInstance()
+      Object receiver = tryGetKotlinObjectInstance(retenoClass);
+      if (receiver == null) {
+        // 3) Kotlin companion: Reteno.Companion.getInstance()
+        receiver = tryGetKotlinCompanion(retenoClass);
+      }
+      if (receiver == null) {
+        return null;
+      }
+
+      try {
+        Method getInstance = receiver.getClass().getMethod("getInstance");
+        return getInstance.invoke(receiver);
       } catch (Exception ignored) {
         return null;
       }

@@ -61,7 +61,61 @@ if (project.hasProperty('ANDROID_RETENO_FCM_VERSION')) {
   }
 }
 
+def firebaseMessagingVersion = null
+if (project.hasProperty('ANDROID_FIREBASE_MESSAGING_VERSION')) {
+  firebaseMessagingVersion = project.property('ANDROID_FIREBASE_MESSAGING_VERSION')
+} else {
+  def pref = null
+
+  def cdvHelpers = null
+  if (project.hasProperty('cdvHelpers')) {
+    cdvHelpers = project.cdvHelpers
+  } else if (rootProject.ext.has('cdvHelpers')) {
+    cdvHelpers = rootProject.ext.cdvHelpers
+  }
+
+  if (cdvHelpers != null && cdvHelpers.getConfigPreference != null) {
+    pref = cdvHelpers.getConfigPreference('ANDROID_FIREBASE_MESSAGING_VERSION', null)
+  } else {
+    def cordovaConfig = null
+    if (project.hasProperty('cordovaConfig')) {
+      cordovaConfig = project.cordovaConfig
+    } else if (rootProject.ext.has('cordovaConfig')) {
+      cordovaConfig = rootProject.ext.cordovaConfig
+    }
+
+    if (cordovaConfig != null) {
+      if (cordovaConfig instanceof Map) {
+        if (cordovaConfig.containsKey('ANDROID_FIREBASE_MESSAGING_VERSION')) {
+          pref = cordovaConfig['ANDROID_FIREBASE_MESSAGING_VERSION']
+        } else if (cordovaConfig.containsKey('preferences') && (cordovaConfig.preferences instanceof Map) && cordovaConfig.preferences.containsKey('ANDROID_FIREBASE_MESSAGING_VERSION')) {
+          pref = cordovaConfig.preferences['ANDROID_FIREBASE_MESSAGING_VERSION']
+        }
+      } else {
+        def mc = null
+        try {
+          mc = cordovaConfig.metaClass
+        } catch (Exception ignored) {
+          mc = null
+        }
+        if (mc != null && mc.respondsTo(cordovaConfig, 'getPreferenceValue', String, Object)) {
+          pref = cordovaConfig.getPreferenceValue('ANDROID_FIREBASE_MESSAGING_VERSION', null)
+        }
+      }
+    }
+  }
+
+  if (pref != null && pref.toString().trim().length() > 0) {
+    firebaseMessagingVersion = pref.toString().trim()
+  } else if (rootProject.ext.has('firebaseMessagingVersion')) {
+    firebaseMessagingVersion = rootProject.ext.firebaseMessagingVersion
+  } else {
+    firebaseMessagingVersion = '23.1.0'
+  }
+}
+
 dependencies {
   implementation "com.reteno:fcm:${retenoFcmVersion}"
+  implementation "com.google.firebase:firebase-messaging:${firebaseMessagingVersion}"
   implementation "com.google.code.gson:gson:2.8.9"
 }

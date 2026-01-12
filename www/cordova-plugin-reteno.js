@@ -4,6 +4,65 @@ var urlutil = require('cordova/urlutil');
 
 var PLUGIN_NAME = 'RetenoPlugin';
 
+var __retenoState = {
+  initialized: false,
+  initPromise: null,
+};
+
+function __isFn(f) {
+  return typeof f === 'function';
+}
+
+function __promiseExec(action, args) {
+  return new Promise(function (resolve, reject) {
+    exec(resolve, reject, PLUGIN_NAME, action, args);
+  });
+}
+
+function __ensureInit(options) {
+  if (__retenoState.initialized) {
+    return Promise.resolve(1);
+  }
+
+  if (__retenoState.initPromise) {
+    return __retenoState.initPromise;
+  }
+
+  var opts = options || {};
+  __retenoState.initPromise = __promiseExec('initialize', [opts])
+    .then(function (res) {
+      __retenoState.initialized = true;
+      __retenoState.initPromise = null;
+      return res;
+    })
+    .catch(function (err) {
+      __retenoState.initialized = false;
+      __retenoState.initPromise = null;
+      throw err;
+    });
+
+  return __retenoState.initPromise;
+}
+
+function __callWithAutoInit(action, args, success, error) {
+  var useCallbacks = __isFn(success) || __isFn(error);
+
+  if (useCallbacks) {
+    __ensureInit()
+      .then(function () {
+        exec(success, error, PLUGIN_NAME, action, args);
+      })
+      .catch(function (err) {
+        if (__isFn(error)) error(err);
+      });
+    return;
+  }
+
+  return __ensureInit().then(function () {
+    return __promiseExec(action, args);
+  });
+}
+
 (function RetenoPlugin() {
   this.channels = {
     beforeload: channel.create('beforeload'),
@@ -56,12 +115,30 @@ var PLUGIN_NAME = 'RetenoPlugin';
       if (typeof arg0 === 'function') {
         error = success;
         success = arg0;
-        exec(success, error, PLUGIN_NAME, 'initialize', []);
-        return;
+        return __ensureInit({})
+          .then(function (res) {
+            if (__isFn(success)) success(res);
+            return res;
+          })
+          .catch(function (err) {
+            if (__isFn(error)) error(err);
+            throw err;
+          });
       }
 
       var options = arg0 || {};
-      exec(success, error, PLUGIN_NAME, 'initialize', [options]);
+      var useCallbacks = __isFn(success) || __isFn(error);
+      if (useCallbacks) {
+        __ensureInit(options)
+          .then(function (res) {
+            if (__isFn(success)) success(res);
+          })
+          .catch(function (err) {
+            if (__isFn(error)) error(err);
+          });
+        return;
+      }
+      return __ensureInit(options);
     },
 
     /* arg0:
@@ -72,7 +149,7 @@ var PLUGIN_NAME = 'RetenoPlugin';
             forcePush?: boolean
           */
     logEvent: function (arg0, success, error) {
-      exec(success, error, PLUGIN_NAME, 'logEvent', [arg0]);
+      return __callWithAutoInit('logEvent', [arg0], success, error);
     },
 
     /*
@@ -88,7 +165,7 @@ var PLUGIN_NAME = 'RetenoPlugin';
       ) {
         throw new Error('Missing argument: "externalUserId"');
       }
-      exec(success, error, PLUGIN_NAME, 'setUserAttributes', [payload]);
+      return __callWithAutoInit('setUserAttributes', [payload], success, error);
     },
 
     /*
@@ -100,10 +177,11 @@ var PLUGIN_NAME = 'RetenoPlugin';
       if (!payload || typeof payload !== 'object') {
         throw new Error('Missing argument: payload');
       }
-      exec(success, error, PLUGIN_NAME, 'setAnonymousUserAttributes', [payload]);
+      return __callWithAutoInit('setAnonymousUserAttributes', [payload], success, error);
     },
 
     getInitialNotification: function (arg0, success, error) {
+      // Allowed before init (used on cold start).
       exec(success, error, PLUGIN_NAME, 'getInitialNotification', [arg0]);
     },
 
@@ -119,10 +197,12 @@ var PLUGIN_NAME = 'RetenoPlugin';
         deviceToken: string
         */
     setDeviceToken: function (arg0, success, error) {
-      exec(success, error, PLUGIN_NAME, 'setDeviceToken', [arg0]);
+      return __callWithAutoInit('setDeviceToken', [arg0], success, error);
     },
 
     requestNotificationPermission: function (success, error) {
+      // If Reteno isn't initialized yet, permission can still be requested,
+      // but Reteno's internal status update will fail until init().
       exec(success, error, PLUGIN_NAME, 'requestNotificationPermission', []);
     },
   };

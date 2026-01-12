@@ -1,5 +1,5 @@
 
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { RetenoService } from '../services/reteno.service';
@@ -12,6 +12,9 @@ import { RetenoService } from '../services/reteno.service';
 })
 export class HomePage {
   status: string | null = null;
+
+  private readonly formBuilder = inject(FormBuilder);
+  private readonly reteno = inject(RetenoService);
 
   form = this.formBuilder.group({
     externalUserId: this.formBuilder.control<string>('demo_user_123', {
@@ -32,38 +35,76 @@ export class HomePage {
     fieldValue: this.formBuilder.control<string>('premium'),
   });
 
-  constructor(
-    private readonly formBuilder: FormBuilder,
-    private readonly reteno: RetenoService
-  ) {}
-
   sendForm() {
     const v = this.form.getRawValue();
+    const clean = (value: string | null | undefined): string | null => {
+      if (value == null) {
+        return null;
+      }
+      const trimmed = value.trim();
+      return trimmed.length > 0 ? trimmed : null;
+    };
+
+    type UserAttributes = {
+      email?: string;
+      phone?: string;
+      firstName?: string;
+      lastName?: string;
+      languageCode?: string;
+      timeZone?: string;
+      address?: {
+        region?: string;
+        town?: string;
+        address?: string;
+        postcode?: string;
+      };
+      fields?: Array<{ key: string; value: string }>;
+    };
+
+    const userAttributes: UserAttributes = {};
+
+    const email = clean(v.email);
+    if (email) userAttributes.email = email;
+
+    const phone = clean(v.phone);
+    if (phone) userAttributes.phone = phone;
+
+    const firstName = clean(v.firstName);
+    if (firstName) userAttributes.firstName = firstName;
+
+    const lastName = clean(v.lastName);
+    if (lastName) userAttributes.lastName = lastName;
+
+    const languageCode = clean(v.languageCode);
+    if (languageCode) userAttributes.languageCode = languageCode;
+
+    const timeZone = clean(v.timeZone);
+    if (timeZone) userAttributes.timeZone = timeZone;
+
+    const region = clean(v.region);
+    const town = clean(v.town);
+    const addressLine = clean(v.address);
+    const postcode = clean(v.postcode);
+    if (region || town || addressLine || postcode) {
+      const address: NonNullable<UserAttributes['address']> = {};
+      if (region) address.region = region;
+      if (town) address.town = town;
+      if (addressLine) address.address = addressLine;
+      if (postcode) address.postcode = postcode;
+      userAttributes.address = address;
+    }
+
+    const fieldKey = clean(v.fieldKey);
+    const fieldValue = clean(v.fieldValue);
+    if (fieldKey && fieldValue) {
+      userAttributes.fields = [{ key: fieldKey, value: fieldValue }];
+    }
+
+    const user = Object.keys(userAttributes).length > 0 ? { userAttributes } : null;
+
     const payload = {
       externalUserId: v.externalUserId,
-      user: {
-        userAttributes: {
-          email: v.email || null,
-          phone: v.phone || null,
-          firstName: v.firstName || null,
-          lastName: v.lastName || null,
-          languageCode: v.languageCode || null,
-          timeZone: v.timeZone || null,
-          address:
-            v.region || v.town || v.address || v.postcode
-              ? {
-                  region: v.region || null,
-                  town: v.town || null,
-                  address: v.address || null,
-                  postcode: v.postcode || null,
-                }
-              : null,
-          fields:
-            v.fieldKey && v.fieldValue
-              ? [{ key: v.fieldKey, value: v.fieldValue }]
-              : null,
-        },
-      },
+      user,
     };
 
     this.sendToReteno(payload);

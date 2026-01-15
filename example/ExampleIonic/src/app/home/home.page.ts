@@ -1,5 +1,5 @@
 
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { RetenoService } from '../services/reteno.service';
@@ -10,7 +10,12 @@ import { RetenoService } from '../services/reteno.service';
     styleUrls: ['home.page.scss'],
     imports: [IonicModule, ReactiveFormsModule]
 })
-export class HomePage {
+export class HomePage implements OnInit {
+    ngOnInit(): void {
+      if (typeof this.reteno.requestNotificationPermission === 'function') {
+        this.reteno.requestNotificationPermission().catch(() => {});
+      }
+    }
   status: string | null = null;
 
   private readonly formBuilder = inject(FormBuilder);
@@ -22,7 +27,7 @@ export class HomePage {
       nonNullable: true,
     }),
     email: this.formBuilder.control<string>('john.doe@example.com'),
-    phone: this.formBuilder.control<string>('+1234567890'),
+    phone: this.formBuilder.control<string>('+380671234567'),
     firstName: this.formBuilder.control<string>('John'),
     lastName: this.formBuilder.control<string>('Doe'),
     languageCode: this.formBuilder.control<string>('en'),

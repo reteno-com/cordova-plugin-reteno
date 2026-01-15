@@ -22,10 +22,15 @@
 document.addEventListener('deviceready', onDeviceReady, false);
 
 function onDeviceReady() {
-    // Cordova is now initialized. Have fun!
 
+    // Cordova is now initialized. Have fun!
     console.log('Running cordova-' + cordova.platformId + '@' + cordova.version);
     document.getElementById('deviceready').classList.add('ready');
+
+    // Request push permission right after startup (Android 13+)
+    if (window.retenosdk && typeof window.retenosdk.requestNotificationPermission === 'function') {
+        window.retenosdk.requestNotificationPermission();
+    }
 
     var statusEl = document.getElementById('retenoStatus');
     var externalUserIdEl = document.getElementById('retenoExternalUserId');
@@ -52,7 +57,7 @@ function onDeviceReady() {
     }
 
     if (emailEl && !String(emailEl.value || '').trim()) emailEl.value = 'john.doe@example.com';
-    if (phoneEl && !String(phoneEl.value || '').trim()) phoneEl.value = '+1234567890';
+    if (phoneEl && !String(phoneEl.value || '').trim()) phoneEl.value = '+380671234567';
     if (firstNameEl && !String(firstNameEl.value || '').trim()) firstNameEl.value = 'John';
     if (lastNameEl && !String(lastNameEl.value || '').trim()) lastNameEl.value = 'Doe';
     if (languageCodeEl && !String(languageCodeEl.value || '').trim()) languageCodeEl.value = 'en';

@@ -177,6 +177,21 @@ function __callWithAutoInit(action, args, success, error) {
       if (!payload || typeof payload !== 'object') {
         throw new Error('Missing argument: payload');
       }
+
+      // Reteno docs: anonymous user attributes cannot include phone/email.
+      if (payload.phone || payload.email) {
+        throw new Error(
+          'Anonymous user attributes cannot include phone/email. Use setUserAttributes(externalUserId, user) instead.'
+        );
+      }
+      if (
+        payload.userAttributes &&
+        (payload.userAttributes.phone || payload.userAttributes.email)
+      ) {
+        throw new Error(
+          'Anonymous user attributes cannot include phone/email. Use setUserAttributes(externalUserId, user) instead.'
+        );
+      }
       return __callWithAutoInit('setAnonymousUserAttributes', [payload], success, error);
     },
 

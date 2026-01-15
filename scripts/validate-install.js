@@ -4,17 +4,39 @@
 
 module.exports = function (context) {
   const opts = (context && context.opts) || {};
+  const path = require('path');
+  const fs = require('fs');
+
+  function resolveProjectRoot() {
+    const candidates = [
+      opts && opts.projectRoot,
+      opts && opts.cordova && opts.cordova.project && opts.cordova.project.root,
+      process.cwd(),
+    ].filter(Boolean);
+
+    for (const candidate of candidates) {
+      try {
+        const abs = path.isAbsolute(candidate)
+          ? candidate
+          : path.resolve(process.cwd(), candidate);
+        const pkgPath = path.join(abs, 'package.json');
+        if (fs.existsSync(pkgPath)) {
+          return abs;
+        }
+      } catch (_) {
+        // try next
+      }
+    }
+    return null;
+  }
 
   function readVarFromPackageJson(varName) {
-    const projectRoot =
-      (opts && opts.projectRoot) ||
-      (opts && opts.cordova && opts.cordova.project && opts.cordova.project.root) ||
-      null;
+    const projectRoot = resolveProjectRoot();
     if (!projectRoot) return undefined;
 
     try {
       // eslint-disable-next-line global-require, import/no-dynamic-require
-      const pkg = require(require('path').join(projectRoot, 'package.json'));
+      const pkg = require(path.join(projectRoot, 'package.json'));
       const pluginCfg =
         pkg &&
         pkg.cordova &&

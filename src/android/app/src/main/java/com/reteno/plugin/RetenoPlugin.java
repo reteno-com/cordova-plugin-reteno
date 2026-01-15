@@ -1,4 +1,5 @@
 package com.reteno.plugin;
+
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.PluginResult;
@@ -6,40 +7,33 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONException;
 
-import android.app.Application;
-import android.content.pm.PackageManager;
-import android.content.pm.ApplicationInfo;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.util.Log;
-import android.widget.Toast;
-
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 
 import com.google.gson.Gson;
-import com.reteno.core.RetenoApplication;
+import com.reteno.core.Reteno;
+import com.reteno.core.RetenoConfig;
 import com.reteno.core.domain.model.user.User;
+import com.reteno.core.domain.model.user.UserAttributesAnonymous;
+import com.reteno.push.RetenoNotificationService;
 
 public class RetenoPlugin extends CordovaPlugin {
   private static final int REQ_CODE_POST_NOTIFICATIONS = 10001;
   private static final String PERMISSION_POST_NOTIFICATIONS = "android.permission.POST_NOTIFICATIONS";
   private static final String SDK_ACCESS_KEY_META = "com.reteno.SDK_ACCESS_KEY";
-  private static final String TAG = "RetenoPlugin";
-
-  private CallbackContext notificationPermissionCallback;
-
-  private JSONObject pendingInitOptions;
-
-  private JSONObject initialNotification;
+  private static final String DEBUG_MODE_META = "com.reteno.plugin.DEBUG_MODE";
+  private static final String DEBUG_MODE_PREF = "RETENO_DEBUG_MODE";
 
   private static volatile RetenoPlugin activeInstance;
 
+  private CallbackContext notificationPermissionCallback;
+  private JSONObject initialNotification;
   private volatile boolean initialized = false;
 
   @Override
@@ -68,13 +62,11 @@ public class RetenoPlugin extends CordovaPlugin {
 
     String safeEventName = JSONObject.quote(eventName);
     String payloadJson = (payload == null) ? "{}" : payload.toString();
-
     final String js = "cordova.fireDocumentEvent(" + safeEventName + ", " + payloadJson + ");";
 
     try {
       instance.webView.getEngine().evaluateJavascript(js, null);
     } catch (Exception ignored) {
-      // Fallback for older engines.
       try {
         instance.webView.loadUrl("javascript:" + js);
       } catch (Exception ignored2) {
@@ -90,50 +82,86 @@ public class RetenoPlugin extends CordovaPlugin {
   }
 
   @Override
-  public boolean execute(
-    String action, JSONArray args, CallbackContext callbackContext
-  ) throws JSONException {
-
+  public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
     if ("initialize".equals(action)) {
-      // Save optional initialization options (first argument).
-      pendingInitOptions = (args != null && args.length() > 0) ? args.optJSONObject(0) : null;
-      initialize(callbackContext);
-      return true;
-    }
-
-    if ("logEvent".equals(action)){
-      logEvent(args, callbackContext);
-      return true;
-    }
-    if ("setUserAttributes".equals(action)){
-      RetenoUserAttributes.SetUserAttributesParsed parsed =
-        RetenoUserAttributes.parseSetUserAttributesArgs(args);
-      if (!parsed.isOk()) {
-        callbackContext.error(parsed.error);
+      Activity activity = cordova.getActivity();
+      if (activity == null) {
+        callbackContext.error("Reteno Android SDK Error: Activity is null.");
         return true;
       }
+      activity.runOnUiThread(new Runnable() {
+        @Override
+        public void run() {
+          initialize(callbackContext);
+        }
+      });
+      return true;
+    }
 
-      setUserAttributes(parsed.externalUserId, parsed.user, callbackContext);
+    if ("logEvent".equals(action)) {
+      cordova.getThreadPool().execute(new Runnable() {
+        @Override
+        public void run() {
+          logEvent(args, callbackContext);
+        }
+      });
+      return true;
+    }
+
+    if ("setUserAttributes".equals(action)) {
+      cordova.getThreadPool().execute(new Runnable() {
+        @Override
+        public void run() {
+          try {
+            RetenoUserAttributes.SetUserAttributesParsed parsed =
+              RetenoUserAttributes.parseSetUserAttributesArgs(args);
+            if (!parsed.isOk()) {
+              callbackContext.error(parsed.error);
+              return;
+            }
+
+            setUserAttributes(parsed.externalUserId, parsed.user, callbackContext);
+          } catch (Exception e) {
+            callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
+          }
+        }
+      });
       return true;
     }
 
     if ("setAnonymousUserAttributes".equals(action)) {
-      RetenoUserAttributes.ParsedPayload parsed =
-        RetenoUserAttributes.parseAnonymousUserAttributesArgs(args);
-      if (!parsed.isOk()) {
-        callbackContext.error(parsed.error);
-        return true;
-      }
+      cordova.getThreadPool().execute(new Runnable() {
+        @Override
+        public void run() {
+          try {
+            RetenoUserAttributes.ParsedPayload parsed =
+              RetenoUserAttributes.parseAnonymousUserAttributesArgs(args);
+            if (!parsed.isOk()) {
+              callbackContext.error(parsed.error);
+              return;
+            }
 
-      setAnonymousUserAttributes(parsed.payload, callbackContext);
+            setAnonymousUserAttributes(parsed.payload, callbackContext);
+          } catch (Exception e) {
+            callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
+          }
+        }
+      });
       return true;
     }
-    if ("getInitialNotification".equals(action)){
+
+    if ("getInitialNotification".equals(action)) {
       getInitialNotification(callbackContext);
       return true;
     }
-    if ("setDeviceToken".equals(action)){
-      setDeviceToken(args, callbackContext);
+
+    if ("setDeviceToken".equals(action)) {
+      cordova.getThreadPool().execute(new Runnable() {
+        @Override
+        public void run() {
+          setDeviceToken(args, callbackContext);
+        }
+      });
       return true;
     }
 
@@ -141,6 +169,7 @@ public class RetenoPlugin extends CordovaPlugin {
       requestNotificationPermission(callbackContext);
       return true;
     }
+
     return false;
   }
 
@@ -150,85 +179,39 @@ public class RetenoPlugin extends CordovaPlugin {
       return;
     }
 
-    try {
-      // If host app already provides Reteno, accept it as initialized.
-      if (tryGetRetenoFromApplication() != null || tryGetRetenoFromSingleton() != null) {
-        initialized = true;
-        callbackContext.success(1);
-        return;
-      }
-
-      String accessKey = readAccessKeyFromManifest();
-      if (TextUtils.isEmpty(accessKey)) {
-        callbackContext.error(
-          "Missing SDK_ACCESS_KEY. " +
-          "Provide it when installing the Cordova plugin (e.g. --variable SDK_ACCESS_KEY=YOUR_KEY) " +
-          "or ensure AndroidManifest meta-data 'com.reteno.SDK_ACCESS_KEY' is set."
-        );
-        return;
-      }
-
-      initRetenoWithConfig(accessKey, pendingInitOptions);
-      pendingInitOptions = null;
-
-      if (tryGetRetenoFromSingleton() == null && tryGetRetenoFromApplication() == null) {
-        callbackContext.error("Reteno SDK initialization failed: instance is not available.");
-        return;
-      }
-
-      initialized = true;
-      callbackContext.success(1);
-    } catch (Exception e) {
-      Log.e(TAG, "Reteno initialization failed", e);
-      callbackContext.error("Reteno Android SDK Error: " + describeException(e));
-    }
-  }
-
-  private String describeException(Throwable t) {
-    if (t == null) {
-      return "Unknown error";
+    String accessKey = readAccessKeyFromManifest();
+    if (TextUtils.isEmpty(accessKey)) {
+      callbackContext.error(
+        "Missing SDK_ACCESS_KEY. Provide it when installing the Cordova plugin " +
+        "(e.g. --variable SDK_ACCESS_KEY=YOUR_KEY) or set AndroidManifest meta-data 'com.reteno.SDK_ACCESS_KEY'."
+      );
+      return;
     }
 
-    // Unwrap common reflection wrapper to expose the real cause.
-    Throwable root = t;
-    if (t instanceof java.lang.reflect.InvocationTargetException) {
-      Throwable cause = ((java.lang.reflect.InvocationTargetException) t).getTargetException();
-      if (cause != null) {
-        root = cause;
-      }
+    Reteno.initWithConfig(
+      new RetenoConfig.Builder()
+        .accessKey(accessKey)
+        .setDebug(readDebugModeEnabled())
+        .build()
+    );
+
+    if (Reteno.getInstance() == null) {
+      callbackContext.error("Reteno SDK initialization failed: instance is not available.");
+      return;
     }
 
-    String message = root.getMessage();
-    if (message != null) {
-      message = message.trim();
-    }
-    if (TextUtils.isEmpty(message)) {
-      message = root.toString();
-    }
-
-    Throwable cause = root.getCause();
-    if (cause != null && cause != root) {
-      String causeMsg = cause.toString();
-      if (!TextUtils.isEmpty(causeMsg)) {
-        return message + " (caused by: " + causeMsg + ")";
-      }
-    }
-
-    return message;
+    initialized = true;
+    callbackContext.success(1);
   }
 
   private void requestNotificationPermission(CallbackContext callbackContext) {
-    // Runtime notification permission exists only on Android 13+ (API 33).
     if (Build.VERSION.SDK_INT < 33) {
       callbackContext.success(1);
       return;
     }
 
     if (cordova.hasPermission(PERMISSION_POST_NOTIFICATIONS)) {
-      if (!updateRetenoPushPermissionStatus(callbackContext)) {
-        return;
-      }
-      callbackContext.success(1);
+      updateRetenoPushPermissionStatus(callbackContext);
       return;
     }
 
@@ -244,7 +227,8 @@ public class RetenoPlugin extends CordovaPlugin {
       return;
     }
 
-    boolean granted = grantResults != null && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED;
+    boolean granted = grantResults != null && grantResults.length > 0
+      && grantResults[0] == PackageManager.PERMISSION_GRANTED;
     CallbackContext cb = notificationPermissionCallback;
     notificationPermissionCallback = null;
     if (cb == null) {
@@ -252,65 +236,39 @@ public class RetenoPlugin extends CordovaPlugin {
     }
 
     if (granted) {
-      if (!updateRetenoPushPermissionStatus(cb)) {
-        return;
-      }
-      cb.success(1);
+      updateRetenoPushPermissionStatus(cb);
     } else {
       cb.success(0);
     }
   }
 
-  private boolean updateRetenoPushPermissionStatus(CallbackContext callbackContext) {
+  private void updateRetenoPushPermissionStatus(CallbackContext callbackContext) {
     try {
-      Object reteno = getRetenoInstanceOrThrow();
-      Method update = reteno.getClass().getMethod("updatePushPermissionStatus");
-      update.invoke(reteno);
-      return true;
+      Reteno reteno = getRetenoInstanceOrThrow();
+      reteno.updatePushPermissionStatus();
+      callbackContext.success(1);
     } catch (Exception e) {
-      if (callbackContext != null) {
-        callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
-      }
-      return false;
+      callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
     }
   }
 
   private void logEvent(JSONArray args, CallbackContext callbackContext) {
     if (args == null || args.length() == 0) {
       callbackContext.error("Empty event!");
-    } else {
-      try {
-        Object reteno = getRetenoInstanceOrThrow();
-        Object event = RetenoEvent.buildEventFromPayload(args.getJSONObject(0));
+      return;
+    }
 
-        Method logEvent = null;
-        for (Method m : reteno.getClass().getMethods()) {
-          if (!"logEvent".equals(m.getName())) {
-            continue;
-          }
-          Class<?>[] pts = m.getParameterTypes();
-          if (pts.length == 1 && pts[0].isAssignableFrom(event.getClass())) {
-            logEvent = m;
-            break;
-          }
-        }
-
-        if (logEvent == null) {
-          throw new NoSuchMethodException("Reteno.logEvent(Event) method not found");
-        }
-
-        logEvent.invoke(reteno, event);
-      } catch (Exception e) {
-        callbackContext. error("Reteno Android SDK Error " + e.getLocalizedMessage());
-        return;
-      }
+    try {
+      Reteno reteno = getRetenoInstanceOrThrow();
+      reteno.logEvent(RetenoEvent.buildEventFromPayload(args.getJSONObject(0)));
       callbackContext.success(1);
+    } catch (Exception e) {
+      callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
     }
   }
 
-  public void setDeviceToken(JSONArray args, CallbackContext callbackContext) {
+  private void setDeviceToken(JSONArray args, CallbackContext callbackContext) {
     try {
-      // Ensure Reteno is initialized (consistent with other SDK calls).
       getRetenoInstanceOrThrow();
 
       String deviceToken = null;
@@ -337,13 +295,9 @@ public class RetenoPlugin extends CordovaPlugin {
         return;
       }
 
-      // Forward token to Reteno's internal FCM pipeline.
-      // We use reflection to avoid hard compile-time coupling to optional modules.
       Context appContext = cordova.getActivity().getApplicationContext();
-      Class<?> serviceClass = Class.forName("com.reteno.push.RetenoNotificationService");
-      Object service = serviceClass.getConstructor(Context.class).newInstance(appContext);
-      Method onNewToken = serviceClass.getMethod("onNewToken", String.class);
-      onNewToken.invoke(service, deviceToken);
+      RetenoNotificationService service = new RetenoNotificationService(appContext);
+      service.onNewToken(deviceToken);
 
       callbackContext.success(1);
     } catch (Exception e) {
@@ -353,90 +307,34 @@ public class RetenoPlugin extends CordovaPlugin {
 
   private void setAnonymousUserAttributes(JSONObject payload, CallbackContext callbackContext) {
     try {
-      Object reteno = getRetenoInstanceOrThrow();
-
-      Class<?> attrsClass = Class.forName("com.reteno.core.domain.model.user.UserAttributesAnonymous");
-      Object attrs = new Gson().fromJson(payload.toString(), attrsClass);
-      Method setAnonymousUserAttributes = reteno.getClass().getMethod("setAnonymousUserAttributes", attrsClass);
-      setAnonymousUserAttributes.invoke(reteno, attrs);
+      Reteno reteno = getRetenoInstanceOrThrow();
+      UserAttributesAnonymous attrs = new Gson().fromJson(payload.toString(), UserAttributesAnonymous.class);
+      reteno.setAnonymousUserAttributes(attrs);
+      callbackContext.success(1);
     } catch (Exception e) {
       callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
-      return;
     }
-
-    callbackContext.success(1);
   }
 
-  public void setUserAttributes(String externalUserId, User user, CallbackContext callbackContext) throws JSONException {
+  private void setUserAttributes(String externalUserId, User user, CallbackContext callbackContext) {
     try {
-      Object reteno = getRetenoInstanceOrThrow();
-      Method setUserAttributes = reteno.getClass().getMethod("setUserAttributes", String.class, User.class);
-      setUserAttributes.invoke(reteno, externalUserId, user);
+      Reteno reteno = getRetenoInstanceOrThrow();
+      if (user == null) {
+        reteno.setUserAttributes(externalUserId);
+      } else {
+        reteno.setUserAttributes(externalUserId, user);
+      }
+      callbackContext.success(1);
     } catch (Exception e) {
       callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
-      return;
-    }
-    callbackContext.success(1);
-  }
-/*
-  public static void onRetenoPushReceived(Context context, Intent intent) {
-    WritableMap params;
-    Bundle extras = intent.getExtras();
-    if (extras != null) {
-      try {
-        params = Arguments.fromBundle(extras);
-      } catch (Exception e) {
-        params = Arguments.createMap();
-      }
-    } else {
-      params = Arguments.createMap();
-    }
-
-    ReactContext reactContext = ((RetenoReactNativeApplication) context.getApplicationContext())
-            .getReactContext();
-
-    if (reactContext != null) {
-      reactContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
-              .emit("reteno-push-received", params);
     }
   }
 
-  public static void onRetenoPushClicked(Context context, Intent intent) {
-    WritableMap params;
-    Bundle extras = intent.getExtras();
-    if (extras != null) {
-      try {
-        params = Arguments.fromBundle(extras);
-      } catch (Exception e) {
-        params = Arguments.createMap();
-      }
-    } else {
-      params = Arguments.createMap();
-    }
-  }
-
-  private WritableMap parseIntent(Intent intent){
-    WritableMap params;
-    Bundle extras = intent.getExtras();
-    if (extras != null) {
-      try {
-        params = Arguments.fromBundle(extras);
-      } catch (Exception e){
-        params = Arguments.createMap();
-      }
-    } else {
-      params = Arguments.createMap();
-    }
-
-    return params;
-  }
-*/
-  public void getInitialNotification(CallbackContext callbackContext){
+  private void getInitialNotification(CallbackContext callbackContext) {
     JSONObject payload = initialNotification;
     initialNotification = null;
 
     if (payload == null) {
-      // No initial notification captured.
       callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK, new JSONObject()));
       return;
     }
@@ -461,7 +359,6 @@ public class RetenoPlugin extends CordovaPlugin {
       return;
     }
 
-    // Best-effort: capture all extras. Host apps can decide how to interpret/filter them.
     initialNotification = bundleToJson(extras);
   }
 
@@ -476,7 +373,7 @@ public class RetenoPlugin extends CordovaPlugin {
         Object value = bundle.get(key);
         json.put(key, bundleValueToJson(value));
       } catch (Exception ignored) {
-        // Best-effort: skip keys that can't be serialized.
+        // Best-effort serialization.
       }
     }
     return json;
@@ -506,29 +403,30 @@ public class RetenoPlugin extends CordovaPlugin {
       return arr;
     }
 
-    // Fallback for Parcelables and other types.
     return value.toString();
   }
 
-  private String readAccessKeyFromManifest() throws Exception {
+  private String readAccessKeyFromManifest() {
     Context context = this.cordova.getActivity();
     if (context == null) {
       return null;
     }
-    PackageManager pm = context.getPackageManager();
-    ApplicationInfo info = pm.getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
-    if (info == null || info.metaData == null) {
+    try {
+      PackageManager pm = context.getPackageManager();
+      ApplicationInfo info = pm.getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
+      if (info == null || info.metaData == null) {
+        return readAccessKeyFromCordovaPreferences();
+      }
+      String key = info.metaData.getString(SDK_ACCESS_KEY_META);
+      String normalized = normalizeAccessKey(key);
+      if (normalized != null) {
+        return normalized;
+      }
+
+      return readAccessKeyFromCordovaPreferences();
+    } catch (Exception ignored) {
       return readAccessKeyFromCordovaPreferences();
     }
-    String key = info.metaData.getString(SDK_ACCESS_KEY_META);
-    String normalized = normalizeAccessKey(key);
-    if (normalized != null) {
-      return normalized;
-    }
-
-    // Capacitor's Cordova plugins module may not substitute $SDK_ACCESS_KEY into AndroidManifest meta-data.
-    // In that case, fall back to Cordova preferences (populated from capacitor.config.*).
-    return readAccessKeyFromCordovaPreferences();
   }
 
   private String readAccessKeyFromCordovaPreferences() {
@@ -545,243 +443,90 @@ public class RetenoPlugin extends CordovaPlugin {
       return null;
     }
     key = key.trim();
-    if (key.length() == 0) {
-      return null;
-    }
-
-    // If Cordova variable was not provided, plugin.xml injects a literal "$SDK_ACCESS_KEY".
-    // Treat that placeholder as missing to avoid a confusing "initialized" state.
-    if ("$SDK_ACCESS_KEY".equals(key)) {
+    if (key.length() == 0 || "$SDK_ACCESS_KEY".equals(key)) {
       return null;
     }
     return key;
   }
 
-  private void initRetenoWithConfig(String accessKey, JSONObject options) throws Exception {
-    // Reteno 2.5.0+ initialization: Reteno.initWithConfig(RetenoConfig.Builder().accessKey(key).build())
-    Class<?> retenoClass = Class.forName("com.reteno.core.Reteno");
-
-    Class<?> builderClass = Class.forName("com.reteno.core.RetenoConfig$Builder");
-    Object builder = builderClass.getDeclaredConstructor().newInstance();
-    Method accessKeyMethod = builderClass.getMethod("accessKey", String.class);
-    accessKeyMethod.invoke(builder, accessKey);
-
-    // Optional parameters (best-effort, only applied when the SDK supports them).
-    applyOptionalInitOptions(builderClass, builder, options);
-
-    Method buildMethod = builderClass.getMethod("build");
-    Object config = buildMethod.invoke(builder);
-
-    // Try to find an initWithConfig method compatible with this config instance.
-    Method init = null;
-    for (Method m : retenoClass.getMethods()) {
-      if (!"initWithConfig".equals(m.getName())) {
-        continue;
+  private boolean readDebugModeEnabled() {
+    try {
+      String pref = this.preferences != null ? this.preferences.getString(DEBUG_MODE_PREF, null) : null;
+      Boolean parsed = parseBooleanLenient(pref, "$RETENO_DEBUG_MODE");
+      if (parsed != null) {
+        return parsed.booleanValue();
       }
-      Class<?>[] pts = m.getParameterTypes();
-      if (pts.length != 1) {
-        continue;
-      }
-      if (!pts[0].isAssignableFrom(config.getClass())) {
-        continue;
-      }
-      init = m;
-      break;
+    } catch (Exception ignored) {
+      // ignore
     }
 
-    if (init == null) {
-      throw new NoSuchMethodException("Reteno.initWithConfig(RetenoConfig) not found");
+    Boolean fromManifest = readBooleanFromManifest(DEBUG_MODE_META, "$RETENO_DEBUG_MODE");
+    if (fromManifest != null) {
+      return fromManifest.booleanValue();
     }
 
-    // If it's static, invoke on the class.
-    if (Modifier.isStatic(init.getModifiers())) {
-      init.invoke(null, config);
-      return;
-    }
-
-    // Otherwise, invoke on Kotlin object/companion receiver if present.
-    Object receiver = tryGetKotlinObjectInstance(retenoClass);
-    if (receiver == null) {
-      receiver = tryGetKotlinCompanion(retenoClass);
-    }
-    if (receiver == null) {
-      throw new NoSuchFieldException("Reteno receiver not found (INSTANCE/Companion)");
-    }
-
-    init.invoke(receiver, config);
+    return false;
   }
 
-  private Object tryGetKotlinObjectInstance(Class<?> cls) {
+  private Boolean readBooleanFromManifest(String metaName, String placeholder) {
     try {
-      Field f = cls.getField("INSTANCE");
-      return f.get(null);
+      Context context = this.cordova.getActivity();
+      if (context == null) {
+        return null;
+      }
+      PackageManager pm = context.getPackageManager();
+      ApplicationInfo info = pm.getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
+      if (info == null || info.metaData == null || !info.metaData.containsKey(metaName)) {
+        return null;
+      }
+      Object raw = info.metaData.get(metaName);
+      if (raw == null) {
+        return null;
+      }
+      if (raw instanceof Boolean) {
+        return (Boolean) raw;
+      }
+      if (raw instanceof Integer) {
+        return ((Integer) raw).intValue() != 0;
+      }
+      if (raw instanceof String) {
+        return parseBooleanLenient((String) raw, placeholder);
+      }
+      return parseBooleanLenient(String.valueOf(raw), placeholder);
     } catch (Exception ignored) {
       return null;
     }
   }
 
-  private Object tryGetKotlinCompanion(Class<?> cls) {
-    try {
-      Field f = cls.getField("Companion");
-      return f.get(null);
-    } catch (Exception ignored) {
+  private Boolean parseBooleanLenient(String raw, String placeholder) {
+    if (raw == null) {
       return null;
     }
-  }
-
-  private void applyOptionalInitOptions(Class<?> builderClass, Object builder, JSONObject options) {
-    if (options == null) {
-      return;
+    String s = raw.trim();
+    if (s.length() == 0) {
+      return null;
     }
-
-    // pauseInAppMessages(boolean)
-    if (options.has("pauseInAppMessages")) {
-      boolean value = options.optBoolean("pauseInAppMessages", false);
-      invokeBuilderBooleanIfExists(builderClass, builder, "pauseInAppMessages", value);
+    if (placeholder != null && placeholder.equals(s)) {
+      return null;
     }
-
-    // pausePushInAppMessages(boolean) OR pausePushInAppMessages()
-    if (options.has("pausePushInAppMessages")) {
-      boolean value = options.optBoolean("pausePushInAppMessages", false);
-      if (!invokeBuilderBooleanIfExists(builderClass, builder, "pausePushInAppMessages", value) && value) {
-        invokeBuilderNoArgIfExists(builderClass, builder, "pausePushInAppMessages");
-      }
-    }
-
-    // lifecycleTrackingOptions(ALL|NONE|...)
-    if (options.has("lifecycleTrackingOptions")) {
-      String name = options.optString("lifecycleTrackingOptions", null);
-      if (name != null) {
-        name = name.trim();
-      }
-      if (name != null && name.length() > 0) {
-        applyLifecycleTrackingOptions(builderClass, builder, name);
-      }
-    }
-  }
-
-  private boolean invokeBuilderBooleanIfExists(Class<?> builderClass, Object builder, String methodName, boolean value) {
-    try {
-      Method m = builderClass.getMethod(methodName, boolean.class);
-      m.invoke(builder, value);
+    if ("true".equalsIgnoreCase(s) || "1".equals(s) || "yes".equalsIgnoreCase(s)
+      || "y".equalsIgnoreCase(s) || "on".equalsIgnoreCase(s)) {
       return true;
-    } catch (Exception ignored) {
+    }
+    if ("false".equalsIgnoreCase(s) || "0".equals(s) || "no".equalsIgnoreCase(s)
+      || "n".equalsIgnoreCase(s) || "off".equalsIgnoreCase(s)) {
       return false;
     }
+    return null;
   }
 
-  private boolean invokeBuilderNoArgIfExists(Class<?> builderClass, Object builder, String methodName) {
-    try {
-      Method m = builderClass.getMethod(methodName);
-      m.invoke(builder);
-      return true;
-    } catch (Exception ignored) {
-      return false;
+  private Reteno getRetenoInstanceOrThrow() {
+    Reteno reteno = Reteno.getInstance();
+    if (reteno == null) {
+      throw new IllegalStateException(
+        "Reteno SDK is not initialized. Call retenosdk.init(...) before using the plugin."
+      );
     }
+    return reteno;
   }
-
-  private void applyLifecycleTrackingOptions(Class<?> builderClass, Object builder, String enumName) {
-    // Class name may vary across SDK versions; try a small set of likely candidates.
-    String[] candidates = new String[] {
-      "com.reteno.core.domain.model.lifecycle.LifecycleTrackingOptions",
-      "com.reteno.core.domain.model.app.lifecycle.LifecycleTrackingOptions",
-      "com.reteno.core.domain.model.LifecycleTrackingOptions"
-    };
-
-    for (String className : candidates) {
-      try {
-        Class<?> enumClass = Class.forName(className);
-        if (!enumClass.isEnum()) {
-          continue;
-        }
-
-        @SuppressWarnings("unchecked")
-        Class<? extends Enum> eClass = (Class<? extends Enum>) enumClass;
-        Enum value = Enum.valueOf(eClass, enumName);
-
-        Method m = builderClass.getMethod("lifecycleTrackingOptions", enumClass);
-        m.invoke(builder, value);
-        return;
-      } catch (Exception ignored) {
-        // try next candidate
-      }
-    }
-  }
-
-  private Object getRetenoInstanceOrThrow() throws Exception {
-    Object appReteno = tryGetRetenoFromApplication();
-    if (appReteno != null) {
-      return appReteno;
-    }
-
-    Object singletonReteno = tryGetRetenoFromSingleton();
-    if (singletonReteno != null) {
-      return singletonReteno;
-    }
-
-    throw new IllegalStateException(
-      "Reteno SDK is not initialized. Call retenosdk.init(...) before using the plugin (and make sure SDK_ACCESS_KEY is provided)."
-    );
-  }
-
-  private Object tryGetRetenoFromApplication() {
-    try {
-      Activity activity = this.cordova.getActivity();
-      if (activity == null) {
-        return null;
-      }
-      Application application = activity.getApplication();
-      if (application == null) {
-        return null;
-      }
-
-      Class<?> retenoAppClass = Class.forName("com.reteno.core.RetenoApplication");
-      if (!retenoAppClass.isInstance(application)) {
-        return null;
-      }
-      Method getRetenoInstance = retenoAppClass.getMethod("getRetenoInstance");
-      return getRetenoInstance.invoke(application);
-    } catch (Exception ignored) {
-      return null;
-    }
-  }
-
-  private Object tryGetRetenoFromSingleton() {
-    try {
-      Class<?> retenoClass = Class.forName("com.reteno.core.Reteno");
-
-      // 1) Static: Reteno.getInstance()
-      try {
-        Method staticGetInstance = retenoClass.getMethod("getInstance");
-        if (Modifier.isStatic(staticGetInstance.getModifiers())) {
-          Object instance = staticGetInstance.invoke(null);
-          if (instance != null) {
-            return instance;
-          }
-        }
-      } catch (Exception ignored) {
-        // continue
-      }
-
-      // 2) Kotlin object: Reteno.INSTANCE.getInstance()
-      Object receiver = tryGetKotlinObjectInstance(retenoClass);
-      if (receiver == null) {
-        // 3) Kotlin companion: Reteno.Companion.getInstance()
-        receiver = tryGetKotlinCompanion(retenoClass);
-      }
-      if (receiver == null) {
-        return null;
-      }
-
-      try {
-        Method getInstance = receiver.getClass().getMethod("getInstance");
-        return getInstance.invoke(receiver);
-      } catch (Exception ignored) {
-        return null;
-      }
-    } catch (Exception ignored) {
-      return null;
-    }
-  }
-
 }

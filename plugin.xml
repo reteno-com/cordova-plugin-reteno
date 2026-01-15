@@ -9,6 +9,8 @@
     <!-- Firebase Messaging version used by Reteno FCM module -->
     <preference name="ANDROID_FIREBASE_MESSAGING_VERSION" default="23.1.0" />
     <preference name="SDK_ACCESS_KEY" default="" />
+    <!-- Reteno Android Debug Mode (Reteno SDK 2.7.0+) -->
+    <preference name="RETENO_DEBUG_MODE" default="false" />
     <hook type="before_plugin_install" src="scripts/validate-install.js" />
     <hook type="after_platform_add" src="scripts/android-fcm-setup.js" />
     <hook type="after_prepare" src="scripts/android-fcm-setup.js" />
@@ -23,6 +25,7 @@
 
     <config-file target="AndroidManifest.xml" parent="/manifest/application">
         <meta-data android:name="com.reteno.SDK_ACCESS_KEY" android:value="$SDK_ACCESS_KEY" />
+        <meta-data android:name="com.reteno.plugin.DEBUG_MODE" android:value="$RETENO_DEBUG_MODE" />
 
         <!-- Reteno push events: forward PushReceived to plugin receiver -->
         <receiver
@@ -32,6 +35,7 @@
         <meta-data
             android:name="com.reteno.Receiver.PushReceived"
             android:value="com.reteno.plugin.RetenoPushReceiver" />
+
     </config-file>
 
   <config-file target="config.xml" parent="/*">

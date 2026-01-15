@@ -3,11 +3,15 @@ package com.reteno.plugin;
 import com.reteno.core.domain.model.user.User;
 import com.google.gson.Gson;
 
+import android.util.Log;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 public class RetenoUserAttributes {
+  private static final String TAG = "RetenoUserAttributes";
+
   private RetenoUserAttributes() {}
 
   public static final class ParsedPayload {
@@ -84,6 +88,22 @@ public class RetenoUserAttributes {
     if (payload == null) {
       return ParsedPayload.error("Invalid setAnonymousUserAttributes payload.");
     }
+
+    // Reteno docs: anonymous attributes cannot include phone/email.
+    if (payload.has("phone") || payload.has("email")) {
+      return ParsedPayload.error(
+        "Anonymous user attributes cannot include phone/email. " +
+        "Use setUserAttributes(externalUserId, user) for phone/email."
+      );
+    }
+    JSONObject userAttributes = payload.optJSONObject("userAttributes");
+    if (userAttributes != null && (userAttributes.has("phone") || userAttributes.has("email"))) {
+      return ParsedPayload.error(
+        "Anonymous user attributes cannot include phone/email. " +
+        "Use setUserAttributes(externalUserId, user) for phone/email."
+      );
+    }
+
     return ParsedPayload.ok(payload);
   }
 

@@ -6,6 +6,7 @@
   "scripts": {
     "build:android:debug": "npm run build && npx cap sync android && cd android && ./gradlew :app:assembleDebug",
     "build:android:release": "npm run build && npx cap sync android && cd android && ./gradlew :app:bundleRelease",
+    "run:android:emulator": "npm run build && npx cap sync android && cd android && ./gradlew :app:installDebug && adb shell am start -n com.reteno.sample/.MainActivity",
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",

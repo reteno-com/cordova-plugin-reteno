@@ -7,6 +7,7 @@
   "scripts": {
     "build:android:debug": "cordova build android --debug",
     "build:android:release": "cordova build android --release",
+    "run:android:emulator": "cordova run android --emulator",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [

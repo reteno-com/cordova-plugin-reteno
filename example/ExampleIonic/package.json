@@ -34,7 +34,6 @@
     "@ionic/angular": "^8.7.16",
     "@ionic/core": "^8.7.16",
     "cordova-plugin-device": "^2.1.0",
-    "cordova-plugin-firebasex": "^16.1.0",
     "cordova-plugin-reteno": "file:../..",
     "ionicons": "^8.0.13",
     "rxjs": "~7.8.0",

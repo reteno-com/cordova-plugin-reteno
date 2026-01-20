@@ -78,6 +78,12 @@ retenosdk.setAnonymousUserAttributes(
 ### setMultiAccountUserAttributes payload example
 
 ```js
+// Since 2.8.0 it is possible to share push notification token between user accounts.
+// If it is required to receive push notifications on accounts that aren't currently logged in,
+// but they share the same device, always use setMultiAccountUserAttributes instead of setUserAttributes.
+// If you want to switch back to default behavior, just replace usages of
+// setMultiAccountUserAttributes to setUserAttributes. This will roll back to
+// 1 token per device behavior.
 // `externalUserId` is required and must be a non-empty string.
 // `user` is required and must be an object.
 retenosdk.setMultiAccountUserAttributes(

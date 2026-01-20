@@ -150,6 +150,27 @@ public class RetenoPlugin extends CordovaPlugin {
       return true;
     }
 
+    if ("setMultiAccountUserAttributes".equals(action)) {
+      cordova.getThreadPool().execute(new Runnable() {
+        @Override
+        public void run() {
+          try {
+            RetenoUserAttributes.SetUserAttributesParsed parsed =
+              RetenoUserAttributes.parseMultiAccountUserAttributesArgs(args);
+            if (!parsed.isOk()) {
+              callbackContext.error(parsed.error);
+              return;
+            }
+
+            setMultiAccountUserAttributes(parsed.externalUserId, parsed.user, callbackContext);
+          } catch (Exception e) {
+            callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
+          }
+        }
+      });
+      return true;
+    }
+
     if ("getInitialNotification".equals(action)) {
       getInitialNotification(callbackContext);
       return true;
@@ -324,6 +345,16 @@ public class RetenoPlugin extends CordovaPlugin {
       } else {
         reteno.setUserAttributes(externalUserId, user);
       }
+      callbackContext.success(1);
+    } catch (Exception e) {
+      callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
+    }
+  }
+
+  private void setMultiAccountUserAttributes(String externalUserId, User user, CallbackContext callbackContext) {
+    try {
+      Reteno reteno = getRetenoInstanceOrThrow();
+      reteno.setMultiAccountUserAttributes(externalUserId, user);
       callbackContext.success(1);
     } catch (Exception e) {
       callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());

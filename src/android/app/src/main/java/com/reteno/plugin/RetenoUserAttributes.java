@@ -134,4 +134,32 @@ public class RetenoUserAttributes {
 
     return SetUserAttributesParsed.ok(externalUserId, user);
   }
+
+  public static SetUserAttributesParsed parseMultiAccountUserAttributesArgs(JSONArray args) throws JSONException {
+    JSONObject payload = extractPayloadObject(args);
+    if (payload == null) {
+      return SetUserAttributesParsed.error("Invalid setMultiAccountUserAttributes payload.");
+    }
+
+    String externalUserId = payload.optString("externalUserId", null);
+    if (externalUserId != null) {
+      externalUserId = externalUserId.trim();
+    }
+    if (externalUserId == null || externalUserId.length() == 0) {
+      return SetUserAttributesParsed.error("Missing argument: externalUserId");
+    }
+
+    if (!payload.has("user") || payload.isNull("user")) {
+      return SetUserAttributesParsed.error("Missing argument: user");
+    }
+    JSONObject userJson = payload.optJSONObject("user");
+    if (userJson == null) {
+      return SetUserAttributesParsed.error(
+        "Invalid setMultiAccountUserAttributes payload: user must be an object."
+      );
+    }
+    User user = new Gson().fromJson(userJson.toString(), User.class);
+
+    return SetUserAttributesParsed.ok(externalUserId, user);
+  }
 }

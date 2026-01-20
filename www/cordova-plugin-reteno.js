@@ -195,6 +195,25 @@ function __callWithAutoInit(action, args, success, error) {
       return __callWithAutoInit('setAnonymousUserAttributes', [payload], success, error);
     },
 
+    /*
+        payload: SetMultiAccountUserAttributesPayload
+        */
+    setMultiAccountUserAttributes: function (arg0, success, error) {
+      // Accept either `payload` or legacy `[payload]`.
+      var payload = Array.isArray(arg0) ? arg0[0] : arg0;
+      if (
+        !payload ||
+        !payload.externalUserId ||
+        (payload.externalUserId && payload.externalUserId.length === 0)
+      ) {
+        throw new Error('Missing argument: "externalUserId"');
+      }
+      if (!payload.user || typeof payload.user !== 'object') {
+        throw new Error('Missing argument: "user"');
+      }
+      return __callWithAutoInit('setMultiAccountUserAttributes', [payload], success, error);
+    },
+
     getInitialNotification: function (arg0, success, error) {
       // Allowed before init (used on cold start).
       exec(success, error, PLUGIN_NAME, 'getInitialNotification', [arg0]);

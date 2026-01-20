@@ -9,6 +9,7 @@ Notes:
 | ------------------------------------------------------------------ | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [setUserAttributes](../www/cordova-plugin-reteno.js)               | iOS, Android       | [Types](../types/index.ts)                                                                                                                        |
 | [setAnonymousUserAttributes](../www/cordova-plugin-reteno.js)      | Android            | [Types](../types/index.ts)                                                                                                                        |
+| [setMultiAccountUserAttributes](../www/cordova-plugin-reteno.js)   | Android            | [Types](../types/index.ts)                                                                                                                        |
 | [setDeviceToken](../www/cordova-plugin-reteno.js)                  | Android            | Forwards FCM token to Reteno (use when another plugin owns FCM callbacks/token, e.g. Firebasex messaging enabled).                                |
 | [logEvent](../www/cordova-plugin-reteno.js)                        | iOS, Android       | [Types](../types/index.ts)                                                                                                                        |
 | [getInitialNotification](../www/cordova-plugin-reteno.js)          | iOS, Android       | Returns push notification that triggered creating app instance                                                                                    |
@@ -71,6 +72,40 @@ retenosdk.setAnonymousUserAttributes(
   },
   () => console.log('setAnonymousUserAttributes: OK'),
   (err) => console.error('setAnonymousUserAttributes: ERROR', err)
+);
+```
+
+### setMultiAccountUserAttributes payload example
+
+```js
+// `externalUserId` is required and must be a non-empty string.
+// `user` is required and must be an object.
+retenosdk.setMultiAccountUserAttributes(
+  {
+    externalUserId: 'user-123',
+    user: {
+      userAttributes: {
+        email: 'john.doe@example.com',
+        phone: '+1234567890',
+        firstName: 'John',
+        lastName: 'Doe',
+        languageCode: 'en',
+        timeZone: 'Europe/Kyiv',
+        address: {
+          region: 'Kyivska',
+          town: 'Kyiv',
+          address: 'Khreshchatyk St, 1',
+          postcode: '01001',
+        },
+        fields: [{ key: 'plan', value: 'premium' }],
+      },
+      subscriptionKeys: ['news', 'promotions'],
+      groupNamesInclude: ['beta-testers'],
+      groupNamesExclude: ['unsubscribed'],
+    },
+  },
+  () => console.log('setMultiAccountUserAttributes: OK'),
+  (err) => console.error('setMultiAccountUserAttributes: ERROR', err)
 );
 ```
 

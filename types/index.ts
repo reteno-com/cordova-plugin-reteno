@@ -38,6 +38,11 @@ export type SetUserAttributesPayload = {
   user?: User | null;
 };
 
+export type SetMultiAccountUserAttributesPayload = {
+  externalUserId: string;
+  user: User;
+};
+
 export type CustomEventParameter = {
   name: string;
   value?: string;

@@ -15,6 +15,11 @@ declare global {
         success?: () => void,
         error?: (err: unknown) => void
       ) => void;
+      setMultiAccountUserAttributes?: (
+        payload: unknown,
+        success?: () => void,
+        error?: (err: unknown) => void
+      ) => void;
       getInitialNotification?: (
         arg0: unknown,
         success?: (payload: unknown) => void,
@@ -101,6 +106,21 @@ export class RetenoService {
       }
       sdk.setDeviceToken(
         token,
+        () => resolve(),
+        (err) => reject(err)
+      );
+    });
+  }
+
+  setMultiAccountUserAttributes(payload: unknown): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const sdk = window.retenosdk;
+      if (!sdk?.setMultiAccountUserAttributes) {
+        reject(new Error('retenosdk.setMultiAccountUserAttributes is not available'));
+        return;
+      }
+      sdk.setMultiAccountUserAttributes(
+        payload,
         () => resolve(),
         (err) => reject(err)
       );

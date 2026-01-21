@@ -133,3 +133,9 @@ See Reteno docs:
 
 - https://docs.reteno.com/reference/android-sdk-setup
 - https://docs.reteno.com/reference/android-push-handling
+
+### Deeplinks in push payloads
+
+Reteno push notifications can include deeplinks. To handle them in a Cordova/Ionic app,
+install a deeplink plugin (for example, one that supports custom URL schemes or Android App Links)
+and wire it to open the link from the push payload.

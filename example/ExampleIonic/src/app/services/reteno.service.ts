@@ -27,6 +27,17 @@ declare global {
       ) => void;
       setOnRetenoPushReceivedListener?: (listener: (event: Event) => void) => void;
       setDeviceToken?: (token: string, success?: () => void, error?: (err: unknown) => void) => void;
+      setLifecycleTrackingOptions?: (
+        options: unknown,
+        success?: () => void,
+        error?: (err: unknown) => void
+      ) => void;
+      logScreenView?: (
+        screenName: string,
+        success?: () => void,
+        error?: (err: unknown) => void
+      ) => void;
+      forcePushData?: (success?: () => void, error?: (err: unknown) => void) => void;
       requestNotificationPermission?: (success?: (result: unknown) => void, error?: (err: unknown) => void) => void;
     };
   }
@@ -126,6 +137,51 @@ export class RetenoService {
       );
     });
   }
+
+  setLifecycleTrackingOptions(options: unknown): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const sdk = window.retenosdk;
+      if (!sdk?.setLifecycleTrackingOptions) {
+        reject(new Error('retenosdk.setLifecycleTrackingOptions is not available'));
+        return;
+      }
+      sdk.setLifecycleTrackingOptions(
+        options,
+        () => resolve(),
+        (err) => reject(err)
+      );
+    });
+  }
+
+  logScreenView(screenName: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const sdk = window.retenosdk;
+      if (!sdk?.logScreenView) {
+        reject(new Error('retenosdk.logScreenView is not available'));
+        return;
+      }
+      sdk.logScreenView(
+        screenName,
+        () => resolve(),
+        (err) => reject(err)
+      );
+    });
+  }
+
+  forcePushData(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const sdk = window.retenosdk;
+      if (!sdk?.forcePushData) {
+        reject(new Error('retenosdk.forcePushData is not available'));
+        return;
+      }
+      sdk.forcePushData(
+        () => resolve(),
+        (err) => reject(err)
+      );
+    });
+  }
+
 
   onPushReceived(listener: (payload: unknown) => void): void {
     const sdk = window.retenosdk;

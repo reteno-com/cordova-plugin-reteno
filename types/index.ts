@@ -59,7 +59,15 @@ export type LogEventPayload = {
 
 export type RequestNotificationPermissionResult = 0 | 1;
 
-export type LifecycleTrackingOptions = 'ALL' | 'NONE' | string;
+export type LifecycleTrackingOptions =
+  | {
+      appLifecycleEnabled?: boolean | null;
+      pushSubscriptionEnabled?: boolean | null;
+      sessionEventsEnabled?: boolean | null;
+    }
+  | 'ALL'
+  | 'NONE'
+  | string;
 
 export type RetenoInitializeOptions = {
   pauseInAppMessages?: boolean;

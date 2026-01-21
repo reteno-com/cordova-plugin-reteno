@@ -19,6 +19,7 @@ import android.text.TextUtils;
 import com.google.gson.Gson;
 import com.reteno.core.Reteno;
 import com.reteno.core.RetenoConfig;
+import com.reteno.core.domain.model.event.LifecycleTrackingOptions;
 import com.reteno.core.domain.model.user.User;
 import com.reteno.core.domain.model.user.UserAttributesAnonymous;
 import com.reteno.push.RetenoNotificationService;
@@ -171,6 +172,48 @@ public class RetenoPlugin extends CordovaPlugin {
       return true;
     }
 
+    if ("setLifecycleTrackingOptions".equals(action)) {
+      cordova.getThreadPool().execute(new Runnable() {
+        @Override
+        public void run() {
+          try {
+            setLifecycleTrackingOptions(args, callbackContext);
+          } catch (Exception e) {
+            callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
+          }
+        }
+      });
+      return true;
+    }
+
+    if ("logScreenView".equals(action)) {
+      cordova.getThreadPool().execute(new Runnable() {
+        @Override
+        public void run() {
+          try {
+            logScreenView(args, callbackContext);
+          } catch (Exception e) {
+            callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
+          }
+        }
+      });
+      return true;
+    }
+
+    if ("forcePushData".equals(action)) {
+      cordova.getThreadPool().execute(new Runnable() {
+        @Override
+        public void run() {
+          try {
+            forcePushData(callbackContext);
+          } catch (Exception e) {
+            callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
+          }
+        }
+      });
+      return true;
+    }
+
     if ("getInitialNotification".equals(action)) {
       getInitialNotification(callbackContext);
       return true;
@@ -288,6 +331,46 @@ public class RetenoPlugin extends CordovaPlugin {
     }
   }
 
+  private void logScreenView(JSONArray args, CallbackContext callbackContext) {
+    String screenName = null;
+    if (args != null && args.length() > 0) {
+      Object arg0 = args.opt(0);
+      if (arg0 instanceof String) {
+        screenName = (String) arg0;
+      } else if (arg0 instanceof JSONObject) {
+        screenName = ((JSONObject) arg0).optString("screenName", null);
+      } else if (arg0 instanceof JSONArray) {
+        screenName = ((JSONArray) arg0).optString(0, null);
+      }
+    }
+
+    if (screenName != null) {
+      screenName = screenName.trim();
+    }
+    if (TextUtils.isEmpty(screenName)) {
+      callbackContext.error("Missing argument: screenName");
+      return;
+    }
+
+    try {
+      Reteno reteno = getRetenoInstanceOrThrow();
+      reteno.logScreenView(screenName);
+      callbackContext.success(1);
+    } catch (Exception e) {
+      callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
+    }
+  }
+
+  private void forcePushData(CallbackContext callbackContext) {
+    try {
+      Reteno reteno = getRetenoInstanceOrThrow();
+      reteno.forcePushData();
+      callbackContext.success(1);
+    } catch (Exception e) {
+      callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
+    }
+  }
+
   private void setDeviceToken(JSONArray args, CallbackContext callbackContext) {
     try {
       getRetenoInstanceOrThrow();
@@ -360,6 +443,56 @@ public class RetenoPlugin extends CordovaPlugin {
       callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
     }
   }
+
+  private void setLifecycleTrackingOptions(JSONArray args, CallbackContext callbackContext) throws JSONException {
+    Reteno reteno = getRetenoInstanceOrThrow();
+    LifecycleTrackingOptions options = parseLifecycleTrackingOptionsArgs(args);
+    if (options == null) {
+      callbackContext.error("Invalid setLifecycleTrackingOptions payload.");
+      return;
+    }
+    reteno.setLifecycleEventConfig(options);
+    callbackContext.success(1);
+  }
+
+  private LifecycleTrackingOptions parseLifecycleTrackingOptionsArgs(JSONArray args) throws JSONException {
+    if (args == null || args.length() == 0) {
+      return null;
+    }
+
+    Object arg0 = args.opt(0);
+    if (arg0 instanceof JSONArray) {
+      arg0 = ((JSONArray) arg0).opt(0);
+    }
+
+    if (arg0 instanceof String) {
+      String value = ((String) arg0).trim();
+      if ("ALL".equalsIgnoreCase(value)) {
+        return new LifecycleTrackingOptions(true, true, true);
+      }
+      if ("NONE".equalsIgnoreCase(value)) {
+        return new LifecycleTrackingOptions(false, false, false);
+      }
+      return null;
+    }
+
+    if (arg0 instanceof JSONObject) {
+      JSONObject payload = (JSONObject) arg0;
+      boolean appLifecycleEnabled = payload.has("appLifecycleEnabled")
+        ? payload.optBoolean("appLifecycleEnabled", true)
+        : true;
+      boolean pushSubscriptionEnabled = payload.has("pushSubscriptionEnabled")
+        ? payload.optBoolean("pushSubscriptionEnabled", true)
+        : true;
+      boolean sessionEventsEnabled = payload.has("sessionEventsEnabled")
+        ? payload.optBoolean("sessionEventsEnabled", true)
+        : true;
+      return new LifecycleTrackingOptions(appLifecycleEnabled, pushSubscriptionEnabled, sessionEventsEnabled);
+    }
+
+    return null;
+  }
+
 
   private void getInitialNotification(CallbackContext callbackContext) {
     JSONObject payload = initialNotification;

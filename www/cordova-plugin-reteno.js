@@ -234,6 +234,32 @@ function __callWithAutoInit(action, args, success, error) {
       return __callWithAutoInit('setDeviceToken', [arg0], success, error);
     },
 
+    /*
+        options: LifecycleTrackingOptions
+        */
+    setLifecycleTrackingOptions: function (arg0, success, error) {
+      // Accept either `options` or legacy `[options]`.
+      var options = Array.isArray(arg0) ? arg0[0] : arg0;
+      if (!options) {
+        throw new Error('Missing argument: options');
+      }
+      return __callWithAutoInit('setLifecycleTrackingOptions', [options], success, error);
+    },
+
+    /*
+        screenName: string
+        */
+    logScreenView: function (arg0, success, error) {
+      if (!arg0) {
+        throw new Error('Missing argument: screenName');
+      }
+      return __callWithAutoInit('logScreenView', [arg0], success, error);
+    },
+
+    forcePushData: function (success, error) {
+      return __callWithAutoInit('forcePushData', [], success, error);
+    },
+
     requestNotificationPermission: function (success, error) {
       // If Reteno isn't initialized yet, permission can still be requested,
       // but Reteno's internal status update will fail until init().

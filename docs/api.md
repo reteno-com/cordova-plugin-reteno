@@ -10,8 +10,11 @@ Notes:
 | [setUserAttributes](../www/cordova-plugin-reteno.js)               | iOS, Android       | [Types](../types/index.ts)                                                                                                                        |
 | [setAnonymousUserAttributes](../www/cordova-plugin-reteno.js)      | Android            | [Types](../types/index.ts)                                                                                                                        |
 | [setMultiAccountUserAttributes](../www/cordova-plugin-reteno.js)   | Android            | [Types](../types/index.ts)                                                                                                                        |
+| [setLifecycleTrackingOptions](../www/cordova-plugin-reteno.js)     | Android            | [Types](../types/index.ts)                                                                                                                        |
 | [setDeviceToken](../www/cordova-plugin-reteno.js)                  | Android            | Forwards FCM token to Reteno (use when another plugin owns FCM callbacks/token, e.g. Firebasex messaging enabled).                                |
 | [logEvent](../www/cordova-plugin-reteno.js)                        | iOS, Android       | [Types](../types/index.ts)                                                                                                                        |
+| [logScreenView](../www/cordova-plugin-reteno.js)                   | Android            | Logs a screen view for manual tracking.                                                                                                           |
+| [forcePushData](../www/cordova-plugin-reteno.js)                   | Android            | Forces Reteno to sync push data for the current device.                                                                                           |
 | [getInitialNotification](../www/cordova-plugin-reteno.js)          | iOS, Android       | Returns push notification that triggered creating app instance                                                                                    |
 | [setOnRetenoPushReceivedListener](../www/cordova-plugin-reteno.js) | iOS, Android       | Sets listener for newly received push notification;                                                                                               |
 | [init](../www/cordova-plugin-reteno.js)                            | Android            | Initializes Reteno SDK.                                                                                                                           |
@@ -115,6 +118,26 @@ retenosdk.setMultiAccountUserAttributes(
 );
 ```
 
+### setLifecycleTrackingOptions example
+
+```js
+// Enable/disable specific lifecycle tracking features.
+// Unspecified fields default to true.
+retenosdk.setLifecycleTrackingOptions(
+  {
+    sessionEventsEnabled: true,
+  },
+  () => console.log('setLifecycleTrackingOptions: OK'),
+  (err) => console.error('setLifecycleTrackingOptions: ERROR', err)
+);
+```
+
+```js
+// Convenience values:
+retenosdk.setLifecycleTrackingOptions('ALL');
+retenosdk.setLifecycleTrackingOptions('NONE');
+```
+
 ### logEvent payload example
 
 Payload type: `LogEventPayload` in [types](../types/index.ts).
@@ -132,6 +155,25 @@ retenosdk.logEvent(
   },
   () => console.log('logEvent: OK'),
   (err) => console.error('logEvent: ERROR', err)
+);
+```
+
+### logScreenView example
+
+```js
+retenosdk.logScreenView(
+  'HomeScreen',
+  () => console.log('logScreenView: OK'),
+  (err) => console.error('logScreenView: ERROR', err)
+);
+```
+
+### forcePushData example
+
+```js
+retenosdk.forcePushData(
+  () => console.log('forcePushData: OK'),
+  (err) => console.error('forcePushData: ERROR', err)
 );
 ```
 

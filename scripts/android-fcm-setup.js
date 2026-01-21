@@ -127,12 +127,17 @@ module.exports = function (context) {
 
   if (!projectRoot) return;
 
-  const androidPlatformDir = path.join(projectRoot, 'platforms', 'android');
-  const androidAppDir = path.join(androidPlatformDir, 'app');
-  const platformsAndroidBuildGradlePath = path.join(androidPlatformDir, 'build.gradle');
-  const platformsAndroidAppBuildGradlePath = path.join(androidAppDir, 'build.gradle');
+  const cordovaAndroidDir = path.join(projectRoot, 'platforms', 'android');
+  const capacitorAndroidDir = path.join(projectRoot, 'android');
+  const androidProjectDir = exists(cordovaAndroidDir)
+    ? cordovaAndroidDir
+    : (exists(capacitorAndroidDir) ? capacitorAndroidDir : null);
 
-  if (!exists(androidPlatformDir)) return;
+  if (!androidProjectDir) return;
+
+  const androidAppDir = path.join(androidProjectDir, 'app');
+  const platformsAndroidBuildGradlePath = path.join(androidProjectDir, 'build.gradle');
+  const platformsAndroidAppBuildGradlePath = path.join(androidAppDir, 'build.gradle');
 
   // Default Google Services Gradle plugin version.
   // We only add it if the project doesn't already have it.

@@ -12,6 +12,7 @@
     <!-- Reteno Android Debug Mode (Reteno SDK 2.7.0+) -->
     <preference name="RETENO_DEBUG_MODE" default="false" />
     <hook type="before_plugin_install" src="scripts/validate-install.js" />
+    <hook type="after_plugin_install" src="scripts/android-fcm-setup.js" />
     <hook type="after_platform_add" src="scripts/android-fcm-setup.js" />
     <hook type="after_prepare" src="scripts/android-fcm-setup.js" />
     <js-module name="cordova-plugin-reteno" src="www/cordova-plugin-reteno.js">

@@ -104,6 +104,17 @@ How to verify:
 - Check `platforms/android/app/build.gradle` contains `com.google.gms.google-services`.
 - If your Gradle build logs contain a message like “google-services.json not found, google-services plugin not applied. Push Notifications won't work”, then the plugin is NOT applied and push won’t work.
 
+### Ionic/Capacitor note
+
+Capacitor does not execute Cordova plugin hooks. That means the automatic copy
+of `google-services.json` into `android/app/` will **not** run.
+
+Do this manually for Ionic/Capacitor apps:
+
+1. Keep `google-services.json` in the project root.
+2. Copy it to `android/app/google-services.json`.
+3. Run `npx cap sync android`.
+
 ### Warning: Reteno + Firebasex (Android)
 
 If you use `cordova-plugin-firebasex` in the same app, be aware it can register its own `FirebaseMessagingService`.

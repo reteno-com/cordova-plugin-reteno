@@ -29,7 +29,10 @@ function onDeviceReady() {
 
     // Request push permission right after startup (Android 13+)
     if (window.retenosdk && typeof window.retenosdk.requestNotificationPermission === 'function') {
-        window.retenosdk.requestNotificationPermission().catch(function () {});
+        var permissionPromise = window.retenosdk.requestNotificationPermission();
+        if (permissionPromise && typeof permissionPromise.catch === 'function') {
+            permissionPromise.catch(function () {});
+        }
     }
 
     var statusEl = document.getElementById('retenoStatus');

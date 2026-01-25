@@ -33,10 +33,12 @@ function onDeviceReady() {
     }
 
     var statusEl = document.getElementById('retenoStatus');
+    var eventStatusEl = document.getElementById('retenoEventStatus');
     var externalUserIdEl = document.getElementById('retenoExternalUserId');
     var multiAccountEl = document.getElementById('retenoMultiAccount');
     var anonymousUserEl = document.getElementById('retenoAnonymousUser');
     var btn = document.getElementById('retenoSetUserAttributesBtn');
+    var logEventBtn = document.getElementById('retenoLogEventBtn');
 
     var emailEl = document.getElementById('retenoEmail');
     var phoneEl = document.getElementById('retenoPhone');
@@ -52,6 +54,11 @@ function onDeviceReady() {
 
     var fieldKeyEl = document.getElementById('retenoFieldKey');
     var fieldValueEl = document.getElementById('retenoFieldValue');
+
+    var eventNameEl = document.getElementById('retenoEventName');
+    var eventDateEl = document.getElementById('retenoEventDate');
+    var eventParamKeyEl = document.getElementById('retenoEventParamKey');
+    var eventParamValueEl = document.getElementById('retenoEventParamValue');
 
     var externalUserGroupEl = document.querySelector('[data-field-group="external-user-id"]');
     var emailGroupEl = document.querySelector('[data-field-group="email"]');
@@ -77,9 +84,20 @@ function onDeviceReady() {
     if (fieldKeyEl && !String(fieldKeyEl.value || '').trim()) fieldKeyEl.value = 'plan';
     if (fieldValueEl && !String(fieldValueEl.value || '').trim()) fieldValueEl.value = 'premium';
 
+    if (eventNameEl && !String(eventNameEl.value || '').trim()) eventNameEl.value = 'purchase';
+    if (eventDateEl && !String(eventDateEl.value || '').trim()) eventDateEl.value = new Date().toISOString();
+    if (eventParamKeyEl && !String(eventParamKeyEl.value || '').trim()) eventParamKeyEl.value = 'orderId';
+    if (eventParamValueEl && !String(eventParamValueEl.value || '').trim()) eventParamValueEl.value = 'A-123';
+
     function setStatus(text) {
         if (statusEl) {
             statusEl.textContent = text;
+        }
+    }
+
+    function setEventStatus(text) {
+        if (eventStatusEl) {
+            eventStatusEl.textContent = text;
         }
     }
 
@@ -280,6 +298,51 @@ function onDeviceReady() {
                         setStatus('setUserAttributes: error: ' + (err && err.message ? err.message : String(err)));
                     });
             }
+        });
+    }
+
+    if (logEventBtn) {
+        logEventBtn.addEventListener('click', function () {
+            var sdk4 = getRetenoSdk();
+            if (!sdk4 || typeof sdk4.logEvent !== 'function') {
+                setEventStatus('Reteno logEvent is not available.');
+                return;
+            }
+
+            function read(el) {
+                return el ? String(el.value || '').trim() : '';
+            }
+
+            var eventName = read(eventNameEl);
+            if (!eventName) {
+                setEventStatus('Please provide eventName.');
+                return;
+            }
+
+            var date = read(eventDateEl) || new Date().toISOString();
+            if (eventDateEl && !eventDateEl.value) {
+                eventDateEl.value = date;
+            }
+
+            var payload = {
+                eventName: eventName,
+                date: date,
+            };
+
+            var paramKey = read(eventParamKeyEl);
+            var paramValue = read(eventParamValueEl);
+            if (paramKey && paramValue) {
+                payload.parameters = [{ name: paramKey, value: paramValue }];
+            }
+
+            setEventStatus('Sending logEvent...');
+            sdk4.logEvent(payload)
+                .then(function () {
+                    setEventStatus('logEvent: success');
+                })
+                .catch(function (err) {
+                    setEventStatus('logEvent: error: ' + (err && err.message ? err.message : String(err)));
+                });
         });
     }
 }

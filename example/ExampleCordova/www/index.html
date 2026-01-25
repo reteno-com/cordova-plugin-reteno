@@ -49,6 +49,7 @@
                 <div class="demo-nav" aria-label="Demo navigation">
                     <h2>Navigation</h2>
                     <button class="nav-button" data-target="user-data" type="button">User data</button>
+                    <button class="nav-button" data-target="log-event" type="button">Log event</button>
                 </div>
             </section>
 
@@ -157,6 +158,55 @@
                 </button>
 
                     <pre id="retenoStatus" class="reteno-status" aria-live="polite"></pre>
+                </div>
+            </section>
+
+            <section class="page" data-page="log-event" data-screen-name="Log event">
+                <div class="page-header">
+                    <button class="back-button" data-target="home" type="button">Back</button>
+                    <h2>Log event</h2>
+                </div>
+
+                <div class="reteno-form" aria-label="Reteno logEvent form">
+                    <h2>Reteno: logEvent</h2>
+
+                    <label class="reteno-label" for="retenoEventName">eventName</label>
+                    <input
+                        id="retenoEventName"
+                        class="reteno-input"
+                        type="text"
+                        placeholder="e.g. purchase"
+                        autocomplete="off"
+                    />
+
+                    <label class="reteno-label" for="retenoEventDate">date (ISO8601)</label>
+                    <input
+                        id="retenoEventDate"
+                        class="reteno-input"
+                        type="text"
+                        placeholder="2024-01-01T10:00:00.000Z"
+                        autocomplete="off"
+                    />
+
+                    <div class="reteno-section">
+                        <div class="reteno-section-title">Parameter (optional)</div>
+                        <div class="reteno-grid">
+                            <div>
+                                <label class="reteno-label" for="retenoEventParamKey">name</label>
+                                <input id="retenoEventParamKey" class="reteno-input" type="text" autocomplete="off" placeholder="orderId" />
+                            </div>
+                            <div>
+                                <label class="reteno-label" for="retenoEventParamValue">value</label>
+                                <input id="retenoEventParamValue" class="reteno-input" type="text" autocomplete="off" placeholder="A-123" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <button id="retenoLogEventBtn" class="reteno-button" type="button">
+                        Send logEvent
+                    </button>
+
+                    <pre id="retenoEventStatus" class="reteno-status" aria-live="polite"></pre>
                 </div>
             </section>
         </div>

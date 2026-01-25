@@ -11,17 +11,15 @@ import { RetenoService } from '../services/reteno.service';
     imports: [IonicModule, ReactiveFormsModule]
 })
 export class HomePage implements OnInit {
-    ngOnInit(): void {
-      if (typeof this.reteno.requestNotificationPermission === 'function') {
-        this.reteno.requestNotificationPermission().catch(() => {});
-      }
-    }
   status: string | null = null;
+  isAnonymous = false;
 
   private readonly formBuilder = inject(FormBuilder);
   private readonly reteno = inject(RetenoService);
 
   form = this.formBuilder.group({
+    multiAccount: this.formBuilder.control<boolean>(false),
+    anonymousUser: this.formBuilder.control<boolean>(false),
     externalUserId: this.formBuilder.control<string>('demo_user_123', {
       validators: [Validators.required],
       nonNullable: true,
@@ -40,6 +38,21 @@ export class HomePage implements OnInit {
     fieldValue: this.formBuilder.control<string>('premium'),
   });
 
+  ngOnInit(): void {
+    this.form.controls.multiAccount.valueChanges.subscribe(() => {
+      this.updateUserMode('multi');
+    });
+    this.form.controls.anonymousUser.valueChanges.subscribe(() => {
+      this.updateUserMode('anonymous');
+    });
+
+    this.updateUserMode();
+  }
+
+  ionViewDidEnter(): void {
+    this.reteno.logScreenView('User data').catch(() => {});
+  }
+
   sendForm() {
     const v = this.form.getRawValue();
     const clean = (value: string | null | undefined): string | null => {
@@ -49,6 +62,12 @@ export class HomePage implements OnInit {
       const trimmed = value.trim();
       return trimmed.length > 0 ? trimmed : null;
     };
+
+    const externalUserId = clean(v.externalUserId);
+    if (!this.isAnonymous && !externalUserId) {
+      this.status = 'Please provide externalUserId.';
+      return;
+    }
 
     type UserAttributes = {
       email?: string;
@@ -68,10 +87,10 @@ export class HomePage implements OnInit {
 
     const userAttributes: UserAttributes = {};
 
-    const email = clean(v.email);
+    const email = this.isAnonymous ? null : clean(v.email);
     if (email) userAttributes.email = email;
 
-    const phone = clean(v.phone);
+    const phone = this.isAnonymous ? null : clean(v.phone);
     if (phone) userAttributes.phone = phone;
 
     const firstName = clean(v.firstName);
@@ -105,25 +124,76 @@ export class HomePage implements OnInit {
       userAttributes.fields = [{ key: fieldKey, value: fieldValue }];
     }
 
-    const user = Object.keys(userAttributes).length > 0 ? { userAttributes } : null;
+    const isMultiAccount = !!v.multiAccount;
 
+    if (this.isAnonymous) {
+      this.sendToReteno('setAnonymousUserAttributes', userAttributes);
+      return;
+    }
+
+    const user = Object.keys(userAttributes).length > 0 ? { userAttributes } : null;
     const payload = {
-      externalUserId: v.externalUserId,
+      externalUserId,
       user,
     };
 
-    this.sendToReteno(payload);
+    if (isMultiAccount) {
+      this.sendToReteno('setMultiAccountUserAttributes', {
+        externalUserId,
+        user: { userAttributes },
+      });
+      return;
+    }
+
+    this.sendToReteno('setUserAttributes', payload);
   }
 
-  private async sendToReteno(payload: unknown) {
+  private async sendToReteno(method: 'setUserAttributes' | 'setMultiAccountUserAttributes' | 'setAnonymousUserAttributes', payload: unknown) {
     this.status = 'Sending…';
     try {
-      await this.reteno.setUserAttributes(payload);
-      this.status = 'setUserAttributes: OK';
+      if (method === 'setAnonymousUserAttributes') {
+        await this.reteno.setAnonymousUserAttributes(payload);
+      } else if (method === 'setMultiAccountUserAttributes') {
+        await this.reteno.setMultiAccountUserAttributes(payload);
+      } else {
+        await this.reteno.setUserAttributes(payload);
+      }
+      this.status = `${method}: OK`;
     } catch (err) {
-      this.status = 'setUserAttributes: ERROR (see console)';
+      this.status = `${method}: ERROR (see console)`;
       // eslint-disable-next-line no-console
-      console.error('setUserAttributes: ERROR', err);
+      console.error(`${method}: ERROR`, err);
     }
+  }
+
+  private updateUserMode(origin?: 'multi' | 'anonymous') {
+    const multiControl = this.form.controls.multiAccount;
+    const anonymousControl = this.form.controls.anonymousUser;
+    const externalUserIdControl = this.form.controls.externalUserId;
+    const emailControl = this.form.controls.email;
+    const phoneControl = this.form.controls.phone;
+
+    if (origin === 'multi' && multiControl.value && anonymousControl.value) {
+      anonymousControl.setValue(false, { emitEvent: false });
+    }
+    if (origin === 'anonymous' && anonymousControl.value && multiControl.value) {
+      multiControl.setValue(false, { emitEvent: false });
+    }
+
+    this.isAnonymous = !!anonymousControl.value;
+
+    if (this.isAnonymous) {
+      externalUserIdControl.clearValidators();
+      externalUserIdControl.disable({ emitEvent: false });
+      emailControl.disable({ emitEvent: false });
+      phoneControl.disable({ emitEvent: false });
+    } else {
+      externalUserIdControl.setValidators([Validators.required]);
+      externalUserIdControl.enable({ emitEvent: false });
+      emailControl.enable({ emitEvent: false });
+      phoneControl.enable({ emitEvent: false });
+    }
+
+    externalUserIdControl.updateValueAndValidity({ emitEvent: false });
   }
 }

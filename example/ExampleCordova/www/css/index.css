@@ -75,6 +75,89 @@ body {
     }
 }
 
+.demo-nav {
+    margin-top:16px;
+    padding:12px;
+    border-radius:8px;
+    background:rgba(255,255,255,0.85);
+    text-align:left;
+    text-transform:none;
+    -webkit-user-select:text;
+    user-select:text;
+}
+
+.demo-nav h2 {
+    margin:0 0 6px 0;
+    font-size:14px;
+    font-weight:600;
+}
+
+.demo-nav-note {
+    margin:0;
+    font-size:11px;
+    color:#333;
+}
+
+.form-options {
+    margin:10px 0 12px 0;
+    padding:10px;
+    border-radius:6px;
+    background:rgba(0,0,0,0.04);
+    text-transform:none;
+}
+
+.checkbox-row {
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:11px;
+    color:#333;
+    margin-bottom:6px;
+}
+
+.checkbox-row:last-child {
+    margin-bottom:0;
+}
+
+.field-hidden {
+    display:none;
+}
+
+.page {
+    display:none;
+}
+
+.page.is-active {
+    display:block;
+}
+
+.page-header {
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:10px;
+}
+
+.nav-button {
+    width:100%;
+    margin-top:8px;
+    padding:10px;
+    border-radius:6px;
+    border:0;
+    background:#4B946A;
+    color:#fff;
+    font-size:12px;
+}
+
+.back-button {
+    border:0;
+    padding:6px 10px;
+    border-radius:6px;
+    background:#e2e2e2;
+    color:#111;
+    font-size:11px;
+}
+
 .reteno-form {
     margin-top:16px;
     padding:12px;
@@ -197,16 +280,4 @@ h1 {
     from { opacity: 1.0; }
     50% { opacity: 0.4; }
     to { opacity: 1.0; }
-}
-
-.blink {
-    animation:fade 3000ms infinite;
-    -webkit-animation:fade 3000ms infinite;
-}
-
-
-@media screen and (prefers-color-scheme: dark) {
-    body {
-        background-image:linear-gradient(to bottom, #585858 0%, #1B1B1B 51%);
-    }
 }

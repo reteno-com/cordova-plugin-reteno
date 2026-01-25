@@ -34,6 +34,8 @@ function onDeviceReady() {
 
     var statusEl = document.getElementById('retenoStatus');
     var externalUserIdEl = document.getElementById('retenoExternalUserId');
+    var multiAccountEl = document.getElementById('retenoMultiAccount');
+    var anonymousUserEl = document.getElementById('retenoAnonymousUser');
     var btn = document.getElementById('retenoSetUserAttributesBtn');
 
     var emailEl = document.getElementById('retenoEmail');
@@ -50,6 +52,10 @@ function onDeviceReady() {
 
     var fieldKeyEl = document.getElementById('retenoFieldKey');
     var fieldValueEl = document.getElementById('retenoFieldValue');
+
+    var externalUserGroupEl = document.querySelector('[data-field-group="external-user-id"]');
+    var emailGroupEl = document.querySelector('[data-field-group="email"]');
+    var phoneGroupEl = document.querySelector('[data-field-group="phone"]');
 
     // Prefill defaults for demo convenience (don't override user's edits).
     if (externalUserIdEl && !String(externalUserIdEl.value || '').trim()) {
@@ -81,6 +87,74 @@ function onDeviceReady() {
         return (window && window.retenosdk) ? window.retenosdk : null;
     }
 
+    function setFieldGroupVisibility(groupEl, isVisible) {
+        if (!groupEl) return;
+        groupEl.classList.toggle('field-hidden', !isVisible);
+        var inputs = groupEl.querySelectorAll('input, select, textarea');
+        inputs.forEach(function (input) {
+            input.disabled = !isVisible;
+        });
+    }
+
+    function updateUserFormMode(origin) {
+        if (origin === 'anonymous' && anonymousUserEl && anonymousUserEl.checked && multiAccountEl) {
+            multiAccountEl.checked = false;
+        }
+        if (origin === 'multi' && multiAccountEl && multiAccountEl.checked && anonymousUserEl) {
+            anonymousUserEl.checked = false;
+        }
+
+        var isAnonymous = !!(anonymousUserEl && anonymousUserEl.checked);
+        setFieldGroupVisibility(externalUserGroupEl, !isAnonymous);
+        setFieldGroupVisibility(emailGroupEl, !isAnonymous);
+        setFieldGroupVisibility(phoneGroupEl, !isAnonymous);
+    }
+
+    function logScreenView(screenName) {
+        var sdk3 = getRetenoSdk();
+        if (!sdk3 || typeof sdk3.logScreenView !== 'function') {
+            return;
+        }
+
+        try {
+            sdk3.logScreenView(
+                screenName,
+                function () {},
+                function (err) {
+                    console.warn('logScreenView: error', err);
+                }
+            );
+        } catch (e) {
+            console.warn('logScreenView: exception', e);
+        }
+    }
+
+    var pageEls = Array.prototype.slice.call(document.querySelectorAll('.page'));
+    var pageByName = {};
+    pageEls.forEach(function (pageEl) {
+        var name = pageEl.getAttribute('data-page');
+        if (name) {
+            pageByName[name] = pageEl;
+        }
+    });
+
+    function showPage(pageName) {
+        var fallbackName = pageByName.home ? 'home' : (pageEls[0] ? pageEls[0].getAttribute('data-page') : '');
+        var name = pageByName[pageName] ? pageName : fallbackName;
+        var activePage = pageByName[name];
+
+        pageEls.forEach(function (pageEl) {
+            pageEl.classList.toggle('is-active', pageEl === activePage);
+        });
+
+        if (activePage) {
+            var screenName = activePage.getAttribute('data-screen-name') || name;
+            if (screenName) {
+                logScreenView(screenName);
+            }
+        }
+    }
+
     // Best-effort auto init for demo purposes.
     var sdk = getRetenoSdk();
     if (sdk && typeof sdk.init === 'function') {
@@ -101,16 +175,45 @@ function onDeviceReady() {
         setStatus('Reteno SDK is not available (window.retenosdk missing).');
     }
 
+    var navButtons = document.querySelectorAll('[data-target]');
+    navButtons.forEach(function (button) {
+        button.addEventListener('click', function () {
+            var target = button.getAttribute('data-target');
+            if (target) {
+                showPage(target);
+            }
+        });
+    });
+
+    if (multiAccountEl) {
+        multiAccountEl.addEventListener('change', function () {
+            updateUserFormMode('multi');
+        });
+    }
+    if (anonymousUserEl) {
+        anonymousUserEl.addEventListener('change', function () {
+            updateUserFormMode('anonymous');
+        });
+    }
+
+    showPage('home');
+    updateUserFormMode();
+
     if (btn) {
         btn.addEventListener('click', function () {
+            var isMultiAccount = !!(multiAccountEl && multiAccountEl.checked);
+            var isAnonymous = !!(anonymousUserEl && anonymousUserEl.checked);
             var sdk2 = getRetenoSdk();
-            if (!sdk2 || typeof sdk2.setUserAttributes !== 'function') {
-                setStatus('Reteno setUserAttributes is not available.');
+            var methodName = isAnonymous
+                ? 'setAnonymousUserAttributes'
+                : (isMultiAccount ? 'setMultiAccountUserAttributes' : 'setUserAttributes');
+
+            if (!sdk2 || typeof sdk2[methodName] !== 'function') {
+                setStatus('Reteno ' + methodName + ' is not available.');
                 return;
             }
-
             var externalUserId = externalUserIdEl ? String(externalUserIdEl.value || '').trim() : '';
-            if (!externalUserId) {
+            if (!isAnonymous && !externalUserId) {
                 setStatus('Please provide externalUserId.');
                 return;
             }
@@ -120,8 +223,8 @@ function onDeviceReady() {
             }
 
             var userAttributes = {};
-            var email = read(emailEl);
-            var phone = read(phoneEl);
+            var email = isAnonymous ? '' : read(emailEl);
+            var phone = isAnonymous ? '' : read(phoneEl);
             var firstName = read(firstNameEl);
             var lastName = read(lastNameEl);
             var languageCode = read(languageCodeEl);
@@ -152,30 +255,54 @@ function onDeviceReady() {
                 userAttributes.fields = [{ key: fieldKey, value: fieldValue }];
             }
 
-            // `user` is optional; only send when at least one attribute is present.
-            var user = null;
-            if (Object.keys(userAttributes).length > 0) {
-                user = { userAttributes: userAttributes };
-            }
-
-            var payload = {
-                externalUserId: externalUserId,
-                user: user,
-            };
-
-            setStatus('Sending setUserAttributes...');
             try {
-                sdk2.setUserAttributes(
-                    payload,
-                    function () {
-                        setStatus('setUserAttributes: success');
-                    },
-                    function (err) {
-                        setStatus('setUserAttributes: error: ' + (err && err.message ? err.message : String(err)));
+                if (isAnonymous) {
+                    setStatus('Sending setAnonymousUserAttributes...');
+                    sdk2.setAnonymousUserAttributes(
+                        userAttributes,
+                        function () {
+                            setStatus('setAnonymousUserAttributes: success');
+                        },
+                        function (err) {
+                            setStatus('setAnonymousUserAttributes: error: ' + (err && err.message ? err.message : String(err)));
+                        }
+                    );
+                } else if (isMultiAccount) {
+                    setStatus('Sending setMultiAccountUserAttributes...');
+                    sdk2.setMultiAccountUserAttributes(
+                        {
+                            externalUserId: externalUserId,
+                            user: { userAttributes: userAttributes },
+                        },
+                        function () {
+                            setStatus('setMultiAccountUserAttributes: success');
+                        },
+                        function (err) {
+                            setStatus('setMultiAccountUserAttributes: error: ' + (err && err.message ? err.message : String(err)));
+                        }
+                    );
+                } else {
+                    // `user` is optional; only send when at least one attribute is present.
+                    var user = null;
+                    if (Object.keys(userAttributes).length > 0) {
+                        user = { userAttributes: userAttributes };
                     }
-                );
+                    setStatus('Sending setUserAttributes...');
+                    sdk2.setUserAttributes(
+                        {
+                            externalUserId: externalUserId,
+                            user: user,
+                        },
+                        function () {
+                            setStatus('setUserAttributes: success');
+                        },
+                        function (err) {
+                            setStatus('setUserAttributes: error: ' + (err && err.message ? err.message : String(err)));
+                        }
+                    );
+                }
             } catch (e2) {
-                setStatus('setUserAttributes exception: ' + (e2 && e2.message ? e2.message : String(e2)));
+                setStatus(methodName + ' exception: ' + (e2 && e2.message ? e2.message : String(e2)));
             }
         });
     }

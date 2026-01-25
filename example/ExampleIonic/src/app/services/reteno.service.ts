@@ -64,6 +64,21 @@ export class RetenoService {
     });
   }
 
+  setAnonymousUserAttributes(payload: unknown): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const sdk = window.retenosdk;
+      if (!sdk?.setAnonymousUserAttributes) {
+        reject(new Error('retenosdk.setAnonymousUserAttributes is not available'));
+        return;
+      }
+      sdk.setAnonymousUserAttributes(
+        payload,
+        () => resolve(),
+        (err) => reject(err)
+      );
+    });
+  }
+
   logEvent(payload: unknown): Promise<void> {
     return new Promise((resolve, reject) => {
       const sdk = window.retenosdk;

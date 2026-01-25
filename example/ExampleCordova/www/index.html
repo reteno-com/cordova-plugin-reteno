@@ -39,36 +39,62 @@
     <body>
         <div class="app-version">v0.0.4</div>
         <div class="app">
-            <h1>Apache Cordova</h1>
-            <div id="deviceready" class="blink">
-                <p class="event listening">Connecting to Device</p>
-                <p class="event received">Device is Ready</p>
-            </div>
+            <section class="page is-active" data-page="home" data-screen-name="Home">
+                <h1>Apache Cordova</h1>
+                <div id="deviceready" class="blink">
+                    <p class="event listening">Connecting to Device</p>
+                    <p class="event received">Device is Ready</p>
+                </div>
 
-            <div class="reteno-form" aria-label="Reteno setUserAttributes form">
-                <h2>Reteno: setUserAttributes</h2>
+                <div class="demo-nav" aria-label="Demo navigation">
+                    <h2>Navigation</h2>
+                    <button class="nav-button" data-target="user-data" type="button">User data</button>
+                </div>
+            </section>
 
-                <label class="reteno-label" for="retenoExternalUserId">externalUserId</label>
-                <input
-                    id="retenoExternalUserId"
-                    class="reteno-input"
-                    type="text"
-                    placeholder="e.g. user_123"
-                    autocomplete="off"
-                />
+            <section class="page" data-page="user-data" data-screen-name="User data">
+                <div class="page-header">
+                    <button class="back-button" data-target="home" type="button">Back</button>
+                    <h2>User data</h2>
+                </div>
 
-                <div class="reteno-section">
-                    <div class="reteno-section-title">User attributes</div>
+                <div class="reteno-form" aria-label="Reteno setUserAttributes form">
+                    <h2>Reteno: setUserAttributes</h2>
 
-                    <div class="reteno-grid">
-                        <div>
-                            <label class="reteno-label" for="retenoEmail">email</label>
-                            <input id="retenoEmail" class="reteno-input" type="email" autocomplete="off" placeholder="john.doe@example.com" />
-                        </div>
-                        <div>
-                            <label class="reteno-label" for="retenoPhone">phone</label>
-                            <input id="retenoPhone" class="reteno-input" type="tel" autocomplete="off" placeholder="+1234567890" />
-                        </div>
+                    <div class="form-options" aria-label="User data options">
+                        <label class="checkbox-row">
+                            <input id="retenoMultiAccount" type="checkbox">
+                            <span>Multi-account user</span>
+                        </label>
+                        <label class="checkbox-row">
+                            <input id="retenoAnonymousUser" type="checkbox">
+                            <span>Anonymous user</span>
+                        </label>
+                    </div>
+
+                    <div class="field-group" data-field-group="external-user-id">
+                    <label class="reteno-label" for="retenoExternalUserId">externalUserId</label>
+                    <input
+                        id="retenoExternalUserId"
+                        class="reteno-input"
+                        type="text"
+                        placeholder="e.g. user_123"
+                        autocomplete="off"
+                    />
+                    </div>
+
+                    <div class="reteno-section">
+                        <div class="reteno-section-title">User attributes</div>
+
+                        <div class="reteno-grid">
+                            <div class="field-group" data-field-group="email">
+                                <label class="reteno-label" for="retenoEmail">email</label>
+                                <input id="retenoEmail" class="reteno-input" type="email" autocomplete="off" placeholder="john.doe@example.com" />
+                            </div>
+                            <div class="field-group" data-field-group="phone">
+                                <label class="reteno-label" for="retenoPhone">phone</label>
+                                <input id="retenoPhone" class="reteno-input" type="tel" autocomplete="off" placeholder="+1234567890" />
+                            </div>
 
                         <div>
                             <label class="reteno-label" for="retenoFirstName">firstName</label>
@@ -130,8 +156,9 @@
                     Send setUserAttributes
                 </button>
 
-                <pre id="retenoStatus" class="reteno-status" aria-live="polite"></pre>
-            </div>
+                    <pre id="retenoStatus" class="reteno-status" aria-live="polite"></pre>
+                </div>
+            </section>
         </div>
         <script src="cordova.js"></script>
         <script src="js/index.js"></script>

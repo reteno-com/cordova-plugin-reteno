@@ -10,14 +10,30 @@
 <ion-content [fullscreen]="true">
   <form [formGroup]="form">
     <ion-list>
+      <ion-item-divider>
+        <ion-label>User mode</ion-label>
+      </ion-item-divider>
+
       <ion-item>
-        <ion-input
-          label="External user id"
-          labelPlacement="stacked"
-          formControlName="externalUserId"
-          placeholder="user-123"
-        ></ion-input>
+        <ion-label>Multi-account user</ion-label>
+        <ion-checkbox slot="end" formControlName="multiAccount"></ion-checkbox>
       </ion-item>
+
+      <ion-item>
+        <ion-label>Anonymous user</ion-label>
+        <ion-checkbox slot="end" formControlName="anonymousUser"></ion-checkbox>
+      </ion-item>
+
+      @if (!isAnonymous) {
+        <ion-item>
+          <ion-input
+            label="External user id"
+            labelPlacement="stacked"
+            formControlName="externalUserId"
+            placeholder="user-123"
+          ></ion-input>
+        </ion-item>
+      }
 
       <ion-item-divider>
         <ion-label>User attributes</ion-label>
@@ -25,27 +41,31 @@
 
       <ion-grid class="form-grid">
         <ion-row>
-          <ion-col size="12" size-md="6">
-            <ion-item>
-              <ion-input
-                label="Email"
-                labelPlacement="stacked"
-                formControlName="email"
-                placeholder="john.doe@example.com"
-              ></ion-input>
-            </ion-item>
-          </ion-col>
+          @if (!isAnonymous) {
+            <ion-col size="12" size-md="6">
+              <ion-item>
+                <ion-input
+                  label="Email"
+                  labelPlacement="stacked"
+                  formControlName="email"
+                  placeholder="john.doe@example.com"
+                ></ion-input>
+              </ion-item>
+            </ion-col>
+          }
 
-          <ion-col size="12" size-md="6">
-            <ion-item>
-              <ion-input
-                label="Phone"
-                labelPlacement="stacked"
-                formControlName="phone"
-                placeholder="+1234567890"
-              ></ion-input>
-            </ion-item>
-          </ion-col>
+          @if (!isAnonymous) {
+            <ion-col size="12" size-md="6">
+              <ion-item>
+                <ion-input
+                  label="Phone"
+                  labelPlacement="stacked"
+                  formControlName="phone"
+                  placeholder="+1234567890"
+                ></ion-input>
+              </ion-item>
+            </ion-col>
+          }
 
           <ion-col size="12" size-md="6">
             <ion-item>
@@ -171,7 +191,7 @@
     </ion-list>
 
     <ion-button expand="block" [disabled]="form.invalid" (click)="sendForm()">
-      Send setUserAttributes
+      Send user data
     </ion-button>
   </form>
 

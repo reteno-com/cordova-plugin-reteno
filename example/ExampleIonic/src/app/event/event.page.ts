@@ -84,4 +84,18 @@ export class EventPage implements OnInit {
       console.error('logEvent: ERROR', err);
     }
   }
+
+  sendForcePushData() {
+    this.status = 'Sending…';
+    this.reteno
+      .forcePushData()
+      .then(() => {
+        this.status = 'forcePushData: OK';
+      })
+      .catch((err) => {
+        this.status = 'forcePushData: ERROR (see console)';
+        // eslint-disable-next-line no-console
+        console.error('forcePushData: ERROR', err);
+      });
+  }
 }

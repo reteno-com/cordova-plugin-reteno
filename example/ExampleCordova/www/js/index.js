@@ -59,6 +59,7 @@ function onDeviceReady() {
     var eventDateEl = document.getElementById('retenoEventDate');
     var eventParamKeyEl = document.getElementById('retenoEventParamKey');
     var eventParamValueEl = document.getElementById('retenoEventParamValue');
+    var forcePushDataBtn = document.getElementById('retenoForcePushDataBtn');
 
     var externalUserGroupEl = document.querySelector('[data-field-group="external-user-id"]');
     var emailGroupEl = document.querySelector('[data-field-group="email"]');
@@ -342,6 +343,25 @@ function onDeviceReady() {
                 })
                 .catch(function (err) {
                     setEventStatus('logEvent: error: ' + (err && err.message ? err.message : String(err)));
+                });
+        });
+    }
+
+    if (forcePushDataBtn) {
+        forcePushDataBtn.addEventListener('click', function () {
+            var sdk5 = getRetenoSdk();
+            if (!sdk5 || typeof sdk5.forcePushData !== 'function') {
+                setEventStatus('Reteno forcePushData is not available.');
+                return;
+            }
+
+            setEventStatus('Sending forcePushData...');
+            sdk5.forcePushData()
+                .then(function () {
+                    setEventStatus('forcePushData: success');
+                })
+                .catch(function (err) {
+                    setEventStatus('forcePushData: error: ' + (err && err.message ? err.message : String(err)));
                 });
         });
     }

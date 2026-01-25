@@ -235,6 +235,10 @@ body {
     font-size:12px;
 }
 
+.reteno-button.secondary {
+    background:#4f6b8f;
+}
+
 .reteno-status {
     margin:12px 0 0 0;
     padding:10px;

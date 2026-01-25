@@ -29,7 +29,7 @@ function onDeviceReady() {
 
     // Request push permission right after startup (Android 13+)
     if (window.retenosdk && typeof window.retenosdk.requestNotificationPermission === 'function') {
-        window.retenosdk.requestNotificationPermission();
+        window.retenosdk.requestNotificationPermission().catch(function () {});
     }
 
     var statusEl = document.getElementById('retenoStatus');
@@ -116,17 +116,9 @@ function onDeviceReady() {
             return;
         }
 
-        try {
-            sdk3.logScreenView(
-                screenName,
-                function () {},
-                function (err) {
-                    console.warn('logScreenView: error', err);
-                }
-            );
-        } catch (e) {
-            console.warn('logScreenView: exception', e);
-        }
+        sdk3.logScreenView(screenName).catch(function (err) {
+            console.warn('logScreenView: error', err);
+        });
     }
 
     var pageEls = Array.prototype.slice.call(document.querySelectorAll('.page'));
@@ -158,19 +150,13 @@ function onDeviceReady() {
     // Best-effort auto init for demo purposes.
     var sdk = getRetenoSdk();
     if (sdk && typeof sdk.init === 'function') {
-        try {
-            sdk.init(
-                {},
-                function () {
-                    setStatus('Reteno initialized');
-                },
-                function (err) {
-                    setStatus('Reteno init error: ' + (err && err.message ? err.message : String(err)));
-                }
-            );
-        } catch (e) {
-            setStatus('Reteno init exception: ' + (e && e.message ? e.message : String(e)));
-        }
+        sdk.init({})
+            .then(function () {
+                setStatus('Reteno initialized');
+            })
+            .catch(function (err) {
+                setStatus('Reteno init error: ' + (err && err.message ? err.message : String(err)));
+            });
     } else {
         setStatus('Reteno SDK is not available (window.retenosdk missing).');
     }
@@ -255,54 +241,44 @@ function onDeviceReady() {
                 userAttributes.fields = [{ key: fieldKey, value: fieldValue }];
             }
 
-            try {
-                if (isAnonymous) {
-                    setStatus('Sending setAnonymousUserAttributes...');
-                    sdk2.setAnonymousUserAttributes(
-                        userAttributes,
-                        function () {
-                            setStatus('setAnonymousUserAttributes: success');
-                        },
-                        function (err) {
-                            setStatus('setAnonymousUserAttributes: error: ' + (err && err.message ? err.message : String(err)));
-                        }
-                    );
-                } else if (isMultiAccount) {
-                    setStatus('Sending setMultiAccountUserAttributes...');
-                    sdk2.setMultiAccountUserAttributes(
-                        {
-                            externalUserId: externalUserId,
-                            user: { userAttributes: userAttributes },
-                        },
-                        function () {
-                            setStatus('setMultiAccountUserAttributes: success');
-                        },
-                        function (err) {
-                            setStatus('setMultiAccountUserAttributes: error: ' + (err && err.message ? err.message : String(err)));
-                        }
-                    );
-                } else {
-                    // `user` is optional; only send when at least one attribute is present.
-                    var user = null;
-                    if (Object.keys(userAttributes).length > 0) {
-                        user = { userAttributes: userAttributes };
-                    }
-                    setStatus('Sending setUserAttributes...');
-                    sdk2.setUserAttributes(
-                        {
-                            externalUserId: externalUserId,
-                            user: user,
-                        },
-                        function () {
-                            setStatus('setUserAttributes: success');
-                        },
-                        function (err) {
-                            setStatus('setUserAttributes: error: ' + (err && err.message ? err.message : String(err)));
-                        }
-                    );
+            if (isAnonymous) {
+                setStatus('Sending setAnonymousUserAttributes...');
+                sdk2.setAnonymousUserAttributes(userAttributes)
+                    .then(function () {
+                        setStatus('setAnonymousUserAttributes: success');
+                    })
+                    .catch(function (err) {
+                        setStatus('setAnonymousUserAttributes: error: ' + (err && err.message ? err.message : String(err)));
+                    });
+            } else if (isMultiAccount) {
+                setStatus('Sending setMultiAccountUserAttributes...');
+                sdk2.setMultiAccountUserAttributes({
+                    externalUserId: externalUserId,
+                    user: { userAttributes: userAttributes },
+                })
+                    .then(function () {
+                        setStatus('setMultiAccountUserAttributes: success');
+                    })
+                    .catch(function (err) {
+                        setStatus('setMultiAccountUserAttributes: error: ' + (err && err.message ? err.message : String(err)));
+                    });
+            } else {
+                // `user` is optional; only send when at least one attribute is present.
+                var user = null;
+                if (Object.keys(userAttributes).length > 0) {
+                    user = { userAttributes: userAttributes };
                 }
-            } catch (e2) {
-                setStatus(methodName + ' exception: ' + (e2 && e2.message ? e2.message : String(e2)));
+                setStatus('Sending setUserAttributes...');
+                sdk2.setUserAttributes({
+                    externalUserId: externalUserId,
+                    user: user,
+                })
+                    .then(function () {
+                        setStatus('setUserAttributes: success');
+                    })
+                    .catch(function (err) {
+                        setStatus('setUserAttributes: error: ' + (err && err.message ? err.message : String(err)));
+                    });
             }
         });
     }

@@ -19,6 +19,20 @@ function __promiseExec(action, args) {
   });
 }
 
+function __callWithExec(action, args, success, error) {
+  var p = __promiseExec(action, args);
+  if (__isFn(success) || __isFn(error)) {
+    p.then(function (res) {
+      if (__isFn(success)) success(res);
+      return res;
+    }).catch(function (err) {
+      if (__isFn(error)) error(err);
+      throw err;
+    });
+  }
+  return p;
+}
+
 function __ensureInit(options) {
   if (__retenoState.initialized) {
     return Promise.resolve(1);
@@ -45,22 +59,19 @@ function __ensureInit(options) {
 }
 
 function __callWithAutoInit(action, args, success, error) {
-  var useCallbacks = __isFn(success) || __isFn(error);
-
-  if (useCallbacks) {
-    __ensureInit()
-      .then(function () {
-        exec(success, error, PLUGIN_NAME, action, args);
-      })
-      .catch(function (err) {
-        if (__isFn(error)) error(err);
-      });
-    return;
-  }
-
-  return __ensureInit().then(function () {
+  var p = __ensureInit().then(function () {
     return __promiseExec(action, args);
   });
+  if (__isFn(success) || __isFn(error)) {
+    p.then(function (res) {
+      if (__isFn(success)) success(res);
+      return res;
+    }).catch(function (err) {
+      if (__isFn(error)) error(err);
+      throw err;
+    });
+  }
+  return p;
 }
 
 (function RetenoPlugin() {
@@ -86,16 +97,16 @@ function __callWithAutoInit(action, args, success, error) {
     },
     _loadAfterBeforeload: function (strUrl) {
       strUrl = urlutil.makeAbsolute(strUrl);
-      exec(null, null, PLUGIN_NAME, 'loadAfterBeforeload', [strUrl]);
+      return __callWithExec('loadAfterBeforeload', [strUrl]);
     },
     close: function (eventname) {
-      exec(null, null, PLUGIN_NAME, 'close', []);
+      return __callWithExec('close', []);
     },
     show: function (eventname) {
-      exec(null, null, PLUGIN_NAME, 'show', []);
+      return __callWithExec('show', []);
     },
     hide: function (eventname) {
-      exec(null, null, PLUGIN_NAME, 'hide', []);
+      return __callWithExec('hide', []);
     },
     addEventListener: function (eventname, f) {
       if (eventname in this.channels) {
@@ -115,30 +126,21 @@ function __callWithAutoInit(action, args, success, error) {
       if (typeof arg0 === 'function') {
         error = success;
         success = arg0;
-        return __ensureInit({})
-          .then(function (res) {
-            if (__isFn(success)) success(res);
-            return res;
-          })
-          .catch(function (err) {
-            if (__isFn(error)) error(err);
-            throw err;
-          });
+        arg0 = {};
       }
 
       var options = arg0 || {};
-      var useCallbacks = __isFn(success) || __isFn(error);
-      if (useCallbacks) {
-        __ensureInit(options)
-          .then(function (res) {
-            if (__isFn(success)) success(res);
-          })
-          .catch(function (err) {
-            if (__isFn(error)) error(err);
-          });
-        return;
+      var p = __ensureInit(options);
+      if (__isFn(success) || __isFn(error)) {
+        p.then(function (res) {
+          if (__isFn(success)) success(res);
+          return res;
+        }).catch(function (err) {
+          if (__isFn(error)) error(err);
+          throw err;
+        });
       }
-      return __ensureInit(options);
+      return p;
     },
 
     /* arg0:
@@ -163,7 +165,7 @@ function __callWithAutoInit(action, args, success, error) {
         !payload.externalUserId ||
         (payload.externalUserId && payload.externalUserId.length === 0)
       ) {
-        throw new Error('Missing argument: "externalUserId"');
+        return Promise.reject(new Error('Missing argument: "externalUserId"'));
       }
       return __callWithAutoInit('setUserAttributes', [payload], success, error);
     },
@@ -175,21 +177,25 @@ function __callWithAutoInit(action, args, success, error) {
       // Accept either `payload` or legacy `[payload]`.
       var payload = Array.isArray(arg0) ? arg0[0] : arg0;
       if (!payload || typeof payload !== 'object') {
-        throw new Error('Missing argument: payload');
+        return Promise.reject(new Error('Missing argument: payload'));
       }
 
       // Reteno docs: anonymous user attributes cannot include phone/email.
       if (payload.phone || payload.email) {
-        throw new Error(
-          'Anonymous user attributes cannot include phone/email. Use setUserAttributes(externalUserId, user) instead.'
+        return Promise.reject(
+          new Error(
+            'Anonymous user attributes cannot include phone/email. Use setUserAttributes(externalUserId, user) instead.'
+          )
         );
       }
       if (
         payload.userAttributes &&
         (payload.userAttributes.phone || payload.userAttributes.email)
       ) {
-        throw new Error(
-          'Anonymous user attributes cannot include phone/email. Use setUserAttributes(externalUserId, user) instead.'
+        return Promise.reject(
+          new Error(
+            'Anonymous user attributes cannot include phone/email. Use setUserAttributes(externalUserId, user) instead.'
+          )
         );
       }
       return __callWithAutoInit('setAnonymousUserAttributes', [payload], success, error);
@@ -206,17 +212,17 @@ function __callWithAutoInit(action, args, success, error) {
         !payload.externalUserId ||
         (payload.externalUserId && payload.externalUserId.length === 0)
       ) {
-        throw new Error('Missing argument: "externalUserId"');
+        return Promise.reject(new Error('Missing argument: "externalUserId"'));
       }
       if (!payload.user || typeof payload.user !== 'object') {
-        throw new Error('Missing argument: "user"');
+        return Promise.reject(new Error('Missing argument: "user"'));
       }
       return __callWithAutoInit('setMultiAccountUserAttributes', [payload], success, error);
     },
 
     getInitialNotification: function (arg0, success, error) {
       // Allowed before init (used on cold start).
-      exec(success, error, PLUGIN_NAME, 'getInitialNotification', [arg0]);
+      return __callWithExec('getInitialNotification', [arg0], success, error);
     },
 
     setOnRetenoPushReceivedListener: function (arg0, arg1) {
@@ -241,7 +247,7 @@ function __callWithAutoInit(action, args, success, error) {
       // Accept either `options` or legacy `[options]`.
       var options = Array.isArray(arg0) ? arg0[0] : arg0;
       if (!options) {
-        throw new Error('Missing argument: options');
+        return Promise.reject(new Error('Missing argument: options'));
       }
       return __callWithAutoInit('setLifecycleTrackingOptions', [options], success, error);
     },
@@ -251,7 +257,7 @@ function __callWithAutoInit(action, args, success, error) {
         */
     logScreenView: function (arg0, success, error) {
       if (!arg0) {
-        throw new Error('Missing argument: screenName');
+        return Promise.reject(new Error('Missing argument: screenName'));
       }
       return __callWithAutoInit('logScreenView', [arg0], success, error);
     },
@@ -263,7 +269,7 @@ function __callWithAutoInit(action, args, success, error) {
     requestNotificationPermission: function (success, error) {
       // If Reteno isn't initialized yet, permission can still be requested,
       // but Reteno's internal status update will fail until init().
-      exec(success, error, PLUGIN_NAME, 'requestNotificationPermission', []);
+      return __callWithExec('requestNotificationPermission', [], success, error);
     },
   };
 

@@ -3,42 +3,45 @@ import { Injectable } from '@angular/core';
 declare global {
   interface Window {
     retenosdk?: {
-      init?: (optionsOrSuccess?: unknown, successOrError?: unknown, errorMaybe?: unknown) => void;
-      logEvent?: (payload: unknown, success?: () => void, error?: (err: unknown) => void) => void;
+      init?: (optionsOrSuccess?: unknown, successOrError?: unknown, errorMaybe?: unknown) => Promise<unknown>;
+      logEvent?: (payload: unknown, success?: () => void, error?: (err: unknown) => void) => Promise<void>;
       setUserAttributes?: (
         payload: unknown,
         success?: () => void,
         error?: (err: unknown) => void
-      ) => void;
+      ) => Promise<void>;
       setAnonymousUserAttributes?: (
         payload: unknown,
         success?: () => void,
         error?: (err: unknown) => void
-      ) => void;
+      ) => Promise<void>;
       setMultiAccountUserAttributes?: (
         payload: unknown,
         success?: () => void,
         error?: (err: unknown) => void
-      ) => void;
+      ) => Promise<void>;
       getInitialNotification?: (
         arg0: unknown,
         success?: (payload: unknown) => void,
         error?: (err: unknown) => void
-      ) => void;
+      ) => Promise<unknown>;
       setOnRetenoPushReceivedListener?: (listener: (event: Event) => void) => void;
-      setDeviceToken?: (token: string, success?: () => void, error?: (err: unknown) => void) => void;
+      setDeviceToken?: (token: string, success?: () => void, error?: (err: unknown) => void) => Promise<void>;
       setLifecycleTrackingOptions?: (
         options: unknown,
         success?: () => void,
         error?: (err: unknown) => void
-      ) => void;
+      ) => Promise<void>;
       logScreenView?: (
         screenName: string,
         success?: () => void,
         error?: (err: unknown) => void
-      ) => void;
-      forcePushData?: (success?: () => void, error?: (err: unknown) => void) => void;
-      requestNotificationPermission?: (success?: (result: unknown) => void, error?: (err: unknown) => void) => void;
+      ) => Promise<void>;
+      forcePushData?: (success?: () => void, error?: (err: unknown) => void) => Promise<void>;
+      requestNotificationPermission?: (
+        success?: (result: unknown) => void,
+        error?: (err: unknown) => void
+      ) => Promise<unknown>;
     };
   }
 }
@@ -50,151 +53,83 @@ export class RetenoService {
   }
 
   setUserAttributes(payload: unknown): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const sdk = window.retenosdk;
-      if (!sdk?.setUserAttributes) {
-        reject(new Error('retenosdk.setUserAttributes is not available'));
-        return;
-      }
-      sdk.setUserAttributes(
-        payload,
-        () => resolve(),
-        (err) => reject(err)
-      );
-    });
+    const sdk = window.retenosdk;
+    if (!sdk?.setUserAttributes) {
+      return Promise.reject(new Error('retenosdk.setUserAttributes is not available'));
+    }
+    return sdk.setUserAttributes(payload);
   }
 
   setAnonymousUserAttributes(payload: unknown): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const sdk = window.retenosdk;
-      if (!sdk?.setAnonymousUserAttributes) {
-        reject(new Error('retenosdk.setAnonymousUserAttributes is not available'));
-        return;
-      }
-      sdk.setAnonymousUserAttributes(
-        payload,
-        () => resolve(),
-        (err) => reject(err)
-      );
-    });
+    const sdk = window.retenosdk;
+    if (!sdk?.setAnonymousUserAttributes) {
+      return Promise.reject(new Error('retenosdk.setAnonymousUserAttributes is not available'));
+    }
+    return sdk.setAnonymousUserAttributes(payload);
   }
 
   logEvent(payload: unknown): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const sdk = window.retenosdk;
-      if (!sdk?.logEvent) {
-        reject(new Error('retenosdk.logEvent is not available'));
-        return;
-      }
-      sdk.logEvent(
-        payload,
-        () => resolve(),
-        (err) => reject(err)
-      );
-    });
+    const sdk = window.retenosdk;
+    if (!sdk?.logEvent) {
+      return Promise.reject(new Error('retenosdk.logEvent is not available'));
+    }
+    return sdk.logEvent(payload);
   }
 
   getInitialNotification(arg0: unknown = null): Promise<unknown> {
-    return new Promise((resolve, reject) => {
-      const sdk = window.retenosdk;
-      if (!sdk?.getInitialNotification) {
-        reject(new Error('retenosdk.getInitialNotification is not available'));
-        return;
-      }
-      sdk.getInitialNotification(
-        arg0,
-        (payload) => resolve(payload),
-        (err) => reject(err)
-      );
-    });
+    const sdk = window.retenosdk;
+    if (!sdk?.getInitialNotification) {
+      return Promise.reject(new Error('retenosdk.getInitialNotification is not available'));
+    }
+    return sdk.getInitialNotification(arg0);
   }
 
   requestNotificationPermission(): Promise<unknown> {
-    return new Promise((resolve, reject) => {
-      const sdk = window.retenosdk;
-      if (!sdk?.requestNotificationPermission) {
-        reject(new Error('retenosdk.requestNotificationPermission is not available'));
-        return;
-      }
-      sdk.requestNotificationPermission(
-        (res) => resolve(res),
-        (err) => reject(err)
-      );
-    });
+    const sdk = window.retenosdk;
+    if (!sdk?.requestNotificationPermission) {
+      return Promise.reject(new Error('retenosdk.requestNotificationPermission is not available'));
+    }
+    return sdk.requestNotificationPermission();
   }
 
   setDeviceToken(token: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const sdk = window.retenosdk;
-      if (!sdk?.setDeviceToken) {
-        reject(new Error('retenosdk.setDeviceToken is not available'));
-        return;
-      }
-      sdk.setDeviceToken(
-        token,
-        () => resolve(),
-        (err) => reject(err)
-      );
-    });
+    const sdk = window.retenosdk;
+    if (!sdk?.setDeviceToken) {
+      return Promise.reject(new Error('retenosdk.setDeviceToken is not available'));
+    }
+    return sdk.setDeviceToken(token);
   }
 
   setMultiAccountUserAttributes(payload: unknown): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const sdk = window.retenosdk;
-      if (!sdk?.setMultiAccountUserAttributes) {
-        reject(new Error('retenosdk.setMultiAccountUserAttributes is not available'));
-        return;
-      }
-      sdk.setMultiAccountUserAttributes(
-        payload,
-        () => resolve(),
-        (err) => reject(err)
-      );
-    });
+    const sdk = window.retenosdk;
+    if (!sdk?.setMultiAccountUserAttributes) {
+      return Promise.reject(new Error('retenosdk.setMultiAccountUserAttributes is not available'));
+    }
+    return sdk.setMultiAccountUserAttributes(payload);
   }
 
   setLifecycleTrackingOptions(options: unknown): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const sdk = window.retenosdk;
-      if (!sdk?.setLifecycleTrackingOptions) {
-        reject(new Error('retenosdk.setLifecycleTrackingOptions is not available'));
-        return;
-      }
-      sdk.setLifecycleTrackingOptions(
-        options,
-        () => resolve(),
-        (err) => reject(err)
-      );
-    });
+    const sdk = window.retenosdk;
+    if (!sdk?.setLifecycleTrackingOptions) {
+      return Promise.reject(new Error('retenosdk.setLifecycleTrackingOptions is not available'));
+    }
+    return sdk.setLifecycleTrackingOptions(options);
   }
 
   logScreenView(screenName: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const sdk = window.retenosdk;
-      if (!sdk?.logScreenView) {
-        reject(new Error('retenosdk.logScreenView is not available'));
-        return;
-      }
-      sdk.logScreenView(
-        screenName,
-        () => resolve(),
-        (err) => reject(err)
-      );
-    });
+    const sdk = window.retenosdk;
+    if (!sdk?.logScreenView) {
+      return Promise.reject(new Error('retenosdk.logScreenView is not available'));
+    }
+    return sdk.logScreenView(screenName);
   }
 
   forcePushData(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const sdk = window.retenosdk;
-      if (!sdk?.forcePushData) {
-        reject(new Error('retenosdk.forcePushData is not available'));
-        return;
-      }
-      sdk.forcePushData(
-        () => resolve(),
-        (err) => reject(err)
-      );
-    });
+    const sdk = window.retenosdk;
+    if (!sdk?.forcePushData) {
+      return Promise.reject(new Error('retenosdk.forcePushData is not available'));
+    }
+    return sdk.forcePushData();
   }
 
 

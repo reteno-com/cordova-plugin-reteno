@@ -50,14 +50,14 @@ Notes:
 You can request it via the plugin API:
 
 ```js
-retenosdk.requestNotificationPermission(
-  function (grantedInt) {
+retenosdk
+  .requestNotificationPermission()
+  .then((grantedInt) => {
     // grantedInt: 1 (granted) or 0 (declined)
-  },
-  function (err) {
+  })
+  .catch((err) => {
     console.error(err);
-  }
-);
+  });
 ```
 
 4. SDK initialization
@@ -65,14 +65,14 @@ retenosdk.requestNotificationPermission(
 Initialize Reteno once during app startup:
 
 ```js
-retenosdk.init(
-  function () {
+retenosdk
+  .init()
+  .then(() => {
     // initialized
-  },
-  function (err) {
+  })
+  .catch((err) => {
     console.error(err);
-  }
-);
+  });
 ```
 
 If you need advanced Reteno configuration (custom `RetenoConfig`, custom device id provider, etc), you can initialize Reteno in your custom `Application` as described here:

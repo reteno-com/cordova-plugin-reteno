@@ -4,6 +4,7 @@ Notes:
 
 - Recommended: call `retenosdk.init(...)` once on app startup before calling SDK-dependent methods like `logEvent`, `setUserAttributes`, `setAnonymousUserAttributes`, or `setDeviceToken`.
 - As a convenience, the JS wrapper will auto-call init when you call those methods, but explicit init gives you clearer error handling and predictable timing.
+- All methods that call native code return a `Promise`. Optional `success` / `error` callbacks are still supported for backward compatibility.
 
 | Method                                                             | Supported platform | Description                                                                                                                                       |
 | ------------------------------------------------------------------ | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -48,10 +49,10 @@ retenosdk.setUserAttributes(
       groupNamesInclude: ['beta-testers'],
       groupNamesExclude: ['unsubscribed'],
     },
-  },
-  () => console.log('setUserAttributes: OK'),
-  (err) => console.error('setUserAttributes: ERROR', err)
-);
+  }
+)
+  .then(() => console.log('setUserAttributes: OK'))
+  .catch((err) => console.error('setUserAttributes: ERROR', err));
 ```
 
 ### setAnonymousUserAttributes payload example
@@ -72,10 +73,10 @@ retenosdk.setAnonymousUserAttributes(
       postcode: '01001',
     },
     fields: [{ key: 'utm_source', value: 'google' }],
-  },
-  () => console.log('setAnonymousUserAttributes: OK'),
-  (err) => console.error('setAnonymousUserAttributes: ERROR', err)
-);
+  }
+)
+  .then(() => console.log('setAnonymousUserAttributes: OK'))
+  .catch((err) => console.error('setAnonymousUserAttributes: ERROR', err));
 ```
 
 ### setMultiAccountUserAttributes payload example
@@ -112,10 +113,10 @@ retenosdk.setMultiAccountUserAttributes(
       groupNamesInclude: ['beta-testers'],
       groupNamesExclude: ['unsubscribed'],
     },
-  },
-  () => console.log('setMultiAccountUserAttributes: OK'),
-  (err) => console.error('setMultiAccountUserAttributes: ERROR', err)
-);
+  }
+)
+  .then(() => console.log('setMultiAccountUserAttributes: OK'))
+  .catch((err) => console.error('setMultiAccountUserAttributes: ERROR', err));
 ```
 
 ### setLifecycleTrackingOptions example
@@ -126,10 +127,10 @@ retenosdk.setMultiAccountUserAttributes(
 retenosdk.setLifecycleTrackingOptions(
   {
     sessionEventsEnabled: true,
-  },
-  () => console.log('setLifecycleTrackingOptions: OK'),
-  (err) => console.error('setLifecycleTrackingOptions: ERROR', err)
-);
+  }
+)
+  .then(() => console.log('setLifecycleTrackingOptions: OK'))
+  .catch((err) => console.error('setLifecycleTrackingOptions: ERROR', err));
 ```
 
 ```js
@@ -152,29 +153,29 @@ retenosdk.logEvent(
       { name: 'orderId', value: 'A-123' },
       { name: 'amount', value: '19.99' },
     ],
-  },
-  () => console.log('logEvent: OK'),
-  (err) => console.error('logEvent: ERROR', err)
-);
+  }
+)
+  .then(() => console.log('logEvent: OK'))
+  .catch((err) => console.error('logEvent: ERROR', err));
 ```
 
 ### logScreenView example
 
 ```js
 retenosdk.logScreenView(
-  'HomeScreen',
-  () => console.log('logScreenView: OK'),
-  (err) => console.error('logScreenView: ERROR', err)
-);
+  'HomeScreen'
+)
+  .then(() => console.log('logScreenView: OK'))
+  .catch((err) => console.error('logScreenView: ERROR', err));
 ```
 
 ### forcePushData example
 
 ```js
-retenosdk.forcePushData(
-  () => console.log('forcePushData: OK'),
-  (err) => console.error('forcePushData: ERROR', err)
-);
+retenosdk
+  .forcePushData()
+  .then(() => console.log('forcePushData: OK'))
+  .catch((err) => console.error('forcePushData: ERROR', err));
 ```
 
 ### setDeviceToken example
@@ -185,8 +186,9 @@ Note: if Reteno receives FCM callbacks directly on Android, you generally don't 
 
 ```js
 // 1) Initialize Reteno first.
-retenosdk.init(
-  () => {
+retenosdk
+  .init()
+  .then(() => {
     // Forward token from your token source (replace this with your integration).
     getFcmTokenFromSomewhere(
       (token) => {
@@ -194,9 +196,8 @@ retenosdk.init(
       },
       (err) => console.error('getFcmTokenFromSomewhere: ERROR', err)
     );
-  },
-  (err) => console.error('retenosdk.init: ERROR', err)
-);
+  })
+  .catch((err) => console.error('retenosdk.init: ERROR', err));
 ```
 
 ### setOnRetenoPushReceivedListener example

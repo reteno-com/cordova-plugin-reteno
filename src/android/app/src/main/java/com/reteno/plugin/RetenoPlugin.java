@@ -23,6 +23,7 @@ import com.reteno.core.domain.model.event.LifecycleTrackingOptions;
 import com.reteno.core.domain.model.user.User;
 import com.reteno.core.domain.model.user.UserAttributesAnonymous;
 import com.reteno.push.RetenoNotificationService;
+import com.reteno.push.RetenoNotifications;
 
 public class RetenoPlugin extends CordovaPlugin {
   private static final int REQ_CODE_POST_NOTIFICATIONS = 10001;
@@ -231,6 +232,20 @@ public class RetenoPlugin extends CordovaPlugin {
 
     if ("requestNotificationPermission".equals(action)) {
       requestNotificationPermission(callbackContext);
+      return true;
+    }
+
+    if ("updateDefaultNotificationChannel".equals(action)) {
+      cordova.getThreadPool().execute(new Runnable() {
+        @Override
+        public void run() {
+          try {
+            updateDefaultNotificationChannel(args, callbackContext);
+          } catch (Exception e) {
+            callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
+          }
+        }
+      });
       return true;
     }
 
@@ -682,6 +697,50 @@ public class RetenoPlugin extends CordovaPlugin {
       return false;
     }
     return null;
+  }
+
+  private void updateDefaultNotificationChannel(JSONArray args, CallbackContext callbackContext) throws JSONException {
+    if (args == null || args.length() == 0) {
+      callbackContext.error("Missing argument: notification channel config");
+      return;
+    }
+
+    Object arg0 = args.opt(0);
+    if (arg0 instanceof JSONArray) {
+      arg0 = ((JSONArray) arg0).opt(0);
+    }
+
+    if (!(arg0 instanceof JSONObject)) {
+      callbackContext.error("Invalid argument: expected an object with name and description");
+      return;
+    }
+
+    JSONObject config = (JSONObject) arg0;
+    String name = config.optString("name", null);
+    String description = config.optString("description", null);
+
+    if (name != null) {
+      name = name.trim();
+    }
+    if (description != null) {
+      description = description.trim();
+    }
+
+    if (TextUtils.isEmpty(name)) {
+      callbackContext.error("Missing argument: name");
+      return;
+    }
+    if (TextUtils.isEmpty(description)) {
+      callbackContext.error("Missing argument: description");
+      return;
+    }
+
+    try {
+      RetenoNotifications.updateDefaultNotificationChannel(name, description);
+      callbackContext.success(1);
+    } catch (Exception e) {
+      callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
+    }
   }
 
   private Reteno getRetenoInstanceOrThrow() {

@@ -74,3 +74,8 @@ export type RetenoInitializeOptions = {
   pausePushInAppMessages?: boolean;
   lifecycleTrackingOptions?: LifecycleTrackingOptions;
 };
+
+export type NotificationChannelConfig = {
+  name: string;
+  description: string;
+};

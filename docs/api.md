@@ -20,6 +20,7 @@ Notes:
 | [setOnRetenoPushReceivedListener](../www/cordova-plugin-reteno.js) | iOS, Android       | Sets listener for newly received push notification;                                                                                               |
 | [init](../www/cordova-plugin-reteno.js)                            | Android            | Initializes Reteno SDK.                                                                                                                           |
 | [requestNotificationPermission](../www/cordova-plugin-reteno.js)   | Android            | Requests `POST_NOTIFICATIONS` permission (Android 13+). Returns `0` or `1` (`RequestNotificationPermissionResult`) in [types](../types/index.ts). |
+| [updateDefaultNotificationChannel](../www/cordova-plugin-reteno.js) | Android            | Updates the default notification channel name and description for existing users. [Types](../types/index.ts)                                      |
 
 ### setUserAttributes payload example
 
@@ -215,4 +216,21 @@ retenosdk.setOnRetenoPushReceivedListener(function (event) {
   // The exact keys depend on what Reteno/FCM delivered.
   console.log('reteno-push-received:', event);
 });
+```
+
+### updateDefaultNotificationChannel example
+
+Updates the default notification channel parameters for existing users on Android devices. This is useful when you need to change how notifications appear to users who already have the app installed.
+
+Payload type: `NotificationChannelConfig` in [types](../types/index.ts).
+
+```js
+retenosdk.updateDefaultNotificationChannel(
+  {
+    name: 'New Channel Name',
+    description: 'New Channel Description',
+  }
+)
+  .then(() => console.log('updateDefaultNotificationChannel: OK'))
+  .catch((err) => console.error('updateDefaultNotificationChannel: ERROR', err));
 ```

@@ -271,6 +271,28 @@ function __callWithAutoInit(action, args, success, error) {
       // but Reteno's internal status update will fail until init().
       return __callWithExec('requestNotificationPermission', [], success, error);
     },
+
+    /*
+        config: NotificationChannelConfig
+        {
+          name: string,
+          description: string
+        }
+        */
+    updateDefaultNotificationChannel: function (arg0, success, error) {
+      // Accept either `config` or legacy `[config]`.
+      var config = Array.isArray(arg0) ? arg0[0] : arg0;
+      if (!config || typeof config !== 'object') {
+        return Promise.reject(new Error('Missing argument: config'));
+      }
+      if (!config.name || typeof config.name !== 'string' || config.name.trim().length === 0) {
+        return Promise.reject(new Error('Missing argument: name'));
+      }
+      if (!config.description || typeof config.description !== 'string' || config.description.trim().length === 0) {
+        return Promise.reject(new Error('Missing argument: description'));
+      }
+      return __callWithAutoInit('updateDefaultNotificationChannel', [config], success, error);
+    },
   };
 
   module.exports = RetenoPluginFunctions;

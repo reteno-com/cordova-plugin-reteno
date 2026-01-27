@@ -18,6 +18,10 @@ export const routes: Routes = [
     loadComponent: () => import('./lifecycle/lifecycle.page').then((m) => m.LifecyclePage),
   },
   {
+    path: 'notifications',
+    loadComponent: () => import('./notifications/notifications.page').then((m) => m.NotificationsPage),
+  },
+  {
     path: '',
     redirectTo: 'main',
     pathMatch: 'full',

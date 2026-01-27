@@ -51,6 +51,7 @@
                     <button class="nav-button" data-target="user-data" type="button">User data</button>
                     <button class="nav-button" data-target="log-event" type="button">Log event</button>
                     <button class="nav-button" data-target="lifecycle" type="button">App lifecycle events</button>
+                    <button class="nav-button" data-target="notifications" type="button">Notifications</button>
                 </div>
             </section>
 
@@ -243,6 +244,41 @@
                     </button>
 
                     <pre id="retenoLifecycleStatus" class="reteno-status" aria-live="polite"></pre>
+                </div>
+            </section>
+
+            <section class="page" data-page="notifications" data-screen-name="Notifications">
+                <div class="page-header">
+                    <button class="back-button" data-target="home" type="button">Back</button>
+                    <h2>Notifications</h2>
+                </div>
+
+                <div class="reteno-form" aria-label="Reteno notification channel form">
+                    <h2>Reteno: updateDefaultNotificationChannel</h2>
+
+                    <label class="reteno-label" for="retenoNotificationName">Channel name</label>
+                    <input
+                        id="retenoNotificationName"
+                        class="reteno-input"
+                        type="text"
+                        placeholder="Updates"
+                        autocomplete="off"
+                    />
+
+                    <label class="reteno-label" for="retenoNotificationDescription">Channel description</label>
+                    <input
+                        id="retenoNotificationDescription"
+                        class="reteno-input"
+                        type="text"
+                        placeholder="General updates and announcements"
+                        autocomplete="off"
+                    />
+
+                    <button id="retenoNotificationApplyBtn" class="reteno-button" type="button">
+                        Apply
+                    </button>
+
+                    <pre id="retenoNotificationStatus" class="reteno-status" aria-live="polite"></pre>
                 </div>
             </section>
         </div>

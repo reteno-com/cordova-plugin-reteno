@@ -38,12 +38,14 @@ function onDeviceReady() {
     var statusEl = document.getElementById('retenoStatus');
     var eventStatusEl = document.getElementById('retenoEventStatus');
     var lifecycleStatusEl = document.getElementById('retenoLifecycleStatus');
+    var notificationStatusEl = document.getElementById('retenoNotificationStatus');
     var externalUserIdEl = document.getElementById('retenoExternalUserId');
     var multiAccountEl = document.getElementById('retenoMultiAccount');
     var anonymousUserEl = document.getElementById('retenoAnonymousUser');
     var btn = document.getElementById('retenoSetUserAttributesBtn');
     var logEventBtn = document.getElementById('retenoLogEventBtn');
     var lifecycleSaveBtn = document.getElementById('retenoLifecycleSaveBtn');
+    var notificationApplyBtn = document.getElementById('retenoNotificationApplyBtn');
 
     var emailEl = document.getElementById('retenoEmail');
     var phoneEl = document.getElementById('retenoPhone');
@@ -69,6 +71,8 @@ function onDeviceReady() {
     var lifecycleAppEl = document.getElementById('retenoLifecycleApp');
     var lifecyclePushEl = document.getElementById('retenoLifecyclePush');
     var lifecycleSessionEl = document.getElementById('retenoLifecycleSession');
+    var notificationNameEl = document.getElementById('retenoNotificationName');
+    var notificationDescriptionEl = document.getElementById('retenoNotificationDescription');
 
     var externalUserGroupEl = document.querySelector('[data-field-group="external-user-id"]');
     var emailGroupEl = document.querySelector('[data-field-group="email"]');
@@ -101,6 +105,10 @@ function onDeviceReady() {
     if (lifecycleAppEl && !lifecycleAppEl.checked) lifecycleAppEl.checked = true;
     if (lifecyclePushEl && !lifecyclePushEl.checked) lifecyclePushEl.checked = true;
     if (lifecycleSessionEl && !lifecycleSessionEl.checked) lifecycleSessionEl.checked = true;
+    if (notificationNameEl && !String(notificationNameEl.value || '').trim()) notificationNameEl.value = 'Updates';
+    if (notificationDescriptionEl && !String(notificationDescriptionEl.value || '').trim()) {
+        notificationDescriptionEl.value = 'General updates and announcements';
+    }
 
     function setStatus(text) {
         if (statusEl) {
@@ -117,6 +125,12 @@ function onDeviceReady() {
     function setLifecycleStatus(text) {
         if (lifecycleStatusEl) {
             lifecycleStatusEl.textContent = text;
+        }
+    }
+
+    function setNotificationStatus(text) {
+        if (notificationStatusEl) {
+            notificationStatusEl.textContent = text;
         }
     }
 
@@ -388,7 +402,6 @@ function onDeviceReady() {
         lifecycleSaveBtn.addEventListener('click', function () {
             var sdk = getRetenoSdk();
             if (!sdk || typeof sdk.setLifecycleTrackingOptions !== 'function') {
-                console.log('setLifecycleTrackingOptions',typeof sdk.setLifecycleTrackingOptions)
                 setLifecycleStatus('Reteno setLifecycleTrackingOptions is not available.');
                 return;
             }
@@ -406,6 +419,32 @@ function onDeviceReady() {
                 })
                 .catch(function (err) {
                     setLifecycleStatus('setLifecycleTrackingOptions: error: ' + (err && err.message ? err.message : String(err)));
+                });
+        });
+    }
+
+    if (notificationApplyBtn) {
+        notificationApplyBtn.addEventListener('click', function () {
+            var sdk = getRetenoSdk();
+            if (!sdk || typeof sdk.updateDefaultNotificationChannel !== 'function') {
+                setNotificationStatus('Reteno updateDefaultNotificationChannel is not available.');
+                return;
+            }
+
+            var name = notificationNameEl ? String(notificationNameEl.value || '').trim() : '';
+            var description = notificationDescriptionEl ? String(notificationDescriptionEl.value || '').trim() : '';
+            if (!name || !description) {
+                setNotificationStatus('Please provide name and description.');
+                return;
+            }
+
+            setNotificationStatus('Applying...');
+            sdk.updateDefaultNotificationChannel({ name: name, description: description })
+                .then(function () {
+                    setNotificationStatus('updateDefaultNotificationChannel: success');
+                })
+                .catch(function (err) {
+                    setNotificationStatus('updateDefaultNotificationChannel: error: ' + (err && err.message ? err.message : String(err)));
                 });
         });
     }

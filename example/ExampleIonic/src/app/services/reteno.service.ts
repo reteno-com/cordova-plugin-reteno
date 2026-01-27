@@ -42,6 +42,11 @@ declare global {
         success?: (result: unknown) => void,
         error?: (err: unknown) => void
       ) => Promise<unknown>;
+      updateDefaultNotificationChannel?: (
+        config: { name: string; description: string },
+        success?: () => void,
+        error?: (err: unknown) => void
+      ) => Promise<void>;
     };
   }
 }
@@ -130,6 +135,14 @@ export class RetenoService {
       return Promise.reject(new Error('retenosdk.forcePushData is not available'));
     }
     return sdk.forcePushData();
+  }
+
+  updateDefaultNotificationChannel(config: { name: string; description: string }): Promise<void> {
+    const sdk = window.retenosdk;
+    if (!sdk?.updateDefaultNotificationChannel) {
+      return Promise.reject(new Error('retenosdk.updateDefaultNotificationChannel is not available'));
+    }
+    return sdk.updateDefaultNotificationChannel(config);
   }
 
 

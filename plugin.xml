@@ -37,6 +37,15 @@
             android:name="com.reteno.Receiver.PushReceived"
             android:value="com.reteno.plugin.RetenoPushReceiver" />
 
+        <!-- Reteno notification clicked receiver: handles user taps on push notifications -->
+        <receiver
+            android:name="com.reteno.plugin.RetenoNotificationClickedReceiver"
+            android:enabled="true"
+            android:exported="true" />
+        <meta-data
+            android:name="com.reteno.Receiver.NotificationClicked"
+            android:value="com.reteno.plugin.RetenoNotificationClickedReceiver" />
+
     </config-file>
 
   <config-file target="config.xml" parent="/*">
@@ -54,8 +63,11 @@
   <source-file 
       src="src/android/app/src/main/java/com/reteno/plugin/RetenoEvent.java" 
       target-dir="src/com/reteno/plugin" />
-  <source-file 
-      src="src/android/app/src/main/java/com/reteno/plugin/RetenoPushReceiver.java" 
+  <source-file
+      src="src/android/app/src/main/java/com/reteno/plugin/RetenoPushReceiver.java"
+      target-dir="src/com/reteno/plugin" />
+  <source-file
+      src="src/android/app/src/main/java/com/reteno/plugin/RetenoNotificationClickedReceiver.java"
       target-dir="src/com/reteno/plugin" />
   <source-file 
       src="src/android/app/src/main/java/com/reteno/plugin/RetenoUserAttributes.java" 

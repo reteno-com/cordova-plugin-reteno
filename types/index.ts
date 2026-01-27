@@ -79,3 +79,25 @@ export type NotificationChannelConfig = {
   name: string;
   description: string;
 };
+
+/**
+ * Payload received when a push notification is received.
+ * Contains the data from the notification bundle.
+ */
+export type RetenoPushReceivedPayload = Record<string, unknown>;
+
+/**
+ * Payload received when a user taps on a push notification.
+ * Contains the custom data from the notification.
+ */
+export type RetenoNotificationClickedPayload = Record<string, unknown>;
+
+/**
+ * Listener function for push notification received events.
+ */
+export type RetenoPushReceivedListener = (payload: RetenoPushReceivedPayload) => void;
+
+/**
+ * Listener function for notification clicked events.
+ */
+export type RetenoNotificationClickedListener = (payload: RetenoNotificationClickedPayload) => void;

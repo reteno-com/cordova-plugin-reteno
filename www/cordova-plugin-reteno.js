@@ -233,6 +233,15 @@ function __callWithAutoInit(action, args, success, error) {
       if (typeof listener !== 'function') return;
       document.addEventListener('reteno-push-received', listener);
     },
+
+    setOnRetenoNotificationClickedListener: function (arg0, arg1) {
+      // Back-compat:
+      // - setOnRetenoNotificationClickedListener(listener)
+      // - setOnRetenoNotificationClickedListener(reteno, listener) (legacy)
+      var listener = typeof arg0 === 'function' ? arg0 : arg1;
+      if (typeof listener !== 'function') return;
+      document.addEventListener('reteno-notification-clicked', listener);
+    },
     /*
         deviceToken: string
         */

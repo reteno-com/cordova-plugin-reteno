@@ -242,6 +242,16 @@ function __callWithAutoInit(action, args, success, error) {
       if (typeof listener !== 'function') return;
       document.addEventListener('reteno-notification-clicked', listener);
     },
+
+    removeOnRetenoPushReceivedListener: function (listener) {
+      if (typeof listener !== 'function') return;
+      document.removeEventListener('reteno-push-received', listener);
+    },
+
+    removeOnRetenoNotificationClickedListener: function (listener) {
+      if (typeof listener !== 'function') return;
+      document.removeEventListener('reteno-notification-clicked', listener);
+    },
     /*
         deviceToken: string
         */

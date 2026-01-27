@@ -17,7 +17,10 @@ Notes:
 | [logScreenView](../www/cordova-plugin-reteno.js)                   | Android            | Logs a screen view for manual tracking.                                                                                                           |
 | [forcePushData](../www/cordova-plugin-reteno.js)                   | Android            | Forces Reteno to sync push data for the current device.                                                                                           |
 | [getInitialNotification](../www/cordova-plugin-reteno.js)          | iOS, Android       | Returns push notification that triggered creating app instance                                                                                    |
-| [setOnRetenoPushReceivedListener](../www/cordova-plugin-reteno.js) | iOS, Android       | Sets listener for newly received push notification;                                                                                               |
+| [setOnRetenoPushReceivedListener](../www/cordova-plugin-reteno.js) | iOS, Android       | Sets listener for newly received push notification.                                                                                               |
+| [removeOnRetenoPushReceivedListener](../www/cordova-plugin-reteno.js) | iOS, Android       | Removes listener for push notification received events.                                                                                           |
+| [setOnRetenoNotificationClickedListener](../www/cordova-plugin-reteno.js) | iOS, Android       | Sets listener for notification click events.                                                                                                      |
+| [removeOnRetenoNotificationClickedListener](../www/cordova-plugin-reteno.js) | iOS, Android       | Removes listener for notification click events.                                                                                                   |
 | [init](../www/cordova-plugin-reteno.js)                            | Android            | Initializes Reteno SDK.                                                                                                                           |
 | [requestNotificationPermission](../www/cordova-plugin-reteno.js)   | Android            | Requests `POST_NOTIFICATIONS` permission (Android 13+). Returns `0` or `1` (`RequestNotificationPermissionResult`) in [types](../types/index.ts). |
 | [updateDefaultNotificationChannel](../www/cordova-plugin-reteno.js) | Android            | Updates the default notification channel name and description for existing users. [Types](../types/index.ts)                                      |
@@ -211,11 +214,33 @@ Notes:
 - This listener is not a replacement for `getInitialNotification()` (cold start): if the app was launched by tapping a notification, use `getInitialNotification()`.
 
 ```js
-retenosdk.setOnRetenoPushReceivedListener(function (event) {
+// Subscribe to push received events
+function onPushReceived(event) {
   // `event` contains the payload fields from intent extras.
   // The exact keys depend on what Reteno/FCM delivered.
   console.log('reteno-push-received:', event);
-});
+}
+
+retenosdk.setOnRetenoPushReceivedListener(onPushReceived);
+
+// Later, to unsubscribe:
+retenosdk.removeOnRetenoPushReceivedListener(onPushReceived);
+```
+
+### setOnRetenoNotificationClickedListener example
+
+Subscribe to notification click events while the app is running.
+
+```js
+// Subscribe to notification click events
+function onNotificationClicked(event) {
+  console.log('reteno-notification-clicked:', event);
+}
+
+retenosdk.setOnRetenoNotificationClickedListener(onNotificationClicked);
+
+// Later, to unsubscribe:
+retenosdk.removeOnRetenoNotificationClickedListener(onNotificationClicked);
 ```
 
 ### updateDefaultNotificationChannel example

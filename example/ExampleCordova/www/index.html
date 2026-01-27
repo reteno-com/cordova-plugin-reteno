@@ -50,6 +50,7 @@
                     <h2>Navigation</h2>
                     <button class="nav-button" data-target="user-data" type="button">User data</button>
                     <button class="nav-button" data-target="log-event" type="button">Log event</button>
+                    <button class="nav-button" data-target="lifecycle" type="button">App lifecycle events</button>
                 </div>
             </section>
 
@@ -210,6 +211,38 @@
                     </button>
 
                     <pre id="retenoEventStatus" class="reteno-status" aria-live="polite"></pre>
+                </div>
+            </section>
+
+            <section class="page" data-page="lifecycle" data-screen-name="App lifecycle events">
+                <div class="page-header">
+                    <button class="back-button" data-target="home" type="button">Back</button>
+                    <h2>App lifecycle events</h2>
+                </div>
+
+                <div class="reteno-form" aria-label="Reteno lifecycle options form">
+                    <h2>Reteno: setLifecycleTrackingOptions</h2>
+
+                    <div class="form-options" aria-label="Lifecycle tracking options">
+                        <label class="checkbox-row">
+                            <input id="retenoLifecycleApp" type="checkbox" checked>
+                            <span>App lifecycle events</span>
+                        </label>
+                        <label class="checkbox-row">
+                            <input id="retenoLifecyclePush" type="checkbox" checked>
+                            <span>Push subscription events</span>
+                        </label>
+                        <label class="checkbox-row">
+                            <input id="retenoLifecycleSession" type="checkbox" checked>
+                            <span>Session events</span>
+                        </label>
+                    </div>
+
+                    <button id="retenoLifecycleSaveBtn" class="reteno-button" type="button">
+                        Save
+                    </button>
+
+                    <pre id="retenoLifecycleStatus" class="reteno-status" aria-live="polite"></pre>
                 </div>
             </section>
         </div>

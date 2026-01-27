@@ -37,11 +37,13 @@ function onDeviceReady() {
 
     var statusEl = document.getElementById('retenoStatus');
     var eventStatusEl = document.getElementById('retenoEventStatus');
+    var lifecycleStatusEl = document.getElementById('retenoLifecycleStatus');
     var externalUserIdEl = document.getElementById('retenoExternalUserId');
     var multiAccountEl = document.getElementById('retenoMultiAccount');
     var anonymousUserEl = document.getElementById('retenoAnonymousUser');
     var btn = document.getElementById('retenoSetUserAttributesBtn');
     var logEventBtn = document.getElementById('retenoLogEventBtn');
+    var lifecycleSaveBtn = document.getElementById('retenoLifecycleSaveBtn');
 
     var emailEl = document.getElementById('retenoEmail');
     var phoneEl = document.getElementById('retenoPhone');
@@ -63,6 +65,10 @@ function onDeviceReady() {
     var eventParamKeyEl = document.getElementById('retenoEventParamKey');
     var eventParamValueEl = document.getElementById('retenoEventParamValue');
     var forcePushDataBtn = document.getElementById('retenoForcePushDataBtn');
+
+    var lifecycleAppEl = document.getElementById('retenoLifecycleApp');
+    var lifecyclePushEl = document.getElementById('retenoLifecyclePush');
+    var lifecycleSessionEl = document.getElementById('retenoLifecycleSession');
 
     var externalUserGroupEl = document.querySelector('[data-field-group="external-user-id"]');
     var emailGroupEl = document.querySelector('[data-field-group="email"]');
@@ -92,6 +98,9 @@ function onDeviceReady() {
     if (eventDateEl && !String(eventDateEl.value || '').trim()) eventDateEl.value = new Date().toISOString();
     if (eventParamKeyEl && !String(eventParamKeyEl.value || '').trim()) eventParamKeyEl.value = 'orderId';
     if (eventParamValueEl && !String(eventParamValueEl.value || '').trim()) eventParamValueEl.value = 'A-123';
+    if (lifecycleAppEl && !lifecycleAppEl.checked) lifecycleAppEl.checked = true;
+    if (lifecyclePushEl && !lifecyclePushEl.checked) lifecyclePushEl.checked = true;
+    if (lifecycleSessionEl && !lifecycleSessionEl.checked) lifecycleSessionEl.checked = true;
 
     function setStatus(text) {
         if (statusEl) {
@@ -102,6 +111,12 @@ function onDeviceReady() {
     function setEventStatus(text) {
         if (eventStatusEl) {
             eventStatusEl.textContent = text;
+        }
+    }
+
+    function setLifecycleStatus(text) {
+        if (lifecycleStatusEl) {
+            lifecycleStatusEl.textContent = text;
         }
     }
 
@@ -133,12 +148,12 @@ function onDeviceReady() {
     }
 
     function logScreenView(screenName) {
-        var sdk3 = getRetenoSdk();
-        if (!sdk3 || typeof sdk3.logScreenView !== 'function') {
+        var sdk = getRetenoSdk();
+        if (!sdk || typeof sdk.logScreenView !== 'function') {
             return;
         }
 
-        sdk3.logScreenView(screenName).catch(function (err) {
+        sdk.logScreenView(screenName).catch(function (err) {
             console.warn('logScreenView: error', err);
         });
     }
@@ -211,12 +226,12 @@ function onDeviceReady() {
         btn.addEventListener('click', function () {
             var isMultiAccount = !!(multiAccountEl && multiAccountEl.checked);
             var isAnonymous = !!(anonymousUserEl && anonymousUserEl.checked);
-            var sdk2 = getRetenoSdk();
+            var sdk = getRetenoSdk();
             var methodName = isAnonymous
                 ? 'setAnonymousUserAttributes'
                 : (isMultiAccount ? 'setMultiAccountUserAttributes' : 'setUserAttributes');
 
-            if (!sdk2 || typeof sdk2[methodName] !== 'function') {
+            if (!sdk || typeof sdk[methodName] !== 'function') {
                 setStatus('Reteno ' + methodName + ' is not available.');
                 return;
             }
@@ -265,7 +280,7 @@ function onDeviceReady() {
 
             if (isAnonymous) {
                 setStatus('Sending setAnonymousUserAttributes...');
-                sdk2.setAnonymousUserAttributes(userAttributes)
+                sdk.setAnonymousUserAttributes(userAttributes)
                     .then(function () {
                         setStatus('setAnonymousUserAttributes: success');
                     })
@@ -274,7 +289,7 @@ function onDeviceReady() {
                     });
             } else if (isMultiAccount) {
                 setStatus('Sending setMultiAccountUserAttributes...');
-                sdk2.setMultiAccountUserAttributes({
+                sdk.setMultiAccountUserAttributes({
                     externalUserId: externalUserId,
                     user: { userAttributes: userAttributes },
                 })
@@ -291,7 +306,7 @@ function onDeviceReady() {
                     user = { userAttributes: userAttributes };
                 }
                 setStatus('Sending setUserAttributes...');
-                sdk2.setUserAttributes({
+                sdk.setUserAttributes({
                     externalUserId: externalUserId,
                     user: user,
                 })
@@ -307,8 +322,8 @@ function onDeviceReady() {
 
     if (logEventBtn) {
         logEventBtn.addEventListener('click', function () {
-            var sdk4 = getRetenoSdk();
-            if (!sdk4 || typeof sdk4.logEvent !== 'function') {
+            var sdk = getRetenoSdk();
+            if (!sdk || typeof sdk.logEvent !== 'function') {
                 setEventStatus('Reteno logEvent is not available.');
                 return;
             }
@@ -340,7 +355,7 @@ function onDeviceReady() {
             }
 
             setEventStatus('Sending logEvent...');
-            sdk4.logEvent(payload)
+            sdk.logEvent(payload)
                 .then(function () {
                     setEventStatus('logEvent: success');
                 })
@@ -352,19 +367,45 @@ function onDeviceReady() {
 
     if (forcePushDataBtn) {
         forcePushDataBtn.addEventListener('click', function () {
-            var sdk5 = getRetenoSdk();
-            if (!sdk5 || typeof sdk5.forcePushData !== 'function') {
+            var sdk = getRetenoSdk();
+            if (!sdk || typeof sdk.forcePushData !== 'function') {
                 setEventStatus('Reteno forcePushData is not available.');
                 return;
             }
 
             setEventStatus('Sending forcePushData...');
-            sdk5.forcePushData()
+            sdk.forcePushData()
                 .then(function () {
                     setEventStatus('forcePushData: success');
                 })
                 .catch(function (err) {
                     setEventStatus('forcePushData: error: ' + (err && err.message ? err.message : String(err)));
+                });
+        });
+    }
+
+    if (lifecycleSaveBtn) {
+        lifecycleSaveBtn.addEventListener('click', function () {
+            var sdk = getRetenoSdk();
+            if (!sdk || typeof sdk.setLifecycleTrackingOptions !== 'function') {
+                console.log('setLifecycleTrackingOptions',typeof sdk.setLifecycleTrackingOptions)
+                setLifecycleStatus('Reteno setLifecycleTrackingOptions is not available.');
+                return;
+            }
+
+            var options = {
+                appLifecycleEnabled: !!(lifecycleAppEl && lifecycleAppEl.checked),
+                pushSubscriptionEnabled: !!(lifecyclePushEl && lifecyclePushEl.checked),
+                sessionEventsEnabled: !!(lifecycleSessionEl && lifecycleSessionEl.checked),
+            };
+
+            setLifecycleStatus('Saving...');
+            sdk.setLifecycleTrackingOptions(options)
+                .then(function () {
+                    setLifecycleStatus('setLifecycleTrackingOptions: success');
+                })
+                .catch(function (err) {
+                    setLifecycleStatus('setLifecycleTrackingOptions: error: ' + (err && err.message ? err.message : String(err)));
                 });
         });
     }

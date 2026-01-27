@@ -14,6 +14,10 @@ export const routes: Routes = [
     loadComponent: () => import('./home/home.page').then((m) => m.HomePage),
   },
   {
+    path: 'lifecycle',
+    loadComponent: () => import('./lifecycle/lifecycle.page').then((m) => m.LifecyclePage),
+  },
+  {
     path: '',
     redirectTo: 'main',
     pathMatch: 'full',

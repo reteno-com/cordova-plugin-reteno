@@ -503,7 +503,6 @@ function onDeviceReady() {
                     pushReceivedHandler = function (event) {
                         var detail = event && event.detail !== undefined ? event.detail : event;
                         var message = 'Push received event: ' + safeStringify(detail);
-                        setPushReceivedEvent(message);
                         appendEventItem(pushReceivedEventListEl, message);
                     };
                     sdk.setOnRetenoPushReceivedListener(pushReceivedHandler);
@@ -538,7 +537,6 @@ function onDeviceReady() {
                     notificationClickedHandler = function (event) {
                         var detail = event && event.detail !== undefined ? event.detail : event;
                         var message = 'Notification clicked event: ' + safeStringify(detail);
-                        setNotificationClickedEvent(message);
                         appendEventItem(notificationClickedEventListEl, message);
                     };
                     sdk.setOnRetenoNotificationClickedListener(notificationClickedHandler);

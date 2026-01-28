@@ -65,9 +65,9 @@
 
 @if (pushReceivedEvents.length) {
   <ion-list>
-    @for (event of pushReceivedEvents; track event) {
+    @for (event of pushReceivedEvents; track event.key) {
       <ion-item>
-        <ion-label>{{ event }}</ion-label>
+        <ion-label>{{ event.text }}</ion-label>
       </ion-item>
     }
   </ion-list>
@@ -81,9 +81,9 @@
 
 @if (notificationClickedEvents.length) {
   <ion-list>
-    @for (event of notificationClickedEvents; track event) {
+    @for (event of notificationClickedEvents; track event.key) {
       <ion-item>
-        <ion-label>{{ event }}</ion-label>
+        <ion-label>{{ event.text }}</ion-label>
       </ion-item>
     }
   </ion-list>

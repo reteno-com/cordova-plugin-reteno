@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, NgZone, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { RetenoService } from '../services/reteno.service';
@@ -13,8 +13,8 @@ export class NotificationsPage implements OnInit {
   status: string | null = null;
   pushListenerStatus: string | null = null;
   clickListenerStatus: string | null = null;
-  pushReceivedEvents: string[] = [];
-  notificationClickedEvents: string[] = [];
+  pushReceivedEvents: { key: string; text: string }[] = [];
+  notificationClickedEvents: { key: string; text: string }[] = [];
   isPushListenerEnabled = false;
   isNotificationClickListenerEnabled = false;
 
@@ -23,6 +23,7 @@ export class NotificationsPage implements OnInit {
 
   private readonly formBuilder = inject(FormBuilder);
   private readonly reteno = inject(RetenoService);
+  private readonly zone = inject(NgZone);
 
   form = this.formBuilder.group({
     name: this.formBuilder.control<string>('Updates', {
@@ -67,9 +68,11 @@ export class NotificationsPage implements OnInit {
     if (enabled && !this.pushListenerHandler) {
       this.pushListenerStatus = 'Listening for push received events...';
       this.pushListenerHandler = this.reteno.setOnRetenoPushReceivedListener((payload) => {
-        const message = `Push received event: ${this.safeStringify(payload)}`;
-        this.pushListenerStatus = message;
-        this.pushReceivedEvents.unshift(message);
+        this.zone.run(() => {
+          const message = this.buildEventMessage('Push received', payload);
+          // this.pushListenerStatus = message;
+          this.addEvent(this.pushReceivedEvents, 'Push received', payload, message);
+        });
       });
       this.isPushListenerEnabled = true;
       return;
@@ -87,9 +90,11 @@ export class NotificationsPage implements OnInit {
     if (enabled && !this.clickListenerHandler) {
       this.clickListenerStatus = 'Listening for notification click events...';
       this.clickListenerHandler = this.reteno.setOnRetenoNotificationClickedListener((payload) => {
-        const message = `Notification clicked event: ${this.safeStringify(payload)}`;
-        this.clickListenerStatus = message;
-        this.notificationClickedEvents.unshift(message);
+        this.zone.run(() => {
+          const message = this.buildEventMessage('Notification clicked', payload);
+          // this.clickListenerStatus = message;
+          this.addEvent(this.notificationClickedEvents, 'Notification clicked', payload, message);
+        });
       });
       this.isNotificationClickListenerEnabled = true;
       return;
@@ -101,6 +106,79 @@ export class NotificationsPage implements OnInit {
       this.isNotificationClickListenerEnabled = false;
       this.clickListenerStatus = 'Notification click listener removed.';
     }
+  }
+
+  private buildEventMessage(label: string, payload: unknown): string {
+    const dateText = this.extractDate(payload);
+    const details = this.safeStringify(payload);
+    if (dateText) {
+      return `${label} event (${dateText}): ${details}`;
+    }
+    return `${label} event: ${details}`;
+  }
+
+  private extractDate(payload: unknown): string | null {
+    if (!payload || typeof payload !== 'object') {
+      return null;
+    }
+    const data = payload as Record<string, unknown>;
+    const candidate =
+      data['date'] ??
+      data['timestamp'] ??
+      data['sentTime'] ??
+      data['sendTime'] ??
+      data['sent_time'] ??
+      data['receivedAt'] ??
+      data['received_at'] ??
+      data['pushDate'] ??
+      data['pushTime'];
+    if (candidate == null) {
+      return null;
+    }
+    if (typeof candidate === 'number') {
+      return new Date(candidate).toISOString();
+    }
+    if (typeof candidate === 'string') {
+      const parsed = Date.parse(candidate);
+      if (!Number.isNaN(parsed)) {
+        return new Date(parsed).toISOString();
+      }
+      return candidate;
+    }
+    return null;
+  }
+
+  private addEvent(
+    list: { key: string; text: string }[],
+    label: string,
+    payload: unknown,
+    text: string
+  ): void {
+    const key = this.buildEventKey(label, payload, text);
+    if (list.some((item) => item.key === key)) {
+      return;
+    }
+    list.unshift({ key, text });
+  }
+
+  private buildEventKey(label: string, payload: unknown, fallback: string): string {
+    if (payload && typeof payload === 'object') {
+      const data = payload as Record<string, unknown>;
+      const candidate =
+        data['id'] ??
+        data['messageId'] ??
+        data['message_id'] ??
+        data['es_interaction_id'] ??
+        data['interactionId'] ??
+        data['notificationId'] ??
+        data['notification_id'] ??
+        data['pushId'] ??
+        data['push_id'];
+      if (candidate != null) {
+        return `${label}:${String(candidate)}`;
+      }
+    }
+    return `${label}:${fallback}`;
   }
 
   private safeStringify(payload: unknown): string {

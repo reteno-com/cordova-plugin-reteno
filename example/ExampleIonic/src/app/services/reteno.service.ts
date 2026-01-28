@@ -168,9 +168,10 @@ export class RetenoService {
   }
 
   setOnRetenoPushReceivedListener(listener: (payload: unknown) => void): (event: Event) => void {
-    const handler = (event: Event) => {
-      const detail = (event as CustomEvent).detail;
-      listener(detail);
+    const handler = (eventOrPayload: Event | unknown) => {
+      const detail = (eventOrPayload as CustomEvent).detail;
+      const payload = detail !== undefined ? detail : eventOrPayload;
+      listener(payload);
     };
     const sdk = window.retenosdk;
     if (sdk?.setOnRetenoPushReceivedListener) {
@@ -191,9 +192,10 @@ export class RetenoService {
   }
 
   setOnRetenoNotificationClickedListener(listener: (payload: unknown) => void): (event: Event) => void {
-    const handler = (event: Event) => {
-      const detail = (event as CustomEvent).detail;
-      listener(detail);
+    const handler = (eventOrPayload: Event | unknown) => {
+      const detail = (eventOrPayload as CustomEvent).detail;
+      const payload = detail !== undefined ? detail : eventOrPayload;
+      listener(payload);
     };
     const sdk = window.retenosdk;
     if (sdk?.setOnRetenoNotificationClickedListener) {

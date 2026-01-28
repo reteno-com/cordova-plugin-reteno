@@ -7,6 +7,15 @@ module.exports = function (context) {
   const path = require('path');
   const fs = require('fs');
 
+  const cmdLine = (context && context.cmdLine) ? String(context.cmdLine) : '';
+  if (!cmdLine || cmdLine.indexOf('cordova') === -1) {
+    return;
+  }
+
+  if (/\bplugin\s+(rm|remove|uninstall)\b/i.test(cmdLine)) {
+    return;
+  }
+
   function resolveProjectRoot() {
     const candidates = [
       opts && opts.projectRoot,
@@ -50,7 +59,6 @@ module.exports = function (context) {
   }
 
   function readVarFromCmdLine(varName) {
-    const cmdLine = (context && context.cmdLine) ? String(context.cmdLine) : '';
     if (!cmdLine) return undefined;
 
     // Supports: --variable NAME=value

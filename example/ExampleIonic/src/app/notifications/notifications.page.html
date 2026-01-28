@@ -32,14 +32,66 @@
       </ion-item>
     </ion-list>
 
-    <ion-button expand="block" [disabled]="form.invalid" (click)="apply()">
-      Apply
-    </ion-button>
-  </form>
+  <ion-button expand="block" [disabled]="form.invalid" (click)="apply()">
+    Apply
+  </ion-button>
+</form>
 
-  @if (status) {
-    <ion-text class="status">
-      <p>{{ status }}</p>
-    </ion-text>
-  }
+<ion-list>
+  <ion-item>
+    <ion-toggle
+      [checked]="isPushListenerEnabled"
+      (ionChange)="togglePushListener($event.detail.checked)"
+    >
+      Push received listener
+    </ion-toggle>
+  </ion-item>
+
+  <ion-item>
+    <ion-toggle
+      [checked]="isNotificationClickListenerEnabled"
+      (ionChange)="toggleNotificationClickListener($event.detail.checked)"
+    >
+      Notification clicked listener
+    </ion-toggle>
+  </ion-item>
+</ion-list>
+
+@if (pushListenerStatus) {
+  <ion-text class="status">
+    <p>{{ pushListenerStatus }}</p>
+  </ion-text>
+}
+
+@if (pushReceivedEvents.length) {
+  <ion-list>
+    @for (event of pushReceivedEvents; track event) {
+      <ion-item>
+        <ion-label>{{ event }}</ion-label>
+      </ion-item>
+    }
+  </ion-list>
+}
+
+@if (clickListenerStatus) {
+  <ion-text class="status">
+    <p>{{ clickListenerStatus }}</p>
+  </ion-text>
+}
+
+@if (notificationClickedEvents.length) {
+  <ion-list>
+    @for (event of notificationClickedEvents; track event) {
+      <ion-item>
+        <ion-label>{{ event }}</ion-label>
+      </ion-item>
+    }
+  </ion-list>
+}
+
+@if (status) {
+  <ion-text class="status">
+    <p>{{ status }}</p>
+  </ion-text>
+}
 </ion-content>

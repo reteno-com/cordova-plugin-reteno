@@ -26,6 +26,9 @@ declare global {
         error?: (err: unknown) => void
       ) => Promise<unknown>;
       setOnRetenoPushReceivedListener?: (listener: (event: Event) => void) => void;
+      setOnRetenoNotificationClickedListener?: (listener: (event: Event) => void) => void;
+      removeOnRetenoPushReceivedListener?: (listener: (event: Event) => void) => void;
+      removeOnRetenoNotificationClickedListener?: (listener: (event: Event) => void) => void;
       setDeviceToken?: (token: string, success?: () => void, error?: (err: unknown) => void) => Promise<void>;
       setLifecycleTrackingOptions?: (
         options: unknown,
@@ -162,5 +165,51 @@ export class RetenoService {
       const detail = (event as CustomEvent).detail;
       listener(detail);
     });
+  }
+
+  setOnRetenoPushReceivedListener(listener: (payload: unknown) => void): (event: Event) => void {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent).detail;
+      listener(detail);
+    };
+    const sdk = window.retenosdk;
+    if (sdk?.setOnRetenoPushReceivedListener) {
+      sdk.setOnRetenoPushReceivedListener(handler);
+    } else {
+      document.addEventListener('reteno-push-received', handler);
+    }
+    return handler;
+  }
+
+  removeOnRetenoPushReceivedListener(handler: (event: Event) => void): void {
+    const sdk = window.retenosdk;
+    if (sdk?.removeOnRetenoPushReceivedListener) {
+      sdk.removeOnRetenoPushReceivedListener(handler);
+      return;
+    }
+    document.removeEventListener('reteno-push-received', handler);
+  }
+
+  setOnRetenoNotificationClickedListener(listener: (payload: unknown) => void): (event: Event) => void {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent).detail;
+      listener(detail);
+    };
+    const sdk = window.retenosdk;
+    if (sdk?.setOnRetenoNotificationClickedListener) {
+      sdk.setOnRetenoNotificationClickedListener(handler);
+    } else {
+      document.addEventListener('reteno-notification-clicked', handler);
+    }
+    return handler;
+  }
+
+  removeOnRetenoNotificationClickedListener(handler: (event: Event) => void): void {
+    const sdk = window.retenosdk;
+    if (sdk?.removeOnRetenoNotificationClickedListener) {
+      sdk.removeOnRetenoNotificationClickedListener(handler);
+      return;
+    }
+    document.removeEventListener('reteno-notification-clicked', handler);
   }
 }

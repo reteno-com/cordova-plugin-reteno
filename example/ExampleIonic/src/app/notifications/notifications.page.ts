@@ -11,6 +11,15 @@ import { RetenoService } from '../services/reteno.service';
 })
 export class NotificationsPage implements OnInit {
   status: string | null = null;
+  pushListenerStatus: string | null = null;
+  clickListenerStatus: string | null = null;
+  pushReceivedEvents: string[] = [];
+  notificationClickedEvents: string[] = [];
+  isPushListenerEnabled = false;
+  isNotificationClickListenerEnabled = false;
+
+  private pushListenerHandler: ((event: Event) => void) | null = null;
+  private clickListenerHandler: ((event: Event) => void) | null = null;
 
   private readonly formBuilder = inject(FormBuilder);
   private readonly reteno = inject(RetenoService);
@@ -52,5 +61,53 @@ export class NotificationsPage implements OnInit {
         // eslint-disable-next-line no-console
         console.error('updateDefaultNotificationChannel: ERROR', err);
       });
+  }
+
+  togglePushListener(enabled: boolean) {
+    if (enabled && !this.pushListenerHandler) {
+      this.pushListenerStatus = 'Listening for push received events...';
+      this.pushListenerHandler = this.reteno.setOnRetenoPushReceivedListener((payload) => {
+        const message = `Push received event: ${this.safeStringify(payload)}`;
+        this.pushListenerStatus = message;
+        this.pushReceivedEvents.unshift(message);
+      });
+      this.isPushListenerEnabled = true;
+      return;
+    }
+
+    if (!enabled && this.pushListenerHandler) {
+      this.reteno.removeOnRetenoPushReceivedListener(this.pushListenerHandler);
+      this.pushListenerHandler = null;
+      this.isPushListenerEnabled = false;
+      this.pushListenerStatus = 'Push received listener removed.';
+    }
+  }
+
+  toggleNotificationClickListener(enabled: boolean) {
+    if (enabled && !this.clickListenerHandler) {
+      this.clickListenerStatus = 'Listening for notification click events...';
+      this.clickListenerHandler = this.reteno.setOnRetenoNotificationClickedListener((payload) => {
+        const message = `Notification clicked event: ${this.safeStringify(payload)}`;
+        this.clickListenerStatus = message;
+        this.notificationClickedEvents.unshift(message);
+      });
+      this.isNotificationClickListenerEnabled = true;
+      return;
+    }
+
+    if (!enabled && this.clickListenerHandler) {
+      this.reteno.removeOnRetenoNotificationClickedListener(this.clickListenerHandler);
+      this.clickListenerHandler = null;
+      this.isNotificationClickListenerEnabled = false;
+      this.clickListenerStatus = 'Notification click listener removed.';
+    }
+  }
+
+  private safeStringify(payload: unknown): string {
+    try {
+      return JSON.stringify(payload);
+    } catch (err) {
+      return String(payload);
+    }
   }
 }

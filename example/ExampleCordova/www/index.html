@@ -280,6 +280,27 @@
 
                     <pre id="retenoNotificationStatus" class="reteno-status" aria-live="polite"></pre>
                 </div>
+
+                <div class="reteno-form" aria-label="Reteno notification listeners">
+                    <h2>Reteno: notification listeners</h2>
+
+                    <label class="toggle-row">
+                        <span class="toggle-label">setOnRetenoPushReceivedListener</span>
+                        <input id="retenoPushReceivedListenerToggle" class="toggle-input" type="checkbox">
+                        <span class="toggle-ui" aria-hidden="true"></span>
+                    </label>
+
+                    <label class="toggle-row">
+                        <span class="toggle-label">setOnRetenoNotificationClickedListener</span>
+                        <input id="retenoNotificationClickedListenerToggle" class="toggle-input" type="checkbox">
+                        <span class="toggle-ui" aria-hidden="true"></span>
+                    </label>
+
+                    <pre id="retenoPushReceivedEvent" class="reteno-status" aria-live="polite"></pre>
+                    <pre id="retenoNotificationClickedEvent" class="reteno-status" aria-live="polite"></pre>
+                    <ul id="retenoPushReceivedEventList" class="reteno-event-list" aria-label="Push received events"></ul>
+                    <ul id="retenoNotificationClickedEventList" class="reteno-event-list" aria-label="Notification clicked events"></ul>
+                </div>
             </section>
         </div>
         <script src="cordova.js"></script>

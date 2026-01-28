@@ -39,6 +39,10 @@ function onDeviceReady() {
     var eventStatusEl = document.getElementById('retenoEventStatus');
     var lifecycleStatusEl = document.getElementById('retenoLifecycleStatus');
     var notificationStatusEl = document.getElementById('retenoNotificationStatus');
+    var pushReceivedEventEl = document.getElementById('retenoPushReceivedEvent');
+    var notificationClickedEventEl = document.getElementById('retenoNotificationClickedEvent');
+    var pushReceivedEventListEl = document.getElementById('retenoPushReceivedEventList');
+    var notificationClickedEventListEl = document.getElementById('retenoNotificationClickedEventList');
     var externalUserIdEl = document.getElementById('retenoExternalUserId');
     var multiAccountEl = document.getElementById('retenoMultiAccount');
     var anonymousUserEl = document.getElementById('retenoAnonymousUser');
@@ -46,6 +50,8 @@ function onDeviceReady() {
     var logEventBtn = document.getElementById('retenoLogEventBtn');
     var lifecycleSaveBtn = document.getElementById('retenoLifecycleSaveBtn');
     var notificationApplyBtn = document.getElementById('retenoNotificationApplyBtn');
+    var pushReceivedListenerToggle = document.getElementById('retenoPushReceivedListenerToggle');
+    var notificationClickedListenerToggle = document.getElementById('retenoNotificationClickedListenerToggle');
 
     var emailEl = document.getElementById('retenoEmail');
     var phoneEl = document.getElementById('retenoPhone');
@@ -134,6 +140,18 @@ function onDeviceReady() {
         }
     }
 
+    function setPushReceivedEvent(text) {
+        if (pushReceivedEventEl) {
+            pushReceivedEventEl.textContent = text;
+        }
+    }
+
+    function setNotificationClickedEvent(text) {
+        if (notificationClickedEventEl) {
+            notificationClickedEventEl.textContent = text;
+        }
+    }
+
     function getRetenoSdk() {
         return (window && window.retenosdk) ? window.retenosdk : null;
     }
@@ -160,6 +178,28 @@ function onDeviceReady() {
         setFieldGroupVisibility(emailGroupEl, !isAnonymous);
         setFieldGroupVisibility(phoneGroupEl, !isAnonymous);
     }
+
+    function safeStringify(payload) {
+        try {
+            return JSON.stringify(payload);
+        } catch (err) {
+            return String(payload);
+        }
+    }
+
+    function appendEventItem(listEl, text) {
+        if (!listEl) return;
+        var item = document.createElement('li');
+        item.textContent = text;
+        if (listEl.firstChild) {
+            listEl.insertBefore(item, listEl.firstChild);
+        } else {
+            listEl.appendChild(item);
+        }
+    }
+
+    var pushReceivedHandler = null;
+    var notificationClickedHandler = null;
 
     function logScreenView(screenName) {
         var sdk = getRetenoSdk();
@@ -446,6 +486,76 @@ function onDeviceReady() {
                 .catch(function (err) {
                     setNotificationStatus('updateDefaultNotificationChannel: error: ' + (err && err.message ? err.message : String(err)));
                 });
+        });
+    }
+
+    if (pushReceivedListenerToggle) {
+        pushReceivedListenerToggle.addEventListener('change', function () {
+            var sdk = getRetenoSdk();
+            if (!sdk || typeof sdk.setOnRetenoPushReceivedListener !== 'function') {
+                setPushReceivedEvent('setOnRetenoPushReceivedListener: not available.');
+                pushReceivedListenerToggle.checked = false;
+                return;
+            }
+
+            if (pushReceivedListenerToggle.checked) {
+                if (!pushReceivedHandler) {
+                    pushReceivedHandler = function (event) {
+                        var detail = event && event.detail !== undefined ? event.detail : event;
+                        var message = 'Push received event: ' + safeStringify(detail);
+                        setPushReceivedEvent(message);
+                        appendEventItem(pushReceivedEventListEl, message);
+                    };
+                    sdk.setOnRetenoPushReceivedListener(pushReceivedHandler);
+                    setPushReceivedEvent('Listening for push received events...');
+                }
+                return;
+            }
+
+            if (pushReceivedHandler) {
+                if (sdk && typeof sdk.removeOnRetenoPushReceivedListener === 'function') {
+                    sdk.removeOnRetenoPushReceivedListener(pushReceivedHandler);
+                } else {
+                    document.removeEventListener('reteno-push-received', pushReceivedHandler);
+                }
+                pushReceivedHandler = null;
+                setPushReceivedEvent('Push received listener removed.');
+            }
+        });
+    }
+
+    if (notificationClickedListenerToggle) {
+        notificationClickedListenerToggle.addEventListener('change', function () {
+            var sdk = getRetenoSdk();
+            if (!sdk || typeof sdk.setOnRetenoNotificationClickedListener !== 'function') {
+                setNotificationClickedEvent('setOnRetenoNotificationClickedListener: not available.');
+                notificationClickedListenerToggle.checked = false;
+                return;
+            }
+
+            if (notificationClickedListenerToggle.checked) {
+                if (!notificationClickedHandler) {
+                    notificationClickedHandler = function (event) {
+                        var detail = event && event.detail !== undefined ? event.detail : event;
+                        var message = 'Notification clicked event: ' + safeStringify(detail);
+                        setNotificationClickedEvent(message);
+                        appendEventItem(notificationClickedEventListEl, message);
+                    };
+                    sdk.setOnRetenoNotificationClickedListener(notificationClickedHandler);
+                    setNotificationClickedEvent('Listening for notification click events...');
+                }
+                return;
+            }
+
+            if (notificationClickedHandler) {
+                if (sdk && typeof sdk.removeOnRetenoNotificationClickedListener === 'function') {
+                    sdk.removeOnRetenoNotificationClickedListener(notificationClickedHandler);
+                } else {
+                    document.removeEventListener('reteno-notification-clicked', notificationClickedHandler);
+                }
+                notificationClickedHandler = null;
+                setNotificationClickedEvent('Notification click listener removed.');
+            }
         });
     }
 }

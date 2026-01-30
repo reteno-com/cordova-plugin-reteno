@@ -300,6 +300,24 @@ function __callWithAutoInit(action, args, success, error) {
       return __callWithAutoInit('forcePushData', [], success, error);
     },
 
+    /*
+        isPaused: boolean
+        */
+    pauseInAppMessages: function (arg0, success, error) {
+      var isPaused = !!arg0;
+      return __callWithAutoInit('pauseInAppMessages', [isPaused], success, error);
+    },
+
+    /*
+        behaviour: 'SKIP_IN_APPS' | 'POSTPONE_IN_APPS'
+        */
+    setInAppMessagesPauseBehaviour: function (arg0, success, error) {
+      if (!arg0 || typeof arg0 !== 'string') {
+        return Promise.reject(new Error("Missing argument: behaviour ('SKIP_IN_APPS' or 'POSTPONE_IN_APPS')"));
+      }
+      return __callWithAutoInit('setInAppMessagesPauseBehaviour', [arg0], success, error);
+    },
+
     requestNotificationPermission: function (success, error) {
       // If Reteno isn't initialized yet, permission can still be requested,
       // but Reteno's internal status update will fail until init().

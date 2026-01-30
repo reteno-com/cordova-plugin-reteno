@@ -21,6 +21,7 @@ import com.reteno.core.Reteno;
 import com.reteno.core.RetenoConfig;
 import com.reteno.core.domain.callback.appinbox.RetenoResultCallback;
 import com.reteno.core.domain.model.event.LifecycleTrackingOptions;
+import com.reteno.core.domain.model.interaction.InAppPauseBehaviour;
 import com.reteno.core.domain.model.appinbox.AppInboxMessage;
 import com.reteno.core.domain.model.appinbox.AppInboxMessages;
 import com.reteno.core.domain.model.user.User;
@@ -342,6 +343,34 @@ public class RetenoPlugin extends CordovaPlugin {
       return true;
     }
 
+    if ("pauseInAppMessages".equals(action)) {
+      cordova.getThreadPool().execute(new Runnable() {
+        @Override
+        public void run() {
+          try {
+            pauseInAppMessages(args, callbackContext);
+          } catch (Exception e) {
+            callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
+          }
+        }
+      });
+      return true;
+    }
+
+    if ("setInAppMessagesPauseBehaviour".equals(action)) {
+      cordova.getThreadPool().execute(new Runnable() {
+        @Override
+        public void run() {
+          try {
+            setInAppMessagesPauseBehaviour(args, callbackContext);
+          } catch (Exception e) {
+            callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
+          }
+        }
+      });
+      return true;
+    }
+
     return false;
   }
 
@@ -401,6 +430,66 @@ public class RetenoPlugin extends CordovaPlugin {
 
     initialized = true;
     callbackContext.success(1);
+  }
+
+  private void pauseInAppMessages(JSONArray args, CallbackContext callbackContext) {
+    boolean isPaused = false;
+    if (args != null && args.length() > 0) {
+      Object arg0 = args.opt(0);
+      if (arg0 instanceof Boolean) {
+        isPaused = (Boolean) arg0;
+      } else if (arg0 instanceof JSONObject) {
+        isPaused = ((JSONObject) arg0).optBoolean("isPaused", false);
+      } else if (arg0 instanceof JSONArray) {
+        isPaused = ((JSONArray) arg0).optBoolean(0, false);
+      }
+    }
+
+    try {
+      Reteno reteno = getRetenoInstanceOrThrow();
+      reteno.pauseInAppMessages(isPaused);
+      callbackContext.success(1);
+    } catch (Exception e) {
+      callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
+    }
+  }
+
+  private void setInAppMessagesPauseBehaviour(JSONArray args, CallbackContext callbackContext) {
+    String behaviour = null;
+    if (args != null && args.length() > 0) {
+      Object arg0 = args.opt(0);
+      if (arg0 instanceof String) {
+        behaviour = (String) arg0;
+      } else if (arg0 instanceof JSONObject) {
+        behaviour = ((JSONObject) arg0).optString("behaviour", null);
+      } else if (arg0 instanceof JSONArray) {
+        behaviour = ((JSONArray) arg0).optString(0, null);
+      }
+    }
+
+    if (behaviour == null || behaviour.trim().isEmpty()) {
+      callbackContext.error("Missing argument: behaviour ('SKIP_IN_APPS' or 'POSTPONE_IN_APPS')");
+      return;
+    }
+
+    InAppPauseBehaviour parsedBehaviour;
+    String normalized = behaviour.trim().toUpperCase();
+    if ("SKIP_IN_APPS".equals(normalized)) {
+      parsedBehaviour = InAppPauseBehaviour.SKIP_IN_APPS;
+    } else if ("POSTPONE_IN_APPS".equals(normalized)) {
+      parsedBehaviour = InAppPauseBehaviour.POSTPONE_IN_APPS;
+    } else {
+      callbackContext.error("Invalid argument: behaviour must be 'SKIP_IN_APPS' or 'POSTPONE_IN_APPS'");
+      return;
+    }
+
+    try {
+      Reteno reteno = getRetenoInstanceOrThrow();
+      reteno.setInAppMessagesPauseBehaviour(parsedBehaviour);
+      callbackContext.success(1);
+    } catch (Exception e) {
+      callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
+    }
   }
 
   private void requestNotificationPermission(CallbackContext callbackContext) {

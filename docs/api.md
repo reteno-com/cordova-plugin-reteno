@@ -16,6 +16,8 @@ Notes:
 | [logEvent](../www/cordova-plugin-reteno.js)                        | iOS, Android       | [Types](../types/index.ts)                                                                                                                        |
 | [logScreenView](../www/cordova-plugin-reteno.js)                   | Android            | Logs a screen view for manual tracking.                                                                                                           |
 | [forcePushData](../www/cordova-plugin-reteno.js)                   | Android            | Forces Reteno to sync push data for the current device.                                                                                           |
+| [pauseInAppMessages](../www/cordova-plugin-reteno.js)             | Android            | Pauses or resumes in-app messages at runtime. Pass `true` to pause, `false` to resume.                                                            |
+| [setInAppMessagesPauseBehaviour](../www/cordova-plugin-reteno.js) | Android            | Sets how paused in-app messages are handled: `SKIP_IN_APPS` or `POSTPONE_IN_APPS`. [Types](../types/index.ts)                                     |
 | [getInitialNotification](../www/cordova-plugin-reteno.js)          | iOS, Android       | Returns push notification that triggered creating app instance                                                                                    |
 | [setOnRetenoPushReceivedListener](../www/cordova-plugin-reteno.js) | iOS, Android       | Sets listener for newly received push notification.                                                                                               |
 | [removeOnRetenoPushReceivedListener](../www/cordova-plugin-reteno.js) | iOS, Android       | Removes listener for push notification received events.                                                                                           |
@@ -223,6 +225,38 @@ retenosdk
   .forcePushData()
   .then(() => console.log('forcePushData: OK'))
   .catch((err) => console.error('forcePushData: ERROR', err));
+```
+
+### pauseInAppMessages example
+
+Pause or resume in-app messages at runtime.
+
+```js
+// Pause in-app messages
+retenosdk.pauseInAppMessages(true)
+  .then(() => console.log('pauseInAppMessages: paused'))
+  .catch((err) => console.error('pauseInAppMessages: ERROR', err));
+
+// Resume in-app messages
+retenosdk.pauseInAppMessages(false)
+  .then(() => console.log('pauseInAppMessages: resumed'))
+  .catch((err) => console.error('pauseInAppMessages: ERROR', err));
+```
+
+### setInAppMessagesPauseBehaviour example
+
+Configure how paused in-app messages are handled (requires Reteno SDK v2.0.3+). Type: `InAppPauseBehaviour` in [types](../types/index.ts).
+
+```js
+// Discard messages received while paused
+retenosdk.setInAppMessagesPauseBehaviour('SKIP_IN_APPS')
+  .then(() => console.log('setInAppMessagesPauseBehaviour: OK'))
+  .catch((err) => console.error('setInAppMessagesPauseBehaviour: ERROR', err));
+
+// Save the first queued message and display it when unpaused
+retenosdk.setInAppMessagesPauseBehaviour('POSTPONE_IN_APPS')
+  .then(() => console.log('setInAppMessagesPauseBehaviour: OK'))
+  .catch((err) => console.error('setInAppMessagesPauseBehaviour: ERROR', err));
 ```
 
 ### setDeviceToken example

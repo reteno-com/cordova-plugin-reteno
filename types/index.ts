@@ -75,6 +75,8 @@ export type RetenoInitializeOptions = {
   lifecycleTrackingOptions?: LifecycleTrackingOptions;
 };
 
+export type InAppPauseBehaviour = 'SKIP_IN_APPS' | 'POSTPONE_IN_APPS';
+
 export type NotificationChannelConfig = {
   name: string;
   description: string;

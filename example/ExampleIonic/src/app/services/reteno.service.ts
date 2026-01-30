@@ -60,6 +60,19 @@ declare global {
         success?: () => void,
         error?: (err: unknown) => void
       ) => Promise<void>;
+      pauseInAppMessages?: (isPaused: boolean, success?: () => void, error?: (err: unknown) => void) => Promise<void>;
+      setInAppMessagesPauseBehaviour?: (
+        behaviour: string,
+        success?: () => void,
+        error?: (err: unknown) => void
+      ) => Promise<void>;
+      setOnInAppLifecycleCallback?: (
+        listener: ((event: Event) => void) | null,
+        success?: () => void,
+        error?: (err: unknown) => void
+      ) => Promise<unknown> | void;
+      setOnInAppMessageCustomDataReceivedListener?: (listener: (event: Event) => void) => void;
+      removeOnInAppMessageCustomDataReceivedListener?: (listener: (event: Event) => void) => void;
       getAppInboxMessages?: (
         payload: { page: number; pageSize: number; status?: string },
         success?: (result: unknown) => void,
@@ -187,6 +200,69 @@ export class RetenoService {
       return Promise.reject(new Error('retenosdk.updateDefaultNotificationChannel is not available'));
     }
     return sdk.updateDefaultNotificationChannel(config);
+  }
+
+  pauseInAppMessages(isPaused: boolean): Promise<void> {
+    const sdk = window.retenosdk;
+    if (!sdk?.pauseInAppMessages) {
+      return Promise.reject(new Error('retenosdk.pauseInAppMessages is not available'));
+    }
+    return sdk.pauseInAppMessages(isPaused);
+  }
+
+  setInAppMessagesPauseBehaviour(behaviour: string): Promise<void> {
+    const sdk = window.retenosdk;
+    if (!sdk?.setInAppMessagesPauseBehaviour) {
+      return Promise.reject(new Error('retenosdk.setInAppMessagesPauseBehaviour is not available'));
+    }
+    return sdk.setInAppMessagesPauseBehaviour(behaviour);
+  }
+
+  setOnInAppLifecycleCallback(listener: (payload: unknown) => void): (event: Event) => void {
+    const handler = (eventOrPayload: Event | unknown) => {
+      const detail = (eventOrPayload as CustomEvent).detail;
+      const payload = detail !== undefined ? detail : eventOrPayload;
+      listener(payload);
+    };
+    const sdk = window.retenosdk;
+    if (sdk?.setOnInAppLifecycleCallback) {
+      sdk.setOnInAppLifecycleCallback(handler);
+    } else {
+      document.addEventListener('reteno-in-app-lifecycle', handler);
+    }
+    return handler;
+  }
+
+  removeOnInAppLifecycleCallback(handler: (event: Event) => void): void {
+    const sdk = window.retenosdk;
+    if (sdk?.setOnInAppLifecycleCallback) {
+      sdk.setOnInAppLifecycleCallback(null);
+    }
+    document.removeEventListener('reteno-in-app-lifecycle', handler);
+  }
+
+  setOnInAppMessageCustomDataReceivedListener(listener: (payload: unknown) => void): (event: Event) => void {
+    const handler = (eventOrPayload: Event | unknown) => {
+      const detail = (eventOrPayload as CustomEvent).detail;
+      const payload = detail !== undefined ? detail : eventOrPayload;
+      listener(payload);
+    };
+    const sdk = window.retenosdk;
+    if (sdk?.setOnInAppMessageCustomDataReceivedListener) {
+      sdk.setOnInAppMessageCustomDataReceivedListener(handler);
+    } else {
+      document.addEventListener('reteno-in-app-custom-data', handler);
+    }
+    return handler;
+  }
+
+  removeOnInAppMessageCustomDataReceivedListener(handler: (event: Event) => void): void {
+    const sdk = window.retenosdk;
+    if (sdk?.removeOnInAppMessageCustomDataReceivedListener) {
+      sdk.removeOnInAppMessageCustomDataReceivedListener(handler);
+      return;
+    }
+    document.removeEventListener('reteno-in-app-custom-data', handler);
   }
 
   getAppInboxMessages(payload: { page: number; pageSize: number; status?: string }): Promise<unknown> {

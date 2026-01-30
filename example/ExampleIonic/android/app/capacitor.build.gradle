@@ -15,7 +15,7 @@ dependencies {
     implementation project(':capacitor-status-bar')
 
 }
-apply from: "../../../../src/android/reteno.gradle"
+apply from: "../../node_modules/cordova-plugin-reteno/src/android/reteno.gradle"
 
 if (hasProperty('postBuildExtras')) {
   postBuildExtras()

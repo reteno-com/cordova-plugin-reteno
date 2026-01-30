@@ -1,0 +1,101 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/main"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Reteno – In-App messages</ion-title>
+    <ion-buttons slot="end">
+      <ion-badge class="app-version" color="medium">v0.0.7</ion-badge>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <ion-list>
+    <ion-item>
+      <ion-toggle [checked]="isPaused" (ionChange)="togglePause($event.detail.checked)">
+        Pause in-app messages
+      </ion-toggle>
+    </ion-item>
+  </ion-list>
+
+  @if (pauseStatus) {
+    <ion-text class="status">
+      <p>{{ pauseStatus }}</p>
+    </ion-text>
+  }
+
+  <form [formGroup]="form">
+    <ion-item>
+      <ion-select
+        label="Pause behaviour"
+        labelPlacement="stacked"
+        interface="popover"
+        formControlName="behaviour"
+      >
+        <ion-select-option value="SKIP_IN_APPS">SKIP_IN_APPS</ion-select-option>
+        <ion-select-option value="POSTPONE_IN_APPS">POSTPONE_IN_APPS</ion-select-option>
+      </ion-select>
+    </ion-item>
+
+    <ion-button expand="block" (click)="applyPauseBehaviour()">Apply pause behaviour</ion-button>
+  </form>
+
+  @if (behaviourStatus) {
+    <ion-text class="status">
+      <p>{{ behaviourStatus }}</p>
+    </ion-text>
+  }
+
+  <ion-list>
+    <ion-item>
+      <ion-toggle
+        [checked]="isLifecycleEnabled"
+        (ionChange)="toggleLifecycle($event.detail.checked)"
+      >
+        In-app lifecycle listener
+      </ion-toggle>
+    </ion-item>
+
+    <ion-item>
+      <ion-toggle
+        [checked]="isCustomDataEnabled"
+        (ionChange)="toggleCustomData($event.detail.checked)"
+      >
+        In-app custom data listener
+      </ion-toggle>
+    </ion-item>
+  </ion-list>
+
+  @if (lifecycleStatus) {
+    <ion-text class="status">
+      <p>{{ lifecycleStatus }}</p>
+    </ion-text>
+  }
+
+  @if (lifecycleEvents.length) {
+    <ion-list>
+      @for (event of lifecycleEvents; track event.key) {
+        <ion-item>
+          <ion-label>{{ event.text }}</ion-label>
+        </ion-item>
+      }
+    </ion-list>
+  }
+
+  @if (customDataStatus) {
+    <ion-text class="status">
+      <p>{{ customDataStatus }}</p>
+    </ion-text>
+  }
+
+  @if (customDataEvents.length) {
+    <ion-list>
+      @for (event of customDataEvents; track event.key) {
+        <ion-item>
+          <ion-label>{{ event.text }}</ion-label>
+        </ion-item>
+      }
+    </ion-list>
+  }
+</ion-content>

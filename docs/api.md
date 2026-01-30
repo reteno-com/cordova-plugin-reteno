@@ -25,6 +25,7 @@ Notes:
 | [removeOnRetenoNotificationClickedListener](../www/cordova-plugin-reteno.js) | iOS, Android       | Removes listener for notification click events.                                                                                                   |
 | [setOnInAppMessageCustomDataReceivedListener](../www/cordova-plugin-reteno.js) | Android            | Sets listener for in-app message custom data events.                                                                                              |
 | [removeOnInAppMessageCustomDataReceivedListener](../www/cordova-plugin-reteno.js) | Android            | Removes listener for in-app message custom data events.                                                                                            |
+| [setOnInAppLifecycleCallback](../www/cordova-plugin-reteno.js)    | Android            | Subscribes to in-app message lifecycle events (beforeDisplay, onDisplay, beforeClose, afterClose, onError). Pass `null` to unsubscribe. [Types](../types/index.ts) |
 | [init](../www/cordova-plugin-reteno.js)                            | Android            | Initializes Reteno SDK. Accepts optional `RetenoInitializeOptions` with `pauseInAppMessages`, `lifecycleTrackingOptions` and `pausePushInAppMessages`. [Types](../types/index.ts) |
 | [requestNotificationPermission](../www/cordova-plugin-reteno.js)   | Android            | Requests `POST_NOTIFICATIONS` permission (Android 13+). Returns `0` or `1` (`RequestNotificationPermissionResult`) in [types](../types/index.ts). |
 | [updateDefaultNotificationChannel](../www/cordova-plugin-reteno.js) | Android            | Updates the default notification channel name and description for existing users. [Types](../types/index.ts)                                      |
@@ -257,6 +258,25 @@ retenosdk.setInAppMessagesPauseBehaviour('SKIP_IN_APPS')
 retenosdk.setInAppMessagesPauseBehaviour('POSTPONE_IN_APPS')
   .then(() => console.log('setInAppMessagesPauseBehaviour: OK'))
   .catch((err) => console.error('setInAppMessagesPauseBehaviour: ERROR', err));
+```
+
+### setOnInAppLifecycleCallback example
+
+Subscribe to in-app message lifecycle events. The listener receives events with `event` (lifecycle stage) and `data` (context-specific payload). Types: `InAppLifecyclePayload`, `InAppData`, `InAppCloseData`, `InAppErrorData` in [types](../types/index.ts).
+
+```js
+function onInAppLifecycle(event) {
+  var detail = event.detail || event;
+  console.log('In-app lifecycle:', detail.event, detail.data);
+  // detail.event is one of: 'beforeDisplay', 'onDisplay', 'beforeClose', 'afterClose', 'onError'
+  // detail.data contains: { id } for display events,
+  //   { id, closeAction } for close events, { id, errorMessage } for error events
+}
+
+retenosdk.setOnInAppLifecycleCallback(onInAppLifecycle);
+
+// Later, to unsubscribe:
+retenosdk.setOnInAppLifecycleCallback(null);
 ```
 
 ### setDeviceToken example

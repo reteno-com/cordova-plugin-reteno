@@ -267,6 +267,17 @@ function __callWithAutoInit(action, args, success, error) {
       if (typeof listener !== 'function') return;
       document.removeEventListener('reteno-in-app-custom-data', listener);
     },
+
+    setOnInAppLifecycleCallback: function (arg0, arg1) {
+      var listener = typeof arg0 === 'function' ? arg0 : arg1;
+      if (listener === null) {
+        return __callWithAutoInit('setInAppLifecycleCallback', [null]);
+      }
+      if (typeof listener !== 'function') return;
+      document.addEventListener('reteno-in-app-lifecycle', listener);
+      return __callWithAutoInit('setInAppLifecycleCallback', []);
+    },
+
     /*
         deviceToken: string
         */

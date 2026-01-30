@@ -16,11 +16,17 @@ import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
 
+import androidx.annotation.NonNull;
+
 import com.google.gson.Gson;
 import com.reteno.core.Reteno;
 import com.reteno.core.RetenoConfig;
 import com.reteno.core.domain.callback.appinbox.RetenoResultCallback;
 import com.reteno.core.domain.model.event.LifecycleTrackingOptions;
+import com.reteno.core.domain.model.interaction.InAppCloseData;
+import com.reteno.core.domain.model.interaction.InAppData;
+import com.reteno.core.domain.model.interaction.InAppErrorData;
+import com.reteno.core.domain.model.interaction.InAppLifecycleCallback;
 import com.reteno.core.domain.model.interaction.InAppPauseBehaviour;
 import com.reteno.core.domain.model.appinbox.AppInboxMessage;
 import com.reteno.core.domain.model.appinbox.AppInboxMessages;
@@ -371,6 +377,20 @@ public class RetenoPlugin extends CordovaPlugin {
       return true;
     }
 
+    if ("setInAppLifecycleCallback".equals(action)) {
+      cordova.getThreadPool().execute(new Runnable() {
+        @Override
+        public void run() {
+          try {
+            setInAppLifecycleCallback(args, callbackContext);
+          } catch (Exception e) {
+            callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
+          }
+        }
+      });
+      return true;
+    }
+
     return false;
   }
 
@@ -489,6 +509,92 @@ public class RetenoPlugin extends CordovaPlugin {
       callbackContext.success(1);
     } catch (Exception e) {
       callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
+    }
+  }
+
+  private void setInAppLifecycleCallback(JSONArray args, CallbackContext callbackContext) {
+    try {
+      Reteno reteno = getRetenoInstanceOrThrow();
+      if (args != null && args.length() > 0) {
+        Object arg0 = args.opt(0);
+        if (arg0 == null || arg0 == JSONObject.NULL) {
+          reteno.setInAppLifecycleCallback(null);
+          callbackContext.success(1);
+          return;
+        }
+      }
+      reteno.setInAppLifecycleCallback(new InAppLifecycleCallback() {
+        @Override
+        public void beforeDisplay(@NonNull InAppData inAppData) {
+          emitInAppLifecycleEvent("beforeDisplay", inAppDataToJson(inAppData));
+        }
+
+        @Override
+        public void onDisplay(@NonNull InAppData inAppData) {
+          emitInAppLifecycleEvent("onDisplay", inAppDataToJson(inAppData));
+        }
+
+        @Override
+        public void beforeClose(@NonNull InAppCloseData closeData) {
+          emitInAppLifecycleEvent("beforeClose", inAppCloseDataToJson(closeData));
+        }
+
+        @Override
+        public void afterClose(@NonNull InAppCloseData closeData) {
+          emitInAppLifecycleEvent("afterClose", inAppCloseDataToJson(closeData));
+        }
+
+        @Override
+        public void onError(@NonNull InAppErrorData errorData) {
+          emitInAppLifecycleEvent("onError", inAppErrorDataToJson(errorData));
+        }
+      });
+      callbackContext.success(1);
+    } catch (Exception e) {
+      callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
+    }
+  }
+
+  private void emitInAppLifecycleEvent(String event, JSONObject data) {
+    try {
+      JSONObject payload = new JSONObject();
+      payload.put("event", event);
+      payload.put("data", data != null ? data : new JSONObject());
+      emitJsEvent("reteno-in-app-lifecycle", payload);
+    } catch (Exception ignored) {
+      // ignore
+    }
+  }
+
+  private JSONObject inAppDataToJson(InAppData inAppData) {
+    try {
+      JSONObject json = new JSONObject();
+      json.put("id", inAppData.getId());
+      return json;
+    } catch (Exception e) {
+      return new JSONObject();
+    }
+  }
+
+  private JSONObject inAppCloseDataToJson(InAppCloseData closeData) {
+    try {
+      JSONObject json = new JSONObject();
+      json.put("id", closeData.getId());
+      json.put("closeAction", closeData.getCloseAction());
+      return json;
+    } catch (Exception e) {
+      return new JSONObject();
+    }
+  }
+
+  private JSONObject inAppErrorDataToJson(InAppErrorData errorData) {
+    try {
+      JSONObject json = new JSONObject();
+      json.put("id", errorData.getId());
+      json.put("errorMessage", errorData.getErrorMessage());
+      return json;
+    } catch (Exception e) {
+      return new JSONObject();
     }
   }
 

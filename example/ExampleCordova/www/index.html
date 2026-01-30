@@ -37,13 +37,45 @@
         <title>Hello World</title>
     </head>
     <body>
-        <div class="app-version">v0.0.7</div>
+        <div class="app-version">v0.0.8</div>
         <div class="app">
             <section class="page is-active" data-page="home" data-screen-name="Home">
                 <h1>Apache Cordova</h1>
                 <div id="deviceready" class="blink">
                     <p class="event listening">Connecting to Device</p>
                     <p class="event received">Device is Ready</p>
+                </div>
+
+                <div id="retenoInitOptions" class="reteno-form" aria-label="Reteno init options">
+                    <h2>Reteno: init options</h2>
+
+                    <label class="toggle-row">
+                        <span class="toggle-label">pauseInAppMessages</span>
+                        <input id="retenoInitPauseInAppMessages" class="toggle-input" type="checkbox">
+                        <span class="toggle-ui" aria-hidden="true"></span>
+                    </label>
+
+                    <label class="toggle-row">
+                        <span class="toggle-label">pausePushInAppMessages</span>
+                        <input id="retenoInitPausePushInAppMessages" class="toggle-input" type="checkbox">
+                        <span class="toggle-ui" aria-hidden="true"></span>
+                    </label>
+
+                    <div class="reteno-section">
+                        <div class="reteno-section-title">lifecycleTrackingOptions</div>
+                        <label class="checkbox-row">
+                            <input id="retenoInitLifecycleApp" type="checkbox" checked>
+                            <span>appLifecycleEnabled</span>
+                        </label>
+                        <label class="checkbox-row">
+                            <input id="retenoInitLifecyclePush" type="checkbox" checked>
+                            <span>pushSubscriptionEnabled</span>
+                        </label>
+                        <label class="checkbox-row">
+                            <input id="retenoInitLifecycleSession" type="checkbox" checked>
+                            <span>sessionEventsEnabled</span>
+                        </label>
+                    </div>
                 </div>
 
                 <div class="demo-nav" aria-label="Demo navigation">

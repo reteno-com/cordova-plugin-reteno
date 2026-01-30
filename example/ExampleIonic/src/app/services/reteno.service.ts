@@ -98,8 +98,115 @@ declare global {
 
 @Injectable({ providedIn: 'root' })
 export class RetenoService {
+  private initialized = false;
+  private initPromise: Promise<unknown> | null = null;
+  private initOptions: {
+    pauseInAppMessages: boolean;
+    pausePushInAppMessages: boolean;
+    lifecycleTrackingOptions: {
+      appLifecycleEnabled: boolean;
+      pushSubscriptionEnabled: boolean;
+      sessionEventsEnabled: boolean;
+    };
+  } = {
+    pauseInAppMessages: false,
+    pausePushInAppMessages: false,
+    lifecycleTrackingOptions: {
+      appLifecycleEnabled: true,
+      pushSubscriptionEnabled: true,
+      sessionEventsEnabled: true,
+    },
+  };
+
   isAvailable(): boolean {
     return !!window.retenosdk;
+  }
+
+  isInitialized(): boolean {
+    return this.initialized;
+  }
+
+  setInitOptions(options: {
+    pauseInAppMessages?: boolean;
+    pausePushInAppMessages?: boolean;
+    lifecycleTrackingOptions?: LifecycleTrackingOptions | string;
+  }): void {
+    if (options.pauseInAppMessages != null) {
+      this.initOptions.pauseInAppMessages = options.pauseInAppMessages;
+    }
+    if (options.pausePushInAppMessages != null) {
+      this.initOptions.pausePushInAppMessages = options.pausePushInAppMessages;
+    }
+    if (options.lifecycleTrackingOptions && typeof options.lifecycleTrackingOptions === 'object') {
+      const lto = options.lifecycleTrackingOptions as {
+        appLifecycleEnabled?: boolean | null;
+        pushSubscriptionEnabled?: boolean | null;
+        sessionEventsEnabled?: boolean | null;
+      };
+      this.initOptions.lifecycleTrackingOptions = {
+        appLifecycleEnabled:
+          lto.appLifecycleEnabled != null
+            ? Boolean(lto.appLifecycleEnabled)
+            : this.initOptions.lifecycleTrackingOptions.appLifecycleEnabled,
+        pushSubscriptionEnabled:
+          lto.pushSubscriptionEnabled != null
+            ? Boolean(lto.pushSubscriptionEnabled)
+            : this.initOptions.lifecycleTrackingOptions.pushSubscriptionEnabled,
+        sessionEventsEnabled:
+          lto.sessionEventsEnabled != null
+            ? Boolean(lto.sessionEventsEnabled)
+            : this.initOptions.lifecycleTrackingOptions.sessionEventsEnabled,
+      };
+    }
+  }
+
+  getInitOptions(): {
+    pauseInAppMessages: boolean;
+    pausePushInAppMessages: boolean;
+    lifecycleTrackingOptions: {
+      appLifecycleEnabled: boolean;
+      pushSubscriptionEnabled: boolean;
+      sessionEventsEnabled: boolean;
+    };
+  } {
+    return {
+      pauseInAppMessages: this.initOptions.pauseInAppMessages,
+      pausePushInAppMessages: this.initOptions.pausePushInAppMessages,
+      lifecycleTrackingOptions: { ...this.initOptions.lifecycleTrackingOptions },
+    };
+  }
+
+  private ensureInit(): Promise<unknown> {
+    if (this.initialized) {
+      return Promise.resolve();
+    }
+    if (this.initPromise) {
+      return this.initPromise;
+    }
+    const sdk = window.retenosdk;
+    if (!sdk?.init) {
+      return Promise.reject(new Error('retenosdk.init is not available'));
+    }
+    this.initPromise = sdk
+      .init({
+        pauseInAppMessages: this.initOptions.pauseInAppMessages,
+        pausePushInAppMessages: this.initOptions.pausePushInAppMessages,
+        lifecycleTrackingOptions: { ...this.initOptions.lifecycleTrackingOptions },
+      })
+      .then((res) => {
+        this.initialized = true;
+        this.initPromise = null;
+        return res;
+      })
+      .catch((err) => {
+        this.initPromise = null;
+        throw err;
+      });
+    return this.initPromise;
+  }
+
+  private withInit<T>(action: () => Promise<T>): Promise<T> {
+    return this.ensureInit().then(action);
   }
 
   init(options?: {
@@ -107,43 +214,50 @@ export class RetenoService {
     pausePushInAppMessages?: boolean;
     lifecycleTrackingOptions?: LifecycleTrackingOptions | string;
   }): Promise<unknown> {
-    const sdk = window.retenosdk;
-    if (!sdk?.init) {
-      return Promise.reject(new Error('retenosdk.init is not available'));
+    if (options) {
+      this.setInitOptions(options);
     }
-    return sdk.init(options || {});
+    return this.ensureInit();
   }
 
   setUserAttributes(payload: unknown): Promise<void> {
-    const sdk = window.retenosdk;
-    if (!sdk?.setUserAttributes) {
-      return Promise.reject(new Error('retenosdk.setUserAttributes is not available'));
-    }
-    return sdk.setUserAttributes(payload);
+    return this.withInit(() => {
+      const sdk = window.retenosdk;
+      if (!sdk?.setUserAttributes) {
+        return Promise.reject(new Error('retenosdk.setUserAttributes is not available'));
+      }
+      return sdk.setUserAttributes(payload);
+    });
   }
 
   setAnonymousUserAttributes(payload: unknown): Promise<void> {
-    const sdk = window.retenosdk;
-    if (!sdk?.setAnonymousUserAttributes) {
-      return Promise.reject(new Error('retenosdk.setAnonymousUserAttributes is not available'));
-    }
-    return sdk.setAnonymousUserAttributes(payload);
+    return this.withInit(() => {
+      const sdk = window.retenosdk;
+      if (!sdk?.setAnonymousUserAttributes) {
+        return Promise.reject(new Error('retenosdk.setAnonymousUserAttributes is not available'));
+      }
+      return sdk.setAnonymousUserAttributes(payload);
+    });
   }
 
   logEvent(payload: unknown): Promise<void> {
-    const sdk = window.retenosdk;
-    if (!sdk?.logEvent) {
-      return Promise.reject(new Error('retenosdk.logEvent is not available'));
-    }
-    return sdk.logEvent(payload);
+    return this.withInit(() => {
+      const sdk = window.retenosdk;
+      if (!sdk?.logEvent) {
+        return Promise.reject(new Error('retenosdk.logEvent is not available'));
+      }
+      return sdk.logEvent(payload);
+    });
   }
 
   getInitialNotification(arg0: unknown = null): Promise<unknown> {
-    const sdk = window.retenosdk;
-    if (!sdk?.getInitialNotification) {
-      return Promise.reject(new Error('retenosdk.getInitialNotification is not available'));
-    }
-    return sdk.getInitialNotification(arg0);
+    return this.withInit(() => {
+      const sdk = window.retenosdk;
+      if (!sdk?.getInitialNotification) {
+        return Promise.reject(new Error('retenosdk.getInitialNotification is not available'));
+      }
+      return sdk.getInitialNotification(arg0);
+    });
   }
 
   requestNotificationPermission(): Promise<unknown> {
@@ -155,67 +269,83 @@ export class RetenoService {
   }
 
   setDeviceToken(token: string): Promise<void> {
-    const sdk = window.retenosdk;
-    if (!sdk?.setDeviceToken) {
-      return Promise.reject(new Error('retenosdk.setDeviceToken is not available'));
-    }
-    return sdk.setDeviceToken(token);
+    return this.withInit(() => {
+      const sdk = window.retenosdk;
+      if (!sdk?.setDeviceToken) {
+        return Promise.reject(new Error('retenosdk.setDeviceToken is not available'));
+      }
+      return sdk.setDeviceToken(token);
+    });
   }
 
   setMultiAccountUserAttributes(payload: unknown): Promise<void> {
-    const sdk = window.retenosdk;
-    if (!sdk?.setMultiAccountUserAttributes) {
-      return Promise.reject(new Error('retenosdk.setMultiAccountUserAttributes is not available'));
-    }
-    return sdk.setMultiAccountUserAttributes(payload);
+    return this.withInit(() => {
+      const sdk = window.retenosdk;
+      if (!sdk?.setMultiAccountUserAttributes) {
+        return Promise.reject(new Error('retenosdk.setMultiAccountUserAttributes is not available'));
+      }
+      return sdk.setMultiAccountUserAttributes(payload);
+    });
   }
 
   setLifecycleTrackingOptions(options: unknown): Promise<void> {
-    const sdk = window.retenosdk;
-    if (!sdk?.setLifecycleTrackingOptions) {
-      return Promise.reject(new Error('retenosdk.setLifecycleTrackingOptions is not available'));
-    }
-    return sdk.setLifecycleTrackingOptions(options);
+    return this.withInit(() => {
+      const sdk = window.retenosdk;
+      if (!sdk?.setLifecycleTrackingOptions) {
+        return Promise.reject(new Error('retenosdk.setLifecycleTrackingOptions is not available'));
+      }
+      return sdk.setLifecycleTrackingOptions(options);
+    });
   }
 
   logScreenView(screenName: string): Promise<void> {
-    const sdk = window.retenosdk;
-    if (!sdk?.logScreenView) {
-      return Promise.reject(new Error('retenosdk.logScreenView is not available'));
-    }
-    return sdk.logScreenView(screenName);
+    return this.withInit(() => {
+      const sdk = window.retenosdk;
+      if (!sdk?.logScreenView) {
+        return Promise.reject(new Error('retenosdk.logScreenView is not available'));
+      }
+      return sdk.logScreenView(screenName);
+    });
   }
 
   forcePushData(): Promise<void> {
-    const sdk = window.retenosdk;
-    if (!sdk?.forcePushData) {
-      return Promise.reject(new Error('retenosdk.forcePushData is not available'));
-    }
-    return sdk.forcePushData();
+    return this.withInit(() => {
+      const sdk = window.retenosdk;
+      if (!sdk?.forcePushData) {
+        return Promise.reject(new Error('retenosdk.forcePushData is not available'));
+      }
+      return sdk.forcePushData();
+    });
   }
 
   updateDefaultNotificationChannel(config: { name: string; description: string }): Promise<void> {
-    const sdk = window.retenosdk;
-    if (!sdk?.updateDefaultNotificationChannel) {
-      return Promise.reject(new Error('retenosdk.updateDefaultNotificationChannel is not available'));
-    }
-    return sdk.updateDefaultNotificationChannel(config);
+    return this.withInit(() => {
+      const sdk = window.retenosdk;
+      if (!sdk?.updateDefaultNotificationChannel) {
+        return Promise.reject(new Error('retenosdk.updateDefaultNotificationChannel is not available'));
+      }
+      return sdk.updateDefaultNotificationChannel(config);
+    });
   }
 
   pauseInAppMessages(isPaused: boolean): Promise<void> {
-    const sdk = window.retenosdk;
-    if (!sdk?.pauseInAppMessages) {
-      return Promise.reject(new Error('retenosdk.pauseInAppMessages is not available'));
-    }
-    return sdk.pauseInAppMessages(isPaused);
+    return this.withInit(() => {
+      const sdk = window.retenosdk;
+      if (!sdk?.pauseInAppMessages) {
+        return Promise.reject(new Error('retenosdk.pauseInAppMessages is not available'));
+      }
+      return sdk.pauseInAppMessages(isPaused);
+    });
   }
 
   setInAppMessagesPauseBehaviour(behaviour: string): Promise<void> {
-    const sdk = window.retenosdk;
-    if (!sdk?.setInAppMessagesPauseBehaviour) {
-      return Promise.reject(new Error('retenosdk.setInAppMessagesPauseBehaviour is not available'));
-    }
-    return sdk.setInAppMessagesPauseBehaviour(behaviour);
+    return this.withInit(() => {
+      const sdk = window.retenosdk;
+      if (!sdk?.setInAppMessagesPauseBehaviour) {
+        return Promise.reject(new Error('retenosdk.setInAppMessagesPauseBehaviour is not available'));
+      }
+      return sdk.setInAppMessagesPauseBehaviour(behaviour);
+    });
   }
 
   setOnInAppLifecycleCallback(listener: (payload: unknown) => void): (event: Event) => void {
@@ -224,12 +354,19 @@ export class RetenoService {
       const payload = detail !== undefined ? detail : eventOrPayload;
       listener(payload);
     };
-    const sdk = window.retenosdk;
-    if (sdk?.setOnInAppLifecycleCallback) {
-      sdk.setOnInAppLifecycleCallback(handler);
-    } else {
-      document.addEventListener('reteno-in-app-lifecycle', handler);
-    }
+    this.ensureInit()
+      .then(() => {
+        const sdk = window.retenosdk;
+        if (sdk?.setOnInAppLifecycleCallback) {
+          sdk.setOnInAppLifecycleCallback(handler);
+        } else {
+          document.addEventListener('reteno-in-app-lifecycle', handler);
+        }
+      })
+      .catch((err) => {
+        // eslint-disable-next-line no-console
+        console.error('reteno init error', err);
+      });
     return handler;
   }
 
@@ -247,12 +384,19 @@ export class RetenoService {
       const payload = detail !== undefined ? detail : eventOrPayload;
       listener(payload);
     };
-    const sdk = window.retenosdk;
-    if (sdk?.setOnInAppMessageCustomDataReceivedListener) {
-      sdk.setOnInAppMessageCustomDataReceivedListener(handler);
-    } else {
-      document.addEventListener('reteno-in-app-custom-data', handler);
-    }
+    this.ensureInit()
+      .then(() => {
+        const sdk = window.retenosdk;
+        if (sdk?.setOnInAppMessageCustomDataReceivedListener) {
+          sdk.setOnInAppMessageCustomDataReceivedListener(handler);
+        } else {
+          document.addEventListener('reteno-in-app-custom-data', handler);
+        }
+      })
+      .catch((err) => {
+        // eslint-disable-next-line no-console
+        console.error('reteno init error', err);
+      });
     return handler;
   }
 
@@ -266,77 +410,96 @@ export class RetenoService {
   }
 
   getAppInboxMessages(payload: { page: number; pageSize: number; status?: string }): Promise<unknown> {
-    const sdk = window.retenosdk;
-    if (!sdk?.getAppInboxMessages) {
-      return Promise.reject(new Error('retenosdk.getAppInboxMessages is not available'));
-    }
-    return sdk.getAppInboxMessages(payload);
+    return this.withInit(() => {
+      const sdk = window.retenosdk;
+      if (!sdk?.getAppInboxMessages) {
+        return Promise.reject(new Error('retenosdk.getAppInboxMessages is not available'));
+      }
+      return sdk.getAppInboxMessages(payload);
+    });
   }
 
   getAppInboxMessagesCount(): Promise<number> {
-    const sdk = window.retenosdk;
-    if (!sdk?.getAppInboxMessagesCount) {
-      return Promise.reject(new Error('retenosdk.getAppInboxMessagesCount is not available'));
-    }
-    return sdk.getAppInboxMessagesCount();
+    return this.withInit(() => {
+      const sdk = window.retenosdk;
+      if (!sdk?.getAppInboxMessagesCount) {
+        return Promise.reject(new Error('retenosdk.getAppInboxMessagesCount is not available'));
+      }
+      return sdk.getAppInboxMessagesCount();
+    });
   }
 
   subscribeOnMessagesCountChanged(
     listener: (count: number) => void,
     error?: (err: unknown) => void
   ): Promise<unknown> {
-    const sdk = window.retenosdk;
-    if (!sdk?.subscribeOnMessagesCountChanged) {
-      return Promise.reject(new Error('retenosdk.subscribeOnMessagesCountChanged is not available'));
-    }
-    const res = sdk.subscribeOnMessagesCountChanged(listener, error);
-    if (res && typeof (res as Promise<unknown>).then === 'function') {
-      return res as Promise<unknown>;
-    }
-    return Promise.resolve();
+    return this.withInit(() => {
+      const sdk = window.retenosdk;
+      if (!sdk?.subscribeOnMessagesCountChanged) {
+        return Promise.reject(new Error('retenosdk.subscribeOnMessagesCountChanged is not available'));
+      }
+      const res = sdk.subscribeOnMessagesCountChanged(listener, error);
+      if (res && typeof (res as Promise<unknown>).then === 'function') {
+        return res as Promise<unknown>;
+      }
+      return Promise.resolve();
+    });
   }
 
   unsubscribeMessagesCountChanged(): Promise<void> {
-    const sdk = window.retenosdk;
-    if (!sdk?.unsubscribeMessagesCountChanged) {
-      return Promise.reject(new Error('retenosdk.unsubscribeMessagesCountChanged is not available'));
-    }
-    return sdk.unsubscribeMessagesCountChanged();
+    return this.withInit(() => {
+      const sdk = window.retenosdk;
+      if (!sdk?.unsubscribeMessagesCountChanged) {
+        return Promise.reject(new Error('retenosdk.unsubscribeMessagesCountChanged is not available'));
+      }
+      return sdk.unsubscribeMessagesCountChanged();
+    });
   }
 
   markAsOpened(messageId: string): Promise<void> {
-    const sdk = window.retenosdk;
-    if (!sdk?.markAsOpened) {
-      return Promise.reject(new Error('retenosdk.markAsOpened is not available'));
-    }
-    return sdk.markAsOpened(messageId);
+    return this.withInit(() => {
+      const sdk = window.retenosdk;
+      if (!sdk?.markAsOpened) {
+        return Promise.reject(new Error('retenosdk.markAsOpened is not available'));
+      }
+      return sdk.markAsOpened(messageId);
+    });
   }
 
   markAllMessagesAsOpened(): Promise<void> {
-    const sdk = window.retenosdk;
-    if (!sdk?.markAllMessagesAsOpened) {
-      return Promise.reject(new Error('retenosdk.markAllMessagesAsOpened is not available'));
-    }
-    return sdk.markAllMessagesAsOpened();
+    return this.withInit(() => {
+      const sdk = window.retenosdk;
+      if (!sdk?.markAllMessagesAsOpened) {
+        return Promise.reject(new Error('retenosdk.markAllMessagesAsOpened is not available'));
+      }
+      return sdk.markAllMessagesAsOpened();
+    });
   }
 
 
   onPushReceived(listener: (payload: unknown) => void): void {
-    const sdk = window.retenosdk;
-    if (sdk?.setOnRetenoPushReceivedListener) {
-      sdk.setOnRetenoPushReceivedListener((event: Event) => {
-        // Cordova fires a CustomEvent with detail payload.
-        const detail = (event as CustomEvent).detail;
-        listener(detail);
-      });
-      return;
-    }
+    this.ensureInit()
+      .then(() => {
+        const sdk = window.retenosdk;
+        if (sdk?.setOnRetenoPushReceivedListener) {
+          sdk.setOnRetenoPushReceivedListener((event: Event) => {
+            // Cordova fires a CustomEvent with detail payload.
+            const detail = (event as CustomEvent).detail;
+            listener(detail);
+          });
+          return;
+        }
 
-    // Fallback in case plugin JS wrapper isn't loaded yet.
-    document.addEventListener('reteno-push-received', (event: Event) => {
-      const detail = (event as CustomEvent).detail;
-      listener(detail);
-    });
+        // Fallback in case plugin JS wrapper isn't loaded yet.
+        document.addEventListener('reteno-push-received', (event: Event) => {
+          const detail = (event as CustomEvent).detail;
+          listener(detail);
+        });
+      })
+      .catch((err) => {
+        // eslint-disable-next-line no-console
+        console.error('reteno init error', err);
+      });
   }
 
   setOnRetenoPushReceivedListener(listener: (payload: unknown) => void): (event: Event) => void {
@@ -345,12 +508,19 @@ export class RetenoService {
       const payload = detail !== undefined ? detail : eventOrPayload;
       listener(payload);
     };
-    const sdk = window.retenosdk;
-    if (sdk?.setOnRetenoPushReceivedListener) {
-      sdk.setOnRetenoPushReceivedListener(handler);
-    } else {
-      document.addEventListener('reteno-push-received', handler);
-    }
+    this.ensureInit()
+      .then(() => {
+        const sdk = window.retenosdk;
+        if (sdk?.setOnRetenoPushReceivedListener) {
+          sdk.setOnRetenoPushReceivedListener(handler);
+        } else {
+          document.addEventListener('reteno-push-received', handler);
+        }
+      })
+      .catch((err) => {
+        // eslint-disable-next-line no-console
+        console.error('reteno init error', err);
+      });
     return handler;
   }
 
@@ -369,12 +539,19 @@ export class RetenoService {
       const payload = detail !== undefined ? detail : eventOrPayload;
       listener(payload);
     };
-    const sdk = window.retenosdk;
-    if (sdk?.setOnRetenoNotificationClickedListener) {
-      sdk.setOnRetenoNotificationClickedListener(handler);
-    } else {
-      document.addEventListener('reteno-notification-clicked', handler);
-    }
+    this.ensureInit()
+      .then(() => {
+        const sdk = window.retenosdk;
+        if (sdk?.setOnRetenoNotificationClickedListener) {
+          sdk.setOnRetenoNotificationClickedListener(handler);
+        } else {
+          document.addEventListener('reteno-notification-clicked', handler);
+        }
+      })
+      .catch((err) => {
+        // eslint-disable-next-line no-console
+        console.error('reteno init error', err);
+      });
     return handler;
   }
 

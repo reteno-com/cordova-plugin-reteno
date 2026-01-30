@@ -24,6 +24,12 @@ Notes:
 | [init](../www/cordova-plugin-reteno.js)                            | Android            | Initializes Reteno SDK.                                                                                                                           |
 | [requestNotificationPermission](../www/cordova-plugin-reteno.js)   | Android            | Requests `POST_NOTIFICATIONS` permission (Android 13+). Returns `0` or `1` (`RequestNotificationPermissionResult`) in [types](../types/index.ts). |
 | [updateDefaultNotificationChannel](../www/cordova-plugin-reteno.js) | Android            | Updates the default notification channel name and description for existing users. [Types](../types/index.ts)                                      |
+| [getAppInboxMessages](../www/cordova-plugin-reteno.js)             | Android            | Fetches App Inbox messages with pagination. [Types](../types/index.ts)                                                                             |
+| [getAppInboxMessagesCount](../www/cordova-plugin-reteno.js)        | Android            | Fetches count of App Inbox messages.                                                                                                               |
+| [subscribeOnMessagesCountChanged](../www/cordova-plugin-reteno.js) | Android            | Subscribes to App Inbox messages count changes.                                                                                                    |
+| [unsubscribeMessagesCountChanged](../www/cordova-plugin-reteno.js)  | Android            | Unsubscribes from App Inbox messages count changes.                                                                                                 |
+| [markAsOpened](../www/cordova-plugin-reteno.js)                    | Android            | Marks an App Inbox message as opened.                                                                                                              |
+| [markAllMessagesAsOpened](../www/cordova-plugin-reteno.js)         | Android            | Marks all App Inbox messages as opened.                                                                                                             |
 
 ### setUserAttributes payload example
 
@@ -258,4 +264,74 @@ retenosdk.updateDefaultNotificationChannel(
 )
   .then(() => console.log('updateDefaultNotificationChannel: OK'))
   .catch((err) => console.error('updateDefaultNotificationChannel: ERROR', err));
+```
+
+### getAppInboxMessages example
+
+Fetches paginated App Inbox messages. Payload type: `GetAppInboxMessagesPayload` in [types](../types/index.ts).
+
+```js
+retenosdk.getAppInboxMessages(
+  {
+    page: 1,
+    pageSize: 20,
+    status: 'UNOPENED',
+  }
+)
+  .then((result) => console.log('getAppInboxMessages: OK', result))
+  .catch((err) => console.error('getAppInboxMessages: ERROR', err));
+```
+
+### getAppInboxMessagesCount example
+
+Fetches count of App Inbox messages.
+
+```js
+retenosdk.getAppInboxMessagesCount()
+  .then((count) => console.log('getAppInboxMessagesCount: OK', count))
+  .catch((err) => console.error('getAppInboxMessagesCount: ERROR', err));
+```
+
+### subscribeOnMessagesCountChanged example
+
+Subscribes to App Inbox messages count changes.
+
+```js
+function onInboxCountChanged(count) {
+  console.log('App Inbox count changed:', count);
+}
+
+retenosdk.subscribeOnMessagesCountChanged(onInboxCountChanged, (err) => {
+  console.error('subscribeOnMessagesCountChanged: ERROR', err);
+});
+```
+
+### unsubscribeMessagesCountChanged example
+
+Unsubscribes from App Inbox messages count changes.
+
+```js
+retenosdk.unsubscribeMessagesCountChanged()
+  .then(() => console.log('unsubscribeMessagesCountChanged: OK'))
+  .catch((err) => console.error('unsubscribeMessagesCountChanged: ERROR', err));
+```
+
+### markAsOpened example
+
+Marks an App Inbox message as opened.
+
+```js
+retenosdk.markAsOpened('message-id')
+  .then(() => console.log('markAsOpened: OK'))
+  .catch((err) => console.error('markAsOpened: ERROR', err));
+```
+
+### markAllMessagesAsOpened example
+
+Marks all App Inbox messages as opened.
+
+```js
+retenosdk.markAllMessagesAsOpened()
+  .then(() => console.log('markAllMessagesAsOpened: OK'))
+  .catch((err) => console.error('markAllMessagesAsOpened: ERROR', err));
 ```

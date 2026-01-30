@@ -19,11 +19,18 @@ import android.text.TextUtils;
 import com.google.gson.Gson;
 import com.reteno.core.Reteno;
 import com.reteno.core.RetenoConfig;
+import com.reteno.core.domain.callback.appinbox.RetenoResultCallback;
 import com.reteno.core.domain.model.event.LifecycleTrackingOptions;
+import com.reteno.core.domain.model.appinbox.AppInboxMessage;
+import com.reteno.core.domain.model.appinbox.AppInboxMessages;
 import com.reteno.core.domain.model.user.User;
 import com.reteno.core.domain.model.user.UserAttributesAnonymous;
+import com.reteno.core.features.appinbox.AppInboxStatus;
 import com.reteno.push.RetenoNotificationService;
 import com.reteno.push.RetenoNotifications;
+
+import java.util.List;
+import java.util.Map;
 
 public class RetenoPlugin extends CordovaPlugin {
   private static final int REQ_CODE_POST_NOTIFICATIONS = 10001;
@@ -35,6 +42,8 @@ public class RetenoPlugin extends CordovaPlugin {
   private static volatile RetenoPlugin activeInstance;
 
   private CallbackContext notificationPermissionCallback;
+  private CallbackContext appInboxMessagesCountCallback;
+  private RetenoResultCallback<Integer> appInboxMessagesCountListener;
   private JSONObject initialNotification;
   private volatile boolean initialized = false;
 
@@ -241,6 +250,90 @@ public class RetenoPlugin extends CordovaPlugin {
         public void run() {
           try {
             updateDefaultNotificationChannel(args, callbackContext);
+          } catch (Exception e) {
+            callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
+          }
+        }
+      });
+      return true;
+    }
+
+    if ("getAppInboxMessages".equals(action)) {
+      cordova.getThreadPool().execute(new Runnable() {
+        @Override
+        public void run() {
+          try {
+            getAppInboxMessages(args, callbackContext);
+          } catch (Exception e) {
+            callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
+          }
+        }
+      });
+      return true;
+    }
+
+    if ("getAppInboxMessagesCount".equals(action)) {
+      cordova.getThreadPool().execute(new Runnable() {
+        @Override
+        public void run() {
+          try {
+            getAppInboxMessagesCount(callbackContext);
+          } catch (Exception e) {
+            callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
+          }
+        }
+      });
+      return true;
+    }
+
+    if ("subscribeOnMessagesCountChanged".equals(action)) {
+      cordova.getThreadPool().execute(new Runnable() {
+        @Override
+        public void run() {
+          try {
+            subscribeOnMessagesCountChanged(callbackContext);
+          } catch (Exception e) {
+            callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
+          }
+        }
+      });
+      return true;
+    }
+
+    if ("unsubscribeMessagesCountChanged".equals(action)) {
+      cordova.getThreadPool().execute(new Runnable() {
+        @Override
+        public void run() {
+          try {
+            unsubscribeMessagesCountChanged(callbackContext);
+          } catch (Exception e) {
+            callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
+          }
+        }
+      });
+      return true;
+    }
+
+    if ("markAsOpened".equals(action)) {
+      cordova.getThreadPool().execute(new Runnable() {
+        @Override
+        public void run() {
+          try {
+            markAsOpened(args, callbackContext);
+          } catch (Exception e) {
+            callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
+          }
+        }
+      });
+      return true;
+    }
+
+    if ("markAllMessagesAsOpened".equals(action)) {
+      cordova.getThreadPool().execute(new Runnable() {
+        @Override
+        public void run() {
+          try {
+            markAllMessagesAsOpened(callbackContext);
           } catch (Exception e) {
             callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
           }
@@ -741,6 +834,345 @@ public class RetenoPlugin extends CordovaPlugin {
     } catch (Exception e) {
       callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
     }
+  }
+
+  private void getAppInboxMessages(JSONArray args, CallbackContext callbackContext) throws JSONException {
+    if (args == null || args.length() == 0) {
+      callbackContext.error("Missing argument: payload");
+      return;
+    }
+
+    Object arg0 = args.opt(0);
+    if (arg0 instanceof JSONArray) {
+      arg0 = ((JSONArray) arg0).opt(0);
+    }
+
+    if (!(arg0 instanceof JSONObject)) {
+      callbackContext.error("Invalid argument: expected an object payload");
+      return;
+    }
+
+    JSONObject payload = (JSONObject) arg0;
+    Object rawPage = payload.opt("page");
+    Object rawPageSize = payload.opt("pageSize");
+
+    if (!payload.has("page") || rawPage == JSONObject.NULL) {
+      callbackContext.error("Missing argument: page");
+      return;
+    }
+    if (!payload.has("pageSize") || rawPageSize == JSONObject.NULL) {
+      callbackContext.error("Missing argument: pageSize");
+      return;
+    }
+
+    Integer page = parseIntegerLenient(rawPage);
+    Integer pageSize = parseIntegerLenient(rawPageSize);
+
+    if (page == null) {
+      callbackContext.error("Invalid argument: page");
+      return;
+    }
+    if (pageSize == null) {
+      callbackContext.error("Invalid argument: pageSize");
+      return;
+    }
+
+    AppInboxStatus status = null;
+    if (payload.has("status") && payload.opt("status") != JSONObject.NULL) {
+      status = parseAppInboxStatus(payload.opt("status"));
+      if (status == null) {
+        callbackContext.error("Invalid argument: status");
+        return;
+      }
+    }
+
+    try {
+      Reteno reteno = getRetenoInstanceOrThrow();
+      reteno.getAppInbox().getAppInboxMessages(
+        page,
+        pageSize,
+        status,
+        new RetenoResultCallback<AppInboxMessages>() {
+          @Override
+          public void onSuccess(AppInboxMessages messages) {
+            try {
+              JSONObject result = appInboxMessagesToJson(messages);
+              callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK, result));
+            } catch (Exception e) {
+              callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
+            }
+          }
+
+          @Override
+          public void onFailure(Integer code, String message, Throwable throwable) {
+            StringBuilder sb = new StringBuilder("Reteno Android SDK Error");
+            if (message != null && message.length() > 0) {
+              sb.append(": ").append(message);
+            } else if (throwable != null && throwable.getLocalizedMessage() != null) {
+              sb.append(": ").append(throwable.getLocalizedMessage());
+            }
+            if (code != null) {
+              sb.append(" (code ").append(code).append(")");
+            }
+            callbackContext.error(sb.toString());
+          }
+        }
+      );
+    } catch (Exception e) {
+      callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
+    }
+  }
+
+  private void getAppInboxMessagesCount(CallbackContext callbackContext) {
+    try {
+      Reteno reteno = getRetenoInstanceOrThrow();
+      reteno.getAppInbox().getAppInboxMessagesCount(new RetenoResultCallback<Integer>() {
+        @Override
+        public void onSuccess(Integer count) {
+          if (count == null) {
+            callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK, 0));
+            return;
+          }
+          callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK, count.intValue()));
+        }
+
+        @Override
+        public void onFailure(Integer code, String message, Throwable throwable) {
+          StringBuilder sb = new StringBuilder("Reteno Android SDK Error");
+          if (message != null && message.length() > 0) {
+            sb.append(": ").append(message);
+          } else if (throwable != null && throwable.getLocalizedMessage() != null) {
+            sb.append(": ").append(throwable.getLocalizedMessage());
+          }
+          if (code != null) {
+            sb.append(" (code ").append(code).append(")");
+          }
+          callbackContext.error(sb.toString());
+        }
+      });
+    } catch (Exception e) {
+      callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
+    }
+  }
+
+  private void subscribeOnMessagesCountChanged(CallbackContext callbackContext) {
+    try {
+      Reteno reteno = getRetenoInstanceOrThrow();
+      if (appInboxMessagesCountListener != null) {
+        try {
+          reteno.getAppInbox().unsubscribeMessagesCountChanged(appInboxMessagesCountListener);
+        } catch (Exception ignored) {
+          // ignore
+        }
+      }
+
+      appInboxMessagesCountCallback = callbackContext;
+      appInboxMessagesCountListener = new RetenoResultCallback<Integer>() {
+        @Override
+        public void onSuccess(Integer count) {
+          CallbackContext cb = appInboxMessagesCountCallback;
+          if (cb == null) {
+            return;
+          }
+          int safeCount = count == null ? 0 : count.intValue();
+          PluginResult result = new PluginResult(PluginResult.Status.OK, safeCount);
+          result.setKeepCallback(true);
+          cb.sendPluginResult(result);
+        }
+
+        @Override
+        public void onFailure(Integer code, String message, Throwable throwable) {
+          CallbackContext cb = appInboxMessagesCountCallback;
+          if (cb == null) {
+            return;
+          }
+          StringBuilder sb = new StringBuilder("Reteno Android SDK Error");
+          if (message != null && message.length() > 0) {
+            sb.append(": ").append(message);
+          } else if (throwable != null && throwable.getLocalizedMessage() != null) {
+            sb.append(": ").append(throwable.getLocalizedMessage());
+          }
+          if (code != null) {
+            sb.append(" (code ").append(code).append(")");
+          }
+          cb.error(sb.toString());
+        }
+      };
+
+      reteno.getAppInbox().subscribeOnMessagesCountChanged(appInboxMessagesCountListener);
+      PluginResult result = new PluginResult(PluginResult.Status.NO_RESULT);
+      result.setKeepCallback(true);
+      callbackContext.sendPluginResult(result);
+    } catch (Exception e) {
+      callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
+    }
+  }
+
+  private void unsubscribeMessagesCountChanged(CallbackContext callbackContext) {
+    try {
+      Reteno reteno = getRetenoInstanceOrThrow();
+      if (appInboxMessagesCountListener != null) {
+        reteno.getAppInbox().unsubscribeMessagesCountChanged(appInboxMessagesCountListener);
+      }
+      appInboxMessagesCountListener = null;
+      appInboxMessagesCountCallback = null;
+      callbackContext.success(1);
+    } catch (Exception e) {
+      callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
+    }
+  }
+
+  private void markAsOpened(JSONArray args, CallbackContext callbackContext) throws JSONException {
+    String messageId = null;
+    if (args != null && args.length() > 0) {
+      Object arg0 = args.opt(0);
+      if (arg0 instanceof String) {
+        messageId = (String) arg0;
+      } else if (arg0 instanceof JSONObject) {
+        messageId = ((JSONObject) arg0).optString("messageId", null);
+        if (TextUtils.isEmpty(messageId)) {
+          messageId = ((JSONObject) arg0).optString("id", null);
+        }
+      } else if (arg0 instanceof JSONArray) {
+        messageId = ((JSONArray) arg0).optString(0, null);
+      }
+    }
+
+    if (messageId != null) {
+      messageId = messageId.trim();
+    }
+    if (TextUtils.isEmpty(messageId)) {
+      callbackContext.error("Missing argument: messageId");
+      return;
+    }
+
+    try {
+      Reteno reteno = getRetenoInstanceOrThrow();
+      reteno.getAppInbox().markAsOpened(messageId);
+      callbackContext.success(1);
+    } catch (Exception e) {
+      callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
+    }
+  }
+
+  private void markAllMessagesAsOpened(CallbackContext callbackContext) {
+    try {
+      Reteno reteno = getRetenoInstanceOrThrow();
+      reteno.getAppInbox().markAllMessagesAsOpened(new RetenoResultCallback<kotlin.Unit>() {
+        @Override
+        public void onSuccess(kotlin.Unit unit) {
+          callbackContext.success(1);
+        }
+
+        @Override
+        public void onFailure(Integer code, String message, Throwable throwable) {
+          StringBuilder sb = new StringBuilder("Reteno Android SDK Error");
+          if (message != null && message.length() > 0) {
+            sb.append(": ").append(message);
+          } else if (throwable != null && throwable.getLocalizedMessage() != null) {
+            sb.append(": ").append(throwable.getLocalizedMessage());
+          }
+          if (code != null) {
+            sb.append(" (code ").append(code).append(")");
+          }
+          callbackContext.error(sb.toString());
+        }
+      });
+    } catch (Exception e) {
+      callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
+    }
+  }
+
+  private Integer parseIntegerLenient(Object raw) {
+    if (raw instanceof Number) {
+      return ((Number) raw).intValue();
+    }
+    if (raw instanceof String) {
+      String s = ((String) raw).trim();
+      if (s.length() == 0) {
+        return null;
+      }
+      try {
+        return Integer.valueOf(s);
+      } catch (NumberFormatException ignored) {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  private AppInboxStatus parseAppInboxStatus(Object raw) {
+    if (!(raw instanceof String)) {
+      return null;
+    }
+    String value = ((String) raw).trim();
+    if (value.length() == 0) {
+      return null;
+    }
+    for (AppInboxStatus status : AppInboxStatus.values()) {
+      if (status.getStr().equalsIgnoreCase(value) || status.name().equalsIgnoreCase(value)) {
+        return status;
+      }
+    }
+    return null;
+  }
+
+  private JSONObject appInboxMessagesToJson(AppInboxMessages messages) throws JSONException {
+    JSONObject json = new JSONObject();
+    JSONArray list = new JSONArray();
+    if (messages != null) {
+      List<AppInboxMessage> messageList = messages.getMessages();
+      if (messageList != null) {
+        for (AppInboxMessage message : messageList) {
+          list.put(appInboxMessageToJson(message));
+        }
+      }
+      json.put("totalPages", messages.getTotalPages());
+    } else {
+      json.put("totalPages", 0);
+    }
+    json.put("messages", list);
+    return json;
+  }
+
+  private JSONObject appInboxMessageToJson(AppInboxMessage message) throws JSONException {
+    JSONObject json = new JSONObject();
+    if (message == null) {
+      return json;
+    }
+
+    putString(json, "id", message.getId());
+    putString(json, "title", message.getTitle());
+    putString(json, "createdDate", message.getCreatedDate());
+    json.put("isNewMessage", message.isNewMessage());
+    putString(json, "content", message.getContent());
+    putString(json, "imageUrl", message.getImageUrl());
+    putString(json, "linkUrl", message.getLinkUrl());
+    putString(json, "category", message.getCategory());
+
+    AppInboxStatus status = message.getStatus();
+    json.put("status", status != null ? status.getStr() : JSONObject.NULL);
+
+    Map<String, String> customData = message.getCustomData();
+    if (customData == null) {
+      json.put("customData", JSONObject.NULL);
+    } else {
+      JSONObject customJson = new JSONObject();
+      for (Map.Entry<String, String> entry : customData.entrySet()) {
+        String key = entry.getKey();
+        String value = entry.getValue();
+        if (key != null) {
+          customJson.put(key, value != null ? value : JSONObject.NULL);
+        }
+      }
+      json.put("customData", customJson);
+    }
+
+    return json;
+  }
+
+  private void putString(JSONObject json, String key, String value) throws JSONException {
+    json.put(key, value != null ? value : JSONObject.NULL);
   }
 
   private Reteno getRetenoInstanceOrThrow() {

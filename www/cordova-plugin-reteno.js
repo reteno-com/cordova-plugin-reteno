@@ -312,6 +312,62 @@ function __callWithAutoInit(action, args, success, error) {
       }
       return __callWithAutoInit('updateDefaultNotificationChannel', [config], success, error);
     },
+
+    /*
+        payload: GetAppInboxMessagesPayload
+        {
+          page: number,
+          pageSize: number,
+          status?: 'OPENED' | 'UNOPENED'
+        }
+        */
+    getAppInboxMessages: function (arg0, success, error) {
+      // Accept either `payload` or legacy `[payload]`.
+      var payload = Array.isArray(arg0) ? arg0[0] : arg0;
+      if (!payload || typeof payload !== 'object') {
+        return Promise.reject(new Error('Missing argument: payload'));
+      }
+      if (payload.page == null) {
+        return Promise.reject(new Error('Missing argument: page'));
+      }
+      if (payload.pageSize == null) {
+        return Promise.reject(new Error('Missing argument: pageSize'));
+      }
+      return __callWithAutoInit('getAppInboxMessages', [payload], success, error);
+    },
+
+    getAppInboxMessagesCount: function (success, error) {
+      return __callWithAutoInit('getAppInboxMessagesCount', [], success, error);
+    },
+
+    subscribeOnMessagesCountChanged: function (arg0, arg1) {
+      var success = typeof arg0 === 'function' ? arg0 : arg1;
+      var error = typeof arg0 === 'function' ? arg1 : undefined;
+      return __ensureInit().then(function () {
+        exec(success, error, PLUGIN_NAME, 'subscribeOnMessagesCountChanged', []);
+        return 1;
+      });
+    },
+
+    unsubscribeMessagesCountChanged: function (success, error) {
+      return __callWithAutoInit('unsubscribeMessagesCountChanged', [], success, error);
+    },
+
+    /*
+        messageId: string
+        */
+    markAsOpened: function (arg0, success, error) {
+      // Accept either `messageId` or legacy `[messageId]`.
+      var messageId = Array.isArray(arg0) ? arg0[0] : arg0;
+      if (!messageId || typeof messageId !== 'string' || messageId.trim().length === 0) {
+        return Promise.reject(new Error('Missing argument: messageId'));
+      }
+      return __callWithAutoInit('markAsOpened', [messageId], success, error);
+    },
+
+    markAllMessagesAsOpened: function (success, error) {
+      return __callWithAutoInit('markAllMessagesAsOpened', [], success, error);
+    },
   };
 
   module.exports = RetenoPluginFunctions;

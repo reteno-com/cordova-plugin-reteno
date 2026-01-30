@@ -80,6 +80,32 @@ export type NotificationChannelConfig = {
   description: string;
 };
 
+export type AppInboxStatus = 'OPENED' | 'UNOPENED';
+
+export type AppInboxMessage = {
+  id: string;
+  title: string;
+  createdDate: string;
+  isNewMessage: boolean;
+  content?: string | null;
+  imageUrl?: string | null;
+  linkUrl?: string | null;
+  category?: string | null;
+  status?: AppInboxStatus | null;
+  customData?: Record<string, string> | null;
+};
+
+export type AppInboxMessages = {
+  messages: AppInboxMessage[];
+  totalPages: number;
+};
+
+export type GetAppInboxMessagesPayload = {
+  page: number;
+  pageSize: number;
+  status?: AppInboxStatus | string | null;
+};
+
 /**
  * Payload received when a push notification is received.
  * Contains the data from the notification bundle.

@@ -23,11 +23,11 @@ import com.reteno.core.Reteno;
 import com.reteno.core.RetenoConfig;
 import com.reteno.core.domain.callback.appinbox.RetenoResultCallback;
 import com.reteno.core.domain.model.event.LifecycleTrackingOptions;
-import com.reteno.core.domain.model.interaction.InAppCloseData;
-import com.reteno.core.domain.model.interaction.InAppData;
-import com.reteno.core.domain.model.interaction.InAppErrorData;
-import com.reteno.core.domain.model.interaction.InAppLifecycleCallback;
-import com.reteno.core.domain.model.interaction.InAppPauseBehaviour;
+import com.reteno.core.features.iam.InAppPauseBehaviour;
+import com.reteno.core.view.iam.callback.InAppCloseData;
+import com.reteno.core.view.iam.callback.InAppData;
+import com.reteno.core.view.iam.callback.InAppErrorData;
+import com.reteno.core.view.iam.callback.InAppLifecycleCallback;
 import com.reteno.core.domain.model.appinbox.AppInboxMessage;
 import com.reteno.core.domain.model.appinbox.AppInboxMessages;
 import com.reteno.core.domain.model.user.User;
@@ -428,16 +428,16 @@ public class RetenoPlugin extends CordovaPlugin {
       .setDebug(readDebugModeEnabled());
 
     if (pauseInAppMessages) {
-      builder.isPausedInAppMessages(true);
+      builder.pauseInAppMessages(true);
     }
     if (pausePushInAppMessages) {
-      builder.isPausedPushInAppMessages(true);
+      builder.pausePushInAppMessages(true);
     }
 
     if (options != null && options.has("lifecycleTrackingOptions")) {
       LifecycleTrackingOptions lto = parseLifecycleTrackingOption(options.opt("lifecycleTrackingOptions"));
       if (lto != null) {
-        builder.setLifecycleTrackingOptions(lto);
+        builder.lifecycleTrackingOptions(lto);
       }
     }
 

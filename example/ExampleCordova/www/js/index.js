@@ -66,6 +66,16 @@ function onDeviceReady() {
     var unsubscribeInboxCountBtn = document.getElementById('retenoUnsubscribeInboxCountBtn');
     var markAsOpenedBtn = document.getElementById('retenoMarkAsOpenedBtn');
     var markAllAsOpenedBtn = document.getElementById('retenoMarkAllAsOpenedBtn');
+    var inAppPauseToggle = document.getElementById('retenoInAppPauseToggle');
+    var inAppPauseBehaviourEl = document.getElementById('retenoInAppPauseBehaviour');
+    var inAppPauseBehaviourBtn = document.getElementById('retenoInAppPauseBehaviourBtn');
+    var inAppStatusEl = document.getElementById('retenoInAppStatus');
+    var inAppLifecycleToggle = document.getElementById('retenoInAppLifecycleToggle');
+    var inAppCustomDataToggle = document.getElementById('retenoInAppCustomDataToggle');
+    var inAppLifecycleStatusEl = document.getElementById('retenoInAppLifecycleStatus');
+    var inAppCustomDataStatusEl = document.getElementById('retenoInAppCustomDataStatus');
+    var inAppLifecycleListEl = document.getElementById('retenoInAppLifecycleList');
+    var inAppCustomDataListEl = document.getElementById('retenoInAppCustomDataList');
 
     var emailEl = document.getElementById('retenoEmail');
     var phoneEl = document.getElementById('retenoPhone');
@@ -174,6 +184,24 @@ function onDeviceReady() {
         }
     }
 
+    function setInAppStatus(text) {
+        if (inAppStatusEl) {
+            inAppStatusEl.textContent = text;
+        }
+    }
+
+    function setInAppLifecycleStatus(text) {
+        if (inAppLifecycleStatusEl) {
+            inAppLifecycleStatusEl.textContent = text;
+        }
+    }
+
+    function setInAppCustomDataStatus(text) {
+        if (inAppCustomDataStatusEl) {
+            inAppCustomDataStatusEl.textContent = text;
+        }
+    }
+
     function setPushReceivedEvent(text) {
         if (pushReceivedEventEl) {
             pushReceivedEventEl.textContent = text;
@@ -255,6 +283,8 @@ function onDeviceReady() {
     var notificationClickedHandler = null;
     var inboxCountSubscribed = false;
     var inboxCountHandler = null;
+    var inAppLifecycleHandler = null;
+    var inAppCustomDataHandler = null;
 
     function logScreenView(screenName) {
         var sdk = getRetenoSdk();
@@ -608,6 +638,128 @@ function onDeviceReady() {
                 }
                 notificationClickedHandler = null;
                 setNotificationClickedEvent('Notification click listener removed.');
+            }
+        });
+    }
+
+    if (inAppPauseToggle) {
+        inAppPauseToggle.addEventListener('change', function () {
+            var sdk = getRetenoSdk();
+            if (!sdk || typeof sdk.pauseInAppMessages !== 'function') {
+                setInAppStatus('Reteno pauseInAppMessages is not available.');
+                inAppPauseToggle.checked = !inAppPauseToggle.checked;
+                return;
+            }
+            var shouldPause = !!inAppPauseToggle.checked;
+            setInAppStatus(shouldPause ? 'Pausing in-app messages...' : 'Resuming in-app messages...');
+            sdk.pauseInAppMessages(shouldPause)
+                .then(function () {
+                    setInAppStatus(shouldPause ? 'pauseInAppMessages: paused' : 'pauseInAppMessages: resumed');
+                })
+                .catch(function (err) {
+                    inAppPauseToggle.checked = !shouldPause;
+                    setInAppStatus('pauseInAppMessages: error: ' + (err && err.message ? err.message : String(err)));
+                });
+        });
+    }
+
+    if (inAppPauseBehaviourBtn) {
+        inAppPauseBehaviourBtn.addEventListener('click', function () {
+            var sdk = getRetenoSdk();
+            if (!sdk || typeof sdk.setInAppMessagesPauseBehaviour !== 'function') {
+                setInAppStatus('Reteno setInAppMessagesPauseBehaviour is not available.');
+                return;
+            }
+            var behaviour = inAppPauseBehaviourEl ? String(inAppPauseBehaviourEl.value || '').trim() : '';
+            if (!behaviour) {
+                setInAppStatus('Please select pause behaviour.');
+                return;
+            }
+            setInAppStatus('Applying pause behaviour...');
+            sdk.setInAppMessagesPauseBehaviour(behaviour)
+                .then(function () {
+                    setInAppStatus('setInAppMessagesPauseBehaviour: OK');
+                })
+                .catch(function (err) {
+                    setInAppStatus(
+                        'setInAppMessagesPauseBehaviour: error: ' +
+                            (err && err.message ? err.message : String(err))
+                    );
+                });
+        });
+    }
+
+    if (inAppLifecycleToggle) {
+        inAppLifecycleToggle.addEventListener('change', function () {
+            var sdk = getRetenoSdk();
+            if (!sdk || typeof sdk.setOnInAppLifecycleCallback !== 'function') {
+                setInAppLifecycleStatus('setOnInAppLifecycleCallback: not available.');
+                inAppLifecycleToggle.checked = false;
+                return;
+            }
+
+            if (inAppLifecycleToggle.checked) {
+                if (!inAppLifecycleHandler) {
+                    inAppLifecycleHandler = function (event) {
+                        var detail = event && event.detail !== undefined ? event.detail : event;
+                        var message = 'In-app lifecycle event: ' + safeStringify(detail);
+                        appendEventItem(inAppLifecycleListEl, message);
+                    };
+                    sdk.setOnInAppLifecycleCallback(inAppLifecycleHandler);
+                    setInAppLifecycleStatus('Listening for in-app lifecycle events...');
+                }
+                return;
+            }
+
+            if (inAppLifecycleHandler) {
+                if (sdk && typeof sdk.setOnInAppLifecycleCallback === 'function') {
+                    sdk.setOnInAppLifecycleCallback(null);
+                }
+                document.removeEventListener('reteno-in-app-lifecycle', inAppLifecycleHandler);
+                inAppLifecycleHandler = null;
+                setInAppLifecycleStatus('In-app lifecycle listener removed.');
+            }
+        });
+    }
+
+    if (inAppCustomDataToggle) {
+        inAppCustomDataToggle.addEventListener('change', function () {
+            var sdk = getRetenoSdk();
+            if (
+                !sdk ||
+                (typeof sdk.setOnInAppMessageCustomDataReceivedListener !== 'function' &&
+                    typeof sdk.removeOnInAppMessageCustomDataReceivedListener !== 'function')
+            ) {
+                setInAppCustomDataStatus('setOnInAppMessageCustomDataReceivedListener: not available.');
+                inAppCustomDataToggle.checked = false;
+                return;
+            }
+
+            if (inAppCustomDataToggle.checked) {
+                if (!inAppCustomDataHandler) {
+                    inAppCustomDataHandler = function (event) {
+                        var detail = event && event.detail !== undefined ? event.detail : event;
+                        var message = 'In-app custom data: ' + safeStringify(detail);
+                        appendEventItem(inAppCustomDataListEl, message);
+                    };
+                    if (sdk && typeof sdk.setOnInAppMessageCustomDataReceivedListener === 'function') {
+                        sdk.setOnInAppMessageCustomDataReceivedListener(inAppCustomDataHandler);
+                    } else {
+                        document.addEventListener('reteno-in-app-custom-data', inAppCustomDataHandler);
+                    }
+                    setInAppCustomDataStatus('Listening for in-app custom data events...');
+                }
+                return;
+            }
+
+            if (inAppCustomDataHandler) {
+                if (sdk && typeof sdk.removeOnInAppMessageCustomDataReceivedListener === 'function') {
+                    sdk.removeOnInAppMessageCustomDataReceivedListener(inAppCustomDataHandler);
+                } else {
+                    document.removeEventListener('reteno-in-app-custom-data', inAppCustomDataHandler);
+                }
+                inAppCustomDataHandler = null;
+                setInAppCustomDataStatus('In-app custom data listener removed.');
             }
         });
     }

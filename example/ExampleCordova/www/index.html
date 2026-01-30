@@ -52,6 +52,7 @@
                     <button class="nav-button" data-target="log-event" type="button">Log event</button>
                     <button class="nav-button" data-target="lifecycle" type="button">App lifecycle events</button>
                     <button class="nav-button" data-target="notifications" type="button">Notifications</button>
+                    <button class="nav-button" data-target="in-app" type="button">In-App messages</button>
                     <button class="nav-button" data-target="app-inbox" type="button">App inbox</button>
                 </div>
             </section>
@@ -304,6 +305,56 @@
                 </div>
             </section>
 
+            <section class="page" data-page="in-app" data-screen-name="In-App messages">
+                <div class="page-header">
+                    <button class="back-button" data-target="home" type="button">Back</button>
+                    <h2>In-App messages</h2>
+                </div>
+
+                <div class="reteno-form" aria-label="Reteno In-App messages">
+                    <h2>Reteno: In-App messages</h2>
+
+                    <label class="toggle-row">
+                        <span class="toggle-label">Pause in-app messages</span>
+                        <input id="retenoInAppPauseToggle" class="toggle-input" type="checkbox">
+                        <span class="toggle-ui" aria-hidden="true"></span>
+                    </label>
+
+                    <label class="reteno-label" for="retenoInAppPauseBehaviour">Pause behaviour</label>
+                    <select id="retenoInAppPauseBehaviour" class="reteno-input">
+                        <option value="">Select behaviour</option>
+                        <option value="SKIP_IN_APPS">SKIP_IN_APPS</option>
+                        <option value="POSTPONE_IN_APPS">POSTPONE_IN_APPS</option>
+                    </select>
+
+                    <button id="retenoInAppPauseBehaviourBtn" class="reteno-button secondary" type="button">
+                        Apply pause behaviour
+                    </button>
+
+                    <pre id="retenoInAppStatus" class="reteno-status" aria-live="polite"></pre>
+                </div>
+
+                <div class="reteno-form" aria-label="Reteno In-App listeners">
+                    <h2>Reteno: In-App listeners</h2>
+
+                    <label class="toggle-row">
+                        <span class="toggle-label">setOnInAppLifecycleCallback</span>
+                        <input id="retenoInAppLifecycleToggle" class="toggle-input" type="checkbox">
+                        <span class="toggle-ui" aria-hidden="true"></span>
+                    </label>
+
+                    <label class="toggle-row">
+                        <span class="toggle-label">setOnInAppMessageCustomDataReceivedListener</span>
+                        <input id="retenoInAppCustomDataToggle" class="toggle-input" type="checkbox">
+                        <span class="toggle-ui" aria-hidden="true"></span>
+                    </label>
+
+                    <pre id="retenoInAppLifecycleStatus" class="reteno-status" aria-live="polite"></pre>
+                    <pre id="retenoInAppCustomDataStatus" class="reteno-status" aria-live="polite"></pre>
+                    <ul id="retenoInAppLifecycleList" class="reteno-event-list" aria-label="In-App lifecycle events"></ul>
+                    <ul id="retenoInAppCustomDataList" class="reteno-event-list" aria-label="In-App custom data events"></ul>
+                </div>
+            </section>
             <section class="page" data-page="app-inbox" data-screen-name="App inbox">
                 <div class="page-header">
                     <button class="back-button" data-target="home" type="button">Back</button>

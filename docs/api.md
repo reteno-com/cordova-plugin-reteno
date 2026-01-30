@@ -21,6 +21,8 @@ Notes:
 | [removeOnRetenoPushReceivedListener](../www/cordova-plugin-reteno.js) | iOS, Android       | Removes listener for push notification received events.                                                                                           |
 | [setOnRetenoNotificationClickedListener](../www/cordova-plugin-reteno.js) | iOS, Android       | Sets listener for notification click events.                                                                                                      |
 | [removeOnRetenoNotificationClickedListener](../www/cordova-plugin-reteno.js) | iOS, Android       | Removes listener for notification click events.                                                                                                   |
+| [setOnInAppMessageCustomDataReceivedListener](../www/cordova-plugin-reteno.js) | Android            | Sets listener for in-app message custom data events.                                                                                              |
+| [removeOnInAppMessageCustomDataReceivedListener](../www/cordova-plugin-reteno.js) | Android            | Removes listener for in-app message custom data events.                                                                                            |
 | [init](../www/cordova-plugin-reteno.js)                            | Android            | Initializes Reteno SDK.                                                                                                                           |
 | [requestNotificationPermission](../www/cordova-plugin-reteno.js)   | Android            | Requests `POST_NOTIFICATIONS` permission (Android 13+). Returns `0` or `1` (`RequestNotificationPermissionResult`) in [types](../types/index.ts). |
 | [updateDefaultNotificationChannel](../www/cordova-plugin-reteno.js) | Android            | Updates the default notification channel name and description for existing users. [Types](../types/index.ts)                                      |
@@ -218,6 +220,20 @@ Notes:
 
 - On Android this is based on Reteno SDK notification events (`com.reteno.Receiver.PushReceived`).
 - This listener is not a replacement for `getInitialNotification()` (cold start): if the app was launched by tapping a notification, use `getInitialNotification()`.
+
+### setOnInAppMessageCustomDataReceivedListener example
+
+Subscribe to in-app message custom data events when a button is clicked.
+
+Important: once you register this receiver, Reteno SDK will not open button links automatically. Instead, it will pass all custom data to your listener, including the link under the `url` key. You are responsible for handling navigation.
+
+```js
+retenosdk.setOnInAppMessageCustomDataReceivedListener(function (event) {
+  // event.detail contains the custom data payload
+  // If a link was assigned to the button, it will be under event.detail.url
+  console.log('In-app custom data:', event.detail);
+});
+```
 
 ```js
 // Subscribe to push received events

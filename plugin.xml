@@ -46,6 +46,16 @@
             android:name="com.reteno.Receiver.NotificationClicked"
             android:value="com.reteno.plugin.RetenoNotificationClickedReceiver" />
 
+        <!-- Reteno in-app message custom data receiver -->
+        <receiver
+            android:name="com.reteno.plugin.RetenoInAppDataReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.reteno.custom-inapp-data" />
+            </intent-filter>
+        </receiver>
+
     </config-file>
 
   <config-file target="config.xml" parent="/*">
@@ -69,8 +79,11 @@
   <source-file
       src="src/android/app/src/main/java/com/reteno/plugin/RetenoNotificationClickedReceiver.java"
       target-dir="src/com/reteno/plugin" />
-  <source-file 
-      src="src/android/app/src/main/java/com/reteno/plugin/RetenoUserAttributes.java" 
+  <source-file
+      src="src/android/app/src/main/java/com/reteno/plugin/RetenoInAppDataReceiver.java"
+      target-dir="src/com/reteno/plugin" />
+  <source-file
+      src="src/android/app/src/main/java/com/reteno/plugin/RetenoUserAttributes.java"
       target-dir="src/com/reteno/plugin" />
   <source-file 
       src="src/android/app/src/main/java/com/reteno/plugin/RetenoUtil.java" 

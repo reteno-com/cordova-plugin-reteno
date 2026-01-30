@@ -252,6 +252,21 @@ function __callWithAutoInit(action, args, success, error) {
       if (typeof listener !== 'function') return;
       document.removeEventListener('reteno-notification-clicked', listener);
     },
+
+    setOnInAppMessageCustomDataReceivedListener: function (arg0, arg1) {
+      // Back-compat:
+      // - setOnInAppMessageCustomDataReceivedListener(listener)
+      // - setOnInAppMessageCustomDataReceivedListener(reteno, listener) (legacy)
+      var listener = typeof arg0 === 'function' ? arg0 : arg1;
+      if (typeof listener !== 'function') return;
+      document.addEventListener('reteno-in-app-custom-data', listener);
+    },
+
+    removeOnInAppMessageCustomDataReceivedListener: function (arg0, arg1) {
+      var listener = typeof arg0 === 'function' ? arg0 : arg1;
+      if (typeof listener !== 'function') return;
+      document.removeEventListener('reteno-in-app-custom-data', listener);
+    },
     /*
         deviceToken: string
         */

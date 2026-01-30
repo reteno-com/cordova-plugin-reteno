@@ -127,3 +127,14 @@ export type RetenoPushReceivedListener = (payload: RetenoPushReceivedPayload) =>
  * Listener function for notification clicked events.
  */
 export type RetenoNotificationClickedListener = (payload: RetenoNotificationClickedPayload) => void;
+
+/**
+ * Payload received when an in-app message button is clicked with custom data.
+ * Contains the custom data from the in-app message, including the button URL under the "url" key.
+ */
+export type RetenoInAppCustomDataPayload = Record<string, unknown>;
+
+/**
+ * Listener function for in-app message custom data events.
+ */
+export type RetenoInAppCustomDataListener = (payload: RetenoInAppCustomDataPayload) => void;

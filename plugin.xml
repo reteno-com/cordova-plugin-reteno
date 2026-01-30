@@ -8,7 +8,7 @@
     <preference name="ANDROID_RETENO_FCM_VERSION" default="2.8.9" />
     <!-- Firebase Messaging version used by Reteno FCM module -->
     <preference name="ANDROID_FIREBASE_MESSAGING_VERSION" default="23.1.0" />
-    <preference name="SDK_ACCESS_KEY" default="" />
+    <preference name="SDK_ACCESS_KEY" default="MISSING" />
     <!-- Reteno Android Debug Mode (Reteno SDK 2.7.0+) -->
     <preference name="RETENO_DEBUG_MODE" default="false" />
     <hook type="before_plugin_install" src="scripts/validate-install.js" />

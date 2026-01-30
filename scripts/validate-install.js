@@ -86,7 +86,7 @@ module.exports = function (context) {
     process.env.SDK_ACCESS_KEY;
   const accessKeyStr = accessKey == null ? '' : String(accessKey).trim();
 
-  if (accessKeyStr.length === 0) {
+  if (accessKeyStr.length === 0 || accessKeyStr === 'MISSING') {
     throw new Error(
       'cordova-plugin-reteno: SDK_ACCESS_KEY is required. Install with: ' +
         'cordova plugin add cordova-plugin-reteno --variable SDK_ACCESS_KEY=YOUR_KEY'

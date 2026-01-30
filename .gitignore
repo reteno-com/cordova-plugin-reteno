@@ -17,3 +17,6 @@ dist/
 build/
 coverage/
 *.tsbuildinfo
+
+# Packed plugin archives(npm pack)
+cordova-plugin-reteno-*.tgz

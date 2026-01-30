@@ -33,7 +33,6 @@ public class RetenoEvent {
     return list;
   }
 
-  //ReadableMap payload
   public static Event buildEventFromPayload(JSONObject payload) throws Exception {
     String eventName = RetenoUtil.getStringOrNull(payload.optString("eventName", null));
     String stringDate = RetenoUtil.getStringOrNull(payload.optString("date", null));

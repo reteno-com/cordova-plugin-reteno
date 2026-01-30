@@ -52,6 +52,7 @@
                     <button class="nav-button" data-target="log-event" type="button">Log event</button>
                     <button class="nav-button" data-target="lifecycle" type="button">App lifecycle events</button>
                     <button class="nav-button" data-target="notifications" type="button">Notifications</button>
+                    <button class="nav-button" data-target="app-inbox" type="button">App inbox</button>
                 </div>
             </section>
 
@@ -300,6 +301,83 @@
                     <pre id="retenoNotificationClickedEvent" class="reteno-status" aria-live="polite"></pre>
                     <ul id="retenoPushReceivedEventList" class="reteno-event-list" aria-label="Push received events"></ul>
                     <ul id="retenoNotificationClickedEventList" class="reteno-event-list" aria-label="Notification clicked events"></ul>
+                </div>
+            </section>
+
+            <section class="page" data-page="app-inbox" data-screen-name="App inbox">
+                <div class="page-header">
+                    <button class="back-button" data-target="home" type="button">Back</button>
+                    <h2>App inbox</h2>
+                </div>
+
+                <div class="reteno-form" aria-label="Reteno App Inbox">
+                    <h2>Reteno: App Inbox</h2>
+
+                    <label class="reteno-label" for="retenoInboxPage">page</label>
+                    <input
+                        id="retenoInboxPage"
+                        class="reteno-input"
+                        type="number"
+                        min="1"
+                        step="1"
+                        placeholder="1"
+                    />
+
+                    <label class="reteno-label" for="retenoInboxPageSize">pageSize</label>
+                    <input
+                        id="retenoInboxPageSize"
+                        class="reteno-input"
+                        type="number"
+                        min="1"
+                        step="1"
+                        placeholder="20"
+                    />
+
+                    <label class="reteno-label" for="retenoInboxStatusSelect">status</label>
+                    <select id="retenoInboxStatusSelect" class="reteno-input">
+                        <option value="">All</option>
+                        <option value="OPENED">OPENED</option>
+                        <option value="UNOPENED">UNOPENED</option>
+                    </select>
+
+                    <button id="retenoGetInboxMessagesBtn" class="reteno-button" type="button">
+                        Fetch messages
+                    </button>
+                    <button id="retenoGetInboxCountBtn" class="reteno-button secondary" type="button">
+                        Get count
+                    </button>
+                    <button id="retenoSubscribeInboxCountBtn" class="reteno-button secondary" type="button">
+                        Subscribe count
+                    </button>
+                    <button id="retenoUnsubscribeInboxCountBtn" class="reteno-button secondary" type="button">
+                        Unsubscribe count
+                    </button>
+
+                    <pre id="retenoInboxStatusText" class="reteno-status" aria-live="polite"></pre>
+                    <pre id="retenoInboxCountText" class="reteno-status" aria-live="polite"></pre>
+                    <ul id="retenoInboxMessagesList" class="reteno-event-list" aria-label="App Inbox messages"></ul>
+                </div>
+
+                <div class="reteno-form" aria-label="Reteno App Inbox mark">
+                    <h2>Reteno: markAsOpened</h2>
+
+                    <label class="reteno-label" for="retenoInboxMessageId">messageId</label>
+                    <input
+                        id="retenoInboxMessageId"
+                        class="reteno-input"
+                        type="text"
+                        autocomplete="off"
+                        placeholder="message-id"
+                    />
+
+                    <button id="retenoMarkAsOpenedBtn" class="reteno-button" type="button">
+                        Mark as opened
+                    </button>
+                    <button id="retenoMarkAllAsOpenedBtn" class="reteno-button secondary" type="button">
+                        Mark all as opened
+                    </button>
+
+                    <pre id="retenoInboxMarkStatus" class="reteno-status" aria-live="polite"></pre>
                 </div>
             </section>
         </div>

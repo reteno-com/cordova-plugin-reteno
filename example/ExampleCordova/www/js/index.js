@@ -52,6 +52,20 @@ function onDeviceReady() {
     var notificationApplyBtn = document.getElementById('retenoNotificationApplyBtn');
     var pushReceivedListenerToggle = document.getElementById('retenoPushReceivedListenerToggle');
     var notificationClickedListenerToggle = document.getElementById('retenoNotificationClickedListenerToggle');
+    var inboxStatusEl = document.getElementById('retenoInboxStatusText');
+    var inboxCountEl = document.getElementById('retenoInboxCountText');
+    var inboxMessagesListEl = document.getElementById('retenoInboxMessagesList');
+    var inboxMarkStatusEl = document.getElementById('retenoInboxMarkStatus');
+    var inboxPageEl = document.getElementById('retenoInboxPage');
+    var inboxPageSizeEl = document.getElementById('retenoInboxPageSize');
+    var inboxStatusSelectEl = document.getElementById('retenoInboxStatusSelect');
+    var inboxMessageIdEl = document.getElementById('retenoInboxMessageId');
+    var getInboxMessagesBtn = document.getElementById('retenoGetInboxMessagesBtn');
+    var getInboxCountBtn = document.getElementById('retenoGetInboxCountBtn');
+    var subscribeInboxCountBtn = document.getElementById('retenoSubscribeInboxCountBtn');
+    var unsubscribeInboxCountBtn = document.getElementById('retenoUnsubscribeInboxCountBtn');
+    var markAsOpenedBtn = document.getElementById('retenoMarkAsOpenedBtn');
+    var markAllAsOpenedBtn = document.getElementById('retenoMarkAllAsOpenedBtn');
 
     var emailEl = document.getElementById('retenoEmail');
     var phoneEl = document.getElementById('retenoPhone');
@@ -115,6 +129,8 @@ function onDeviceReady() {
     if (notificationDescriptionEl && !String(notificationDescriptionEl.value || '').trim()) {
         notificationDescriptionEl.value = 'General updates and announcements';
     }
+    if (inboxPageEl && !String(inboxPageEl.value || '').trim()) inboxPageEl.value = '1';
+    if (inboxPageSizeEl && !String(inboxPageSizeEl.value || '').trim()) inboxPageSizeEl.value = '20';
 
     function setStatus(text) {
         if (statusEl) {
@@ -137,6 +153,24 @@ function onDeviceReady() {
     function setNotificationStatus(text) {
         if (notificationStatusEl) {
             notificationStatusEl.textContent = text;
+        }
+    }
+
+    function setInboxStatus(text) {
+        if (inboxStatusEl) {
+            inboxStatusEl.textContent = text;
+        }
+    }
+
+    function setInboxCount(text) {
+        if (inboxCountEl) {
+            inboxCountEl.textContent = text;
+        }
+    }
+
+    function setInboxMarkStatus(text) {
+        if (inboxMarkStatusEl) {
+            inboxMarkStatusEl.textContent = text;
         }
     }
 
@@ -198,8 +232,29 @@ function onDeviceReady() {
         }
     }
 
+    function renderInboxMessages(messages) {
+        if (!inboxMessagesListEl) return;
+        inboxMessagesListEl.innerHTML = '';
+        if (!messages || !messages.length) {
+            return;
+        }
+        messages.forEach(function (message) {
+            var id = message && message.id ? message.id : 'unknown';
+            var title = message && message.title ? message.title : '';
+            var status = message && message.status ? message.status : '';
+            var created = message && message.createdDate ? message.createdDate : '';
+            var label = 'id: ' + id;
+            if (title) label += ' | title: ' + title;
+            if (status) label += ' | status: ' + status;
+            if (created) label += ' | created: ' + created;
+            appendEventItem(inboxMessagesListEl, label);
+        });
+    }
+
     var pushReceivedHandler = null;
     var notificationClickedHandler = null;
+    var inboxCountSubscribed = false;
+    var inboxCountHandler = null;
 
     function logScreenView(screenName) {
         var sdk = getRetenoSdk();
@@ -554,6 +609,145 @@ function onDeviceReady() {
                 notificationClickedHandler = null;
                 setNotificationClickedEvent('Notification click listener removed.');
             }
+        });
+    }
+
+    if (getInboxMessagesBtn) {
+        getInboxMessagesBtn.addEventListener('click', function () {
+            var sdk = getRetenoSdk();
+            if (!sdk || typeof sdk.getAppInboxMessages !== 'function') {
+                setInboxStatus('Reteno getAppInboxMessages is not available.');
+                return;
+            }
+
+            var page = inboxPageEl ? parseInt(String(inboxPageEl.value || '').trim(), 10) : NaN;
+            var pageSize = inboxPageSizeEl ? parseInt(String(inboxPageSizeEl.value || '').trim(), 10) : NaN;
+            if (!page || page < 1 || Number.isNaN(page)) {
+                setInboxStatus('Please provide a valid page.');
+                return;
+            }
+            if (!pageSize || pageSize < 1 || Number.isNaN(pageSize)) {
+                setInboxStatus('Please provide a valid pageSize.');
+                return;
+            }
+
+            var statusValue = inboxStatusSelectEl ? String(inboxStatusSelectEl.value || '').trim() : '';
+            var payload = { page: page, pageSize: pageSize };
+            if (statusValue) {
+                payload.status = statusValue;
+            }
+
+            setInboxStatus('Fetching messages...');
+            sdk.getAppInboxMessages(payload)
+                .then(function (result) {
+                    var totalPages = result && result.totalPages !== undefined ? result.totalPages : '?';
+                    var messages = result && result.messages ? result.messages : [];
+                    setInboxStatus('getAppInboxMessages: OK (totalPages: ' + totalPages + ')');
+                    renderInboxMessages(messages);
+                })
+                .catch(function (err) {
+                    setInboxStatus('getAppInboxMessages: error: ' + (err && err.message ? err.message : String(err)));
+                });
+        });
+    }
+
+    if (getInboxCountBtn) {
+        getInboxCountBtn.addEventListener('click', function () {
+            var sdk = getRetenoSdk();
+            if (!sdk || typeof sdk.getAppInboxMessagesCount !== 'function') {
+                setInboxCount('Reteno getAppInboxMessagesCount is not available.');
+                return;
+            }
+            setInboxCount('Fetching count...');
+            sdk.getAppInboxMessagesCount()
+                .then(function (count) {
+                    setInboxCount('App Inbox count: ' + count);
+                })
+                .catch(function (err) {
+                    setInboxCount('getAppInboxMessagesCount: error: ' + (err && err.message ? err.message : String(err)));
+                });
+        });
+    }
+
+    if (subscribeInboxCountBtn) {
+        subscribeInboxCountBtn.addEventListener('click', function () {
+            var sdk = getRetenoSdk();
+            if (!sdk || typeof sdk.subscribeOnMessagesCountChanged !== 'function') {
+                setInboxCount('Reteno subscribeOnMessagesCountChanged is not available.');
+                return;
+            }
+            if (inboxCountSubscribed) {
+                setInboxCount('Already subscribed to count updates.');
+                return;
+            }
+            inboxCountHandler = function (count) {
+                setInboxCount('App Inbox count: ' + count);
+            };
+            setInboxCount('Subscribing to count updates...');
+            sdk.subscribeOnMessagesCountChanged(inboxCountHandler, function (err) {
+                setInboxCount('subscribeOnMessagesCountChanged: error: ' + (err && err.message ? err.message : String(err)));
+            });
+            inboxCountSubscribed = true;
+        });
+    }
+
+    if (unsubscribeInboxCountBtn) {
+        unsubscribeInboxCountBtn.addEventListener('click', function () {
+            var sdk = getRetenoSdk();
+            if (!sdk || typeof sdk.unsubscribeMessagesCountChanged !== 'function') {
+                setInboxCount('Reteno unsubscribeMessagesCountChanged is not available.');
+                return;
+            }
+            sdk.unsubscribeMessagesCountChanged()
+                .then(function () {
+                    inboxCountSubscribed = false;
+                    inboxCountHandler = null;
+                    setInboxCount('Unsubscribed from count updates.');
+                })
+                .catch(function (err) {
+                    setInboxCount('unsubscribeMessagesCountChanged: error: ' + (err && err.message ? err.message : String(err)));
+                });
+        });
+    }
+
+    if (markAsOpenedBtn) {
+        markAsOpenedBtn.addEventListener('click', function () {
+            var sdk = getRetenoSdk();
+            if (!sdk || typeof sdk.markAsOpened !== 'function') {
+                setInboxMarkStatus('Reteno markAsOpened is not available.');
+                return;
+            }
+            var messageId = inboxMessageIdEl ? String(inboxMessageIdEl.value || '').trim() : '';
+            if (!messageId) {
+                setInboxMarkStatus('Please provide messageId.');
+                return;
+            }
+            setInboxMarkStatus('Marking message as opened...');
+            sdk.markAsOpened(messageId)
+                .then(function () {
+                    setInboxMarkStatus('markAsOpened: OK');
+                })
+                .catch(function (err) {
+                    setInboxMarkStatus('markAsOpened: error: ' + (err && err.message ? err.message : String(err)));
+                });
+        });
+    }
+
+    if (markAllAsOpenedBtn) {
+        markAllAsOpenedBtn.addEventListener('click', function () {
+            var sdk = getRetenoSdk();
+            if (!sdk || typeof sdk.markAllMessagesAsOpened !== 'function') {
+                setInboxMarkStatus('Reteno markAllMessagesAsOpened is not available.');
+                return;
+            }
+            setInboxMarkStatus('Marking all messages as opened...');
+            sdk.markAllMessagesAsOpened()
+                .then(function () {
+                    setInboxMarkStatus('markAllMessagesAsOpened: OK');
+                })
+                .catch(function (err) {
+                    setInboxMarkStatus('markAllMessagesAsOpened: error: ' + (err && err.message ? err.message : String(err)));
+                });
         });
     }
 }

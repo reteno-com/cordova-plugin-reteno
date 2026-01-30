@@ -1,5 +1,15 @@
 import { Injectable } from '@angular/core';
 
+export type LifecycleTrackingOptions =
+  | {
+      appLifecycleEnabled?: boolean | null;
+      pushSubscriptionEnabled?: boolean | null;
+      sessionEventsEnabled?: boolean | null;
+    }
+  | 'ALL'
+  | 'NONE'
+  | string;
+
 declare global {
   interface Window {
     retenosdk?: {
@@ -77,6 +87,18 @@ declare global {
 export class RetenoService {
   isAvailable(): boolean {
     return !!window.retenosdk;
+  }
+
+  init(options?: {
+    pauseInAppMessages?: boolean;
+    pausePushInAppMessages?: boolean;
+    lifecycleTrackingOptions?: LifecycleTrackingOptions | string;
+  }): Promise<unknown> {
+    const sdk = window.retenosdk;
+    if (!sdk?.init) {
+      return Promise.reject(new Error('retenosdk.init is not available'));
+    }
+    return sdk.init(options || {});
   }
 
   setUserAttributes(payload: unknown): Promise<void> {

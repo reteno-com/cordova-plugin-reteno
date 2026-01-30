@@ -23,7 +23,7 @@ Notes:
 | [removeOnRetenoNotificationClickedListener](../www/cordova-plugin-reteno.js) | iOS, Android       | Removes listener for notification click events.                                                                                                   |
 | [setOnInAppMessageCustomDataReceivedListener](../www/cordova-plugin-reteno.js) | Android            | Sets listener for in-app message custom data events.                                                                                              |
 | [removeOnInAppMessageCustomDataReceivedListener](../www/cordova-plugin-reteno.js) | Android            | Removes listener for in-app message custom data events.                                                                                            |
-| [init](../www/cordova-plugin-reteno.js)                            | Android            | Initializes Reteno SDK.                                                                                                                           |
+| [init](../www/cordova-plugin-reteno.js)                            | Android            | Initializes Reteno SDK. Accepts optional `RetenoInitializeOptions` with `pauseInAppMessages`, `lifecycleTrackingOptions` and `pausePushInAppMessages`. [Types](../types/index.ts) |
 | [requestNotificationPermission](../www/cordova-plugin-reteno.js)   | Android            | Requests `POST_NOTIFICATIONS` permission (Android 13+). Returns `0` or `1` (`RequestNotificationPermissionResult`) in [types](../types/index.ts). |
 | [updateDefaultNotificationChannel](../www/cordova-plugin-reteno.js) | Android            | Updates the default notification channel name and description for existing users. [Types](../types/index.ts)                                      |
 | [getAppInboxMessages](../www/cordova-plugin-reteno.js)             | Android            | Fetches App Inbox messages with pagination. [Types](../types/index.ts)                                                                             |
@@ -32,6 +32,41 @@ Notes:
 | [unsubscribeMessagesCountChanged](../www/cordova-plugin-reteno.js)  | Android            | Unsubscribes from App Inbox messages count changes.                                                                                                 |
 | [markAsOpened](../www/cordova-plugin-reteno.js)                    | Android            | Marks an App Inbox message as opened.                                                                                                              |
 | [markAllMessagesAsOpened](../www/cordova-plugin-reteno.js)         | Android            | Marks all App Inbox messages as opened.                                                                                                             |
+
+### init example
+
+Initialize the Reteno SDK with optional configuration. Payload type: `RetenoInitializeOptions` in [types](../types/index.ts).
+
+```js
+// Initialize with default options (in-app messages enabled).
+retenosdk.init()
+  .then(() => console.log('init: OK'))
+  .catch((err) => console.error('init: ERROR', err));
+```
+
+```js
+// Initialize with in-app messages paused and lifecycle tracking configured.
+// pauseInAppMessages: pauses all in-app messages until resumed.
+// pausePushInAppMessages: pauses in-app messages triggered by push notifications.
+// lifecycleTrackingOptions: configures lifecycle event tracking ('ALL', 'NONE', or an object).
+retenosdk.init({
+  pauseInAppMessages: true,
+  pausePushInAppMessages: false,
+  lifecycleTrackingOptions: {
+    appLifecycleEnabled: true,
+    pushSubscriptionEnabled: true,
+    sessionEventsEnabled: false,
+  },
+})
+  .then(() => console.log('init: OK'))
+  .catch((err) => console.error('init: ERROR', err));
+```
+
+```js
+// Shorthand lifecycle tracking values:
+retenosdk.init({ lifecycleTrackingOptions: 'ALL' });
+retenosdk.init({ lifecycleTrackingOptions: 'NONE' });
+```
 
 ### setUserAttributes payload example
 

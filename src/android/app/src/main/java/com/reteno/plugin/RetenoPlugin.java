@@ -103,7 +103,7 @@ public class RetenoPlugin extends CordovaPlugin {
       activity.runOnUiThread(new Runnable() {
         @Override
         public void run() {
-          initialize(callbackContext);
+          initialize(args, callbackContext);
         }
       });
       return true;
@@ -345,7 +345,7 @@ public class RetenoPlugin extends CordovaPlugin {
     return false;
   }
 
-  private void initialize(CallbackContext callbackContext) {
+  private void initialize(JSONArray args, CallbackContext callbackContext) {
     if (initialized) {
       callbackContext.success(1);
       return;
@@ -360,12 +360,39 @@ public class RetenoPlugin extends CordovaPlugin {
       return;
     }
 
-    Reteno.initWithConfig(
-      new RetenoConfig.Builder()
-        .accessKey(accessKey)
-        .setDebug(readDebugModeEnabled())
-        .build()
-    );
+    JSONObject options = null;
+    if (args != null && args.length() > 0) {
+      Object arg0 = args.opt(0);
+      if (arg0 instanceof JSONArray) {
+        arg0 = ((JSONArray) arg0).opt(0);
+      }
+      if (arg0 instanceof JSONObject) {
+        options = (JSONObject) arg0;
+      }
+    }
+
+    boolean pauseInAppMessages = options != null && options.optBoolean("pauseInAppMessages", false);
+    boolean pausePushInAppMessages = options != null && options.optBoolean("pausePushInAppMessages", false);
+
+    RetenoConfig.Builder builder = new RetenoConfig.Builder()
+      .accessKey(accessKey)
+      .setDebug(readDebugModeEnabled());
+
+    if (pauseInAppMessages) {
+      builder.isPausedInAppMessages(true);
+    }
+    if (pausePushInAppMessages) {
+      builder.isPausedPushInAppMessages(true);
+    }
+
+    if (options != null && options.has("lifecycleTrackingOptions")) {
+      LifecycleTrackingOptions lto = parseLifecycleTrackingOption(options.opt("lifecycleTrackingOptions"));
+      if (lto != null) {
+        builder.setLifecycleTrackingOptions(lto);
+      }
+    }
+
+    Reteno.initWithConfig(builder.build());
 
     if (Reteno.getInstance() == null) {
       callbackContext.error("Reteno SDK initialization failed: instance is not available.");
@@ -573,19 +600,27 @@ public class RetenoPlugin extends CordovaPlugin {
       arg0 = ((JSONArray) arg0).opt(0);
     }
 
-    if (arg0 instanceof String) {
-      String value = ((String) arg0).trim();
-      if ("ALL".equalsIgnoreCase(value)) {
+    return parseLifecycleTrackingOption(arg0);
+  }
+
+  private LifecycleTrackingOptions parseLifecycleTrackingOption(Object value) {
+    if (value == null) {
+      return null;
+    }
+
+    if (value instanceof String) {
+      String str = ((String) value).trim();
+      if ("ALL".equalsIgnoreCase(str)) {
         return new LifecycleTrackingOptions(true, true, true);
       }
-      if ("NONE".equalsIgnoreCase(value)) {
+      if ("NONE".equalsIgnoreCase(str)) {
         return new LifecycleTrackingOptions(false, false, false);
       }
       return null;
     }
 
-    if (arg0 instanceof JSONObject) {
-      JSONObject payload = (JSONObject) arg0;
+    if (value instanceof JSONObject) {
+      JSONObject payload = (JSONObject) value;
       boolean appLifecycleEnabled = payload.has("appLifecycleEnabled")
         ? payload.optBoolean("appLifecycleEnabled", true)
         : true;

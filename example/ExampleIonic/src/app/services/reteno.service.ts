@@ -50,6 +50,25 @@ declare global {
         success?: () => void,
         error?: (err: unknown) => void
       ) => Promise<void>;
+      getAppInboxMessages?: (
+        payload: { page: number; pageSize: number; status?: string },
+        success?: (result: unknown) => void,
+        error?: (err: unknown) => void
+      ) => Promise<unknown>;
+      getAppInboxMessagesCount?: (
+        success?: (count: number) => void,
+        error?: (err: unknown) => void
+      ) => Promise<number>;
+      subscribeOnMessagesCountChanged?: (
+        success?: (count: number) => void,
+        error?: (err: unknown) => void
+      ) => Promise<unknown> | void;
+      unsubscribeMessagesCountChanged?: (
+        success?: () => void,
+        error?: (err: unknown) => void
+      ) => Promise<void>;
+      markAsOpened?: (messageId: string, success?: () => void, error?: (err: unknown) => void) => Promise<void>;
+      markAllMessagesAsOpened?: (success?: () => void, error?: (err: unknown) => void) => Promise<void>;
     };
   }
 }
@@ -146,6 +165,61 @@ export class RetenoService {
       return Promise.reject(new Error('retenosdk.updateDefaultNotificationChannel is not available'));
     }
     return sdk.updateDefaultNotificationChannel(config);
+  }
+
+  getAppInboxMessages(payload: { page: number; pageSize: number; status?: string }): Promise<unknown> {
+    const sdk = window.retenosdk;
+    if (!sdk?.getAppInboxMessages) {
+      return Promise.reject(new Error('retenosdk.getAppInboxMessages is not available'));
+    }
+    return sdk.getAppInboxMessages(payload);
+  }
+
+  getAppInboxMessagesCount(): Promise<number> {
+    const sdk = window.retenosdk;
+    if (!sdk?.getAppInboxMessagesCount) {
+      return Promise.reject(new Error('retenosdk.getAppInboxMessagesCount is not available'));
+    }
+    return sdk.getAppInboxMessagesCount();
+  }
+
+  subscribeOnMessagesCountChanged(
+    listener: (count: number) => void,
+    error?: (err: unknown) => void
+  ): Promise<unknown> {
+    const sdk = window.retenosdk;
+    if (!sdk?.subscribeOnMessagesCountChanged) {
+      return Promise.reject(new Error('retenosdk.subscribeOnMessagesCountChanged is not available'));
+    }
+    const res = sdk.subscribeOnMessagesCountChanged(listener, error);
+    if (res && typeof (res as Promise<unknown>).then === 'function') {
+      return res as Promise<unknown>;
+    }
+    return Promise.resolve();
+  }
+
+  unsubscribeMessagesCountChanged(): Promise<void> {
+    const sdk = window.retenosdk;
+    if (!sdk?.unsubscribeMessagesCountChanged) {
+      return Promise.reject(new Error('retenosdk.unsubscribeMessagesCountChanged is not available'));
+    }
+    return sdk.unsubscribeMessagesCountChanged();
+  }
+
+  markAsOpened(messageId: string): Promise<void> {
+    const sdk = window.retenosdk;
+    if (!sdk?.markAsOpened) {
+      return Promise.reject(new Error('retenosdk.markAsOpened is not available'));
+    }
+    return sdk.markAsOpened(messageId);
+  }
+
+  markAllMessagesAsOpened(): Promise<void> {
+    const sdk = window.retenosdk;
+    if (!sdk?.markAllMessagesAsOpened) {
+      return Promise.reject(new Error('retenosdk.markAllMessagesAsOpened is not available'));
+    }
+    return sdk.markAllMessagesAsOpened();
   }
 
 

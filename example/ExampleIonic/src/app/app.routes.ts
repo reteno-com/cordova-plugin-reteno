@@ -22,6 +22,10 @@ export const routes: Routes = [
     loadComponent: () => import('./notifications/notifications.page').then((m) => m.NotificationsPage),
   },
   {
+    path: 'app-inbox',
+    loadComponent: () => import('./app-inbox/app-inbox.page').then((m) => m.AppInboxPage),
+  },
+  {
     path: '',
     redirectTo: 'main',
     pathMatch: 'full',

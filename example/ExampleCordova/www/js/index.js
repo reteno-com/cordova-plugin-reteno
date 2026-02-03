@@ -103,6 +103,7 @@ function onDeviceReady() {
     var eventParamKeyEl = document.getElementById('retenoEventParamKey');
     var eventParamValueEl = document.getElementById('retenoEventParamValue');
     var forcePushDataBtn = document.getElementById('retenoForcePushDataBtn');
+    var forcePushDataHomeBtn = document.getElementById('retenoForcePushDataHomeBtn');
 
     var lifecycleAppEl = document.getElementById('retenoLifecycleApp');
     var lifecyclePushEl = document.getElementById('retenoLifecyclePush');
@@ -593,6 +594,24 @@ function onDeviceReady() {
                     });
             }, function (err) {
                 setEventStatus('Reteno init error: ' + (err && err.message ? err.message : String(err)));
+            });
+        });
+    }
+
+    if (forcePushDataHomeBtn) {
+        forcePushDataHomeBtn.addEventListener('click', function () {
+            withInit(function () {
+                var sdk = getRetenoSdk();
+                if (!sdk || typeof sdk.forcePushData !== 'function') {
+                    return;
+                }
+
+                sdk.forcePushData()
+                    .catch(function (err) {
+                        console.warn('forcePushData: error', err);
+                    });
+            }, function (err) {
+                console.warn('Reteno init error', err);
             });
         });
     }

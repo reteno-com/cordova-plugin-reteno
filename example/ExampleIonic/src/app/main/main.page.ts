@@ -42,6 +42,14 @@ export class MainPage implements OnInit {
     });
   }
 
+  forcePushData(): void {
+    this.reteno.forcePushData()
+      .catch((err) => {
+        // eslint-disable-next-line no-console
+        console.error('forcePushData: ERROR', err);
+      });
+  }
+
   private syncInitOptions(): void {
     const options = this.reteno.getInitOptions();
     this.initPauseInAppMessages = options.pauseInAppMessages;

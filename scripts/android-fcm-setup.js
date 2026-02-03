@@ -218,6 +218,64 @@ function ensureNetworkSecurityConfig(androidAppDir, androidProjectDir) {
 }
 
 // ---------------------------------------------------------------------------
+// Capacitor: plugin variable substitution
+// ---------------------------------------------------------------------------
+
+/**
+ * Capacitor does NOT substitute $VARIABLE placeholders from plugin.xml in the
+ * generated capacitor-cordova-android-plugins manifest.  This leaves values
+ * like $SDK_ACCESS_KEY and $RETENO_DEBUG_MODE unresolved (defaults are used).
+ *
+ * This function reads the Cordova preferences from capacitor.config.json and
+ * performs the substitution so that the manifest contains the real values.
+ */
+function substituteCapacitorPluginVariables(androidProjectDir, androidAppDir) {
+  const capPluginManifest = path.join(
+    androidProjectDir, 'capacitor-cordova-android-plugins', 'src', 'main', 'AndroidManifest.xml'
+  );
+  if (!exists(capPluginManifest)) return 'skip';
+
+  const configPath = path.join(androidAppDir, 'src', 'main', 'assets', 'capacitor.config.json');
+  if (!exists(configPath)) return 'skip';
+
+  let prefs;
+  try {
+    const config = JSON.parse(readText(configPath));
+    prefs = (config && config.cordova && config.cordova.preferences) || {};
+  } catch (_) {
+    return 'skip';
+  }
+
+  if (Object.keys(prefs).length === 0) return 'skip';
+
+  let text = readText(capPluginManifest);
+  let changed = false;
+
+  const allowedKeys = new Set([
+    'SDK_ACCESS_KEY',
+    'RETENO_DEBUG_MODE',
+    'ANDROID_RETENO_FCM_VERSION',
+    'ANDROID_FIREBASE_MESSAGING_VERSION',
+  ]);
+
+  for (const key of Object.keys(prefs)) {
+    if (!allowedKeys.has(key)) continue;
+    const placeholder = '$' + key;
+    if (text.includes(placeholder)) {
+      text = text.split(placeholder).join(String(prefs[key]));
+      changed = true;
+    }
+  }
+
+  if (changed) {
+    writeText(capPluginManifest, text);
+    return 'applied';
+  }
+
+  return 'ok';
+}
+
+// ---------------------------------------------------------------------------
 // google-services.json helpers
 // ---------------------------------------------------------------------------
 
@@ -272,6 +330,9 @@ module.exports = function (context) {
   const platformsAndroidBuildGradlePath = path.join(androidProjectDir, 'build.gradle');
   const platformsAndroidAppBuildGradlePath = path.join(androidAppDir, 'build.gradle');
 
+  // --- Capacitor: substitute plugin variables in generated manifest ----------
+  const varsResult = substituteCapacitorPluginVariables(androidProjectDir, androidAppDir);
+
   // --- Network security config (conditional on RETENO_DEBUG_MODE) -----------
   const nscResult = ensureNetworkSecurityConfig(androidAppDir, androidProjectDir);
 
@@ -288,7 +349,7 @@ module.exports = function (context) {
   if (!googleServicesSrc) {
     // eslint-disable-next-line no-console
     console.log(
-      `cordova-plugin-reteno: Android setup: network-security-config=${nscResult} google-services.json=not-found (skipping google-services Gradle plugin).`
+      `cordova-plugin-reteno: Android setup: capacitor-vars=${varsResult} network-security-config=${nscResult} google-services.json=not-found (skipping google-services Gradle plugin).`
     );
     return;
   }
@@ -308,6 +369,7 @@ module.exports = function (context) {
   console.log(
     [
       'cordova-plugin-reteno: Android setup:',
+      `capacitor-vars=${varsResult}`,
       `network-security-config=${nscResult}`,
       `google-services.json=${copyResult.reason}`,
       `google-services-classpath=${classpathChangedRoot || classpathChangedApp ? 'added' : 'ok'}`,

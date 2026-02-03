@@ -400,56 +400,61 @@ public class RetenoPlugin extends CordovaPlugin {
       return;
     }
 
-    String accessKey = readAccessKeyFromManifest();
-    if (TextUtils.isEmpty(accessKey)) {
-      callbackContext.error(
-        "Missing SDK_ACCESS_KEY. Provide it when installing the Cordova plugin " +
-        "(e.g. --variable SDK_ACCESS_KEY=YOUR_KEY) or set AndroidManifest meta-data 'com.reteno.SDK_ACCESS_KEY'."
-      );
-      return;
-    }
-
-    JSONObject options = null;
-    if (args != null && args.length() > 0) {
-      Object arg0 = args.opt(0);
-      if (arg0 instanceof JSONArray) {
-        arg0 = ((JSONArray) arg0).opt(0);
+    try {
+      if (Reteno.getInstance() != null) {
+        initialized = true;
+        callbackContext.success(1);
+        return;
       }
-      if (arg0 instanceof JSONObject) {
-        options = (JSONObject) arg0;
+
+      String accessKey = readAccessKeyFromManifest();
+      if (TextUtils.isEmpty(accessKey)) {
+        callbackContext.error(
+          "Missing SDK_ACCESS_KEY. Provide it when installing the Cordova plugin " +
+          "(e.g. --variable SDK_ACCESS_KEY=YOUR_KEY) or set AndroidManifest meta-data 'com.reteno.SDK_ACCESS_KEY'."
+        );
+        return;
       }
-    }
 
-    boolean pauseInAppMessages = options != null && options.optBoolean("pauseInAppMessages", false);
-    boolean pausePushInAppMessages = options != null && options.optBoolean("pausePushInAppMessages", false);
-
-    RetenoConfig.Builder builder = new RetenoConfig.Builder()
-      .accessKey(accessKey)
-      .setDebug(readDebugModeEnabled());
-
-    if (pauseInAppMessages) {
-      builder.pauseInAppMessages(true);
-    }
-    if (pausePushInAppMessages) {
-      builder.pausePushInAppMessages(true);
-    }
-
-    if (options != null && options.has("lifecycleTrackingOptions")) {
-      LifecycleTrackingOptions lto = parseLifecycleTrackingOption(options.opt("lifecycleTrackingOptions"));
-      if (lto != null) {
-        builder.lifecycleTrackingOptions(lto);
+      JSONObject options = null;
+      if (args != null && args.length() > 0) {
+        Object arg0 = args.opt(0);
+        if (arg0 instanceof JSONArray) {
+          arg0 = ((JSONArray) arg0).opt(0);
+        }
+        if (arg0 instanceof JSONObject) {
+          options = (JSONObject) arg0;
+        }
       }
+
+      boolean pauseInAppMessages = options != null && options.optBoolean("pauseInAppMessages", false);
+      boolean pausePushInAppMessages = options != null && options.optBoolean("pausePushInAppMessages", false);
+
+      RetenoConfig.Builder builder = new RetenoConfig.Builder()
+        .accessKey(accessKey)
+        .setDebug(readDebugModeEnabled());
+
+      if (pauseInAppMessages) {
+        builder.pauseInAppMessages(true);
+      }
+      if (pausePushInAppMessages) {
+        builder.pausePushInAppMessages(true);
+      }
+
+      if (options != null && options.has("lifecycleTrackingOptions")) {
+        LifecycleTrackingOptions lto = parseLifecycleTrackingOption(options.opt("lifecycleTrackingOptions"));
+        if (lto != null) {
+          builder.lifecycleTrackingOptions(lto);
+        }
+      }
+
+      Reteno.initWithConfig(builder.build());
+
+      initialized = true;
+      callbackContext.success(1);
+    } catch (Exception e) {
+      callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
     }
-
-    Reteno.initWithConfig(builder.build());
-
-    if (Reteno.getInstance() == null) {
-      callbackContext.error("Reteno SDK initialization failed: instance is not available.");
-      return;
-    }
-
-    initialized = true;
-    callbackContext.success(1);
   }
 
   private void pauseInAppMessages(JSONArray args, CallbackContext callbackContext) {
@@ -865,7 +870,8 @@ public class RetenoPlugin extends CordovaPlugin {
   }
 
   private String readAccessKeyFromManifest() {
-    Context context = this.cordova.getActivity();
+    Activity activity = this.cordova.getActivity();
+    Context context = activity != null ? activity.getApplicationContext() : null;
     if (context == null) {
       return null;
     }

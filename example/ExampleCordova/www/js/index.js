@@ -145,6 +145,12 @@ function onDeviceReady() {
     if (initLifecycleAppEl && !initLifecycleAppEl.checked) initLifecycleAppEl.checked = true;
     if (initLifecyclePushEl && !initLifecyclePushEl.checked) initLifecyclePushEl.checked = true;
     if (initLifecycleSessionEl && !initLifecycleSessionEl.checked) initLifecycleSessionEl.checked = true;
+    if (initPauseInAppEl && initPauseInAppEl.checked) initPauseInAppEl.checked = false;
+    if (initPausePushInAppEl && initPausePushInAppEl.checked) initPausePushInAppEl.checked = false;
+    if (inAppPauseToggle && inAppPauseToggle.checked) inAppPauseToggle.checked = false;
+    if (inAppPauseBehaviourEl && !String(inAppPauseBehaviourEl.value || '').trim()) {
+        inAppPauseBehaviourEl.value = 'POSTPONE_IN_APPS';
+    }
     if (notificationNameEl && !String(notificationNameEl.value || '').trim()) notificationNameEl.value = 'Updates';
     if (notificationDescriptionEl && !String(notificationDescriptionEl.value || '').trim()) {
         notificationDescriptionEl.value = 'General updates and announcements';

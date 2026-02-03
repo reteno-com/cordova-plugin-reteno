@@ -33,7 +33,7 @@ export class InAppPage implements OnInit {
   private readonly zone = inject(NgZone);
 
   form = this.formBuilder.group({
-    behaviour: this.formBuilder.control<string>('SKIP_IN_APPS', {
+    behaviour: this.formBuilder.control<string>('POSTPONE_IN_APPS', {
       validators: [Validators.required],
       nonNullable: true,
     }),

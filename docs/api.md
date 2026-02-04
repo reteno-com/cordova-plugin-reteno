@@ -35,6 +35,8 @@ Notes:
 | [unsubscribeMessagesCountChanged](../www/cordova-plugin-reteno.js)  | Android            | Unsubscribes from App Inbox messages count changes.                                                                                                 |
 | [markAsOpened](../www/cordova-plugin-reteno.js)                    | Android            | Marks an App Inbox message as opened.                                                                                                              |
 | [markAllMessagesAsOpened](../www/cordova-plugin-reteno.js)         | Android            | Marks all App Inbox messages as opened.                                                                                                             |
+| [getRecommendations](../www/cordova-plugin-reteno.js)             | Android            | Fetches product or category recommendations. [Types](../types/index.ts)                                                                            |
+| [logRecommendations](../www/cordova-plugin-reteno.js)             | Android            | Sends recommendation impressions or clicks. [Types](../types/index.ts)                                                                             |
 
 ### init example
 
@@ -439,4 +441,60 @@ Marks all App Inbox messages as opened.
 retenosdk.markAllMessagesAsOpened()
   .then(() => console.log('markAllMessagesAsOpened: OK'))
   .catch((err) => console.error('markAllMessagesAsOpened: ERROR', err));
+```
+
+### getRecommendations example
+
+Fetches recommendations. Payload type: `GetRecommendationsPayload` in [types](../types/index.ts).
+
+```js
+// Product-based recommendations.
+retenosdk.getRecommendations(
+  {
+    recomVariantId: 'variant-id',
+    productIds: ['product-1', 'product-2'],
+    fields: ['name', 'price', 'image', 'link'],
+  }
+)
+  .then((result) => console.log('getRecommendations: OK', result))
+  .catch((err) => console.error('getRecommendations: ERROR', err));
+```
+
+```js
+// Category-based recommendations.
+retenosdk.getRecommendations(
+  {
+    recomVariantId: 'variant-id',
+    categoryId: 'category-1',
+    fields: ['name', 'price'],
+  }
+)
+  .then((result) => console.log('getRecommendations: OK', result))
+  .catch((err) => console.error('getRecommendations: ERROR', err));
+```
+
+### logRecommendations example
+
+Sends recommendation events. Payload type: `LogRecommendationsPayload` in [types](../types/index.ts).
+
+```js
+retenosdk.logRecommendations(
+  {
+    recomVariantId: 'variant-id',
+    recomEvents: [
+      {
+        recomEventType: 'IMPRESSIONS',
+        occurred: new Date().toISOString(),
+        productId: 'product-1',
+      },
+      {
+        recomEventType: 'CLICKS',
+        occurred: new Date().toISOString(),
+        productId: 'product-2',
+      },
+    ],
+  }
+)
+  .then(() => console.log('logRecommendations: OK'))
+  .catch((err) => console.error('logRecommendations: ERROR', err));
 ```

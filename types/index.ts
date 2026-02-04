@@ -131,6 +131,40 @@ export type GetAppInboxMessagesPayload = {
   status?: AppInboxStatus | string | null;
 };
 
+export type RecommendationFilter = {
+  name: string;
+  values: string[];
+};
+
+export type GetRecommendationsPayload = {
+  recomVariantId: string;
+  productIds?: string[] | null;
+  categoryId?: string | null;
+  fields?: string[] | null;
+  filters?: RecommendationFilter | RecommendationFilter[] | null;
+};
+
+export type RecommendationItem = {
+  productId: string;
+} & Record<string, unknown>;
+
+export type RecommendationsResponse<T = RecommendationItem> = {
+  recoms: T[];
+};
+
+export type RecommendationEventType = 'IMPRESSIONS' | 'CLICKS' | string;
+
+export type RecommendationEvent = {
+  recomEventType: RecommendationEventType;
+  occurred: string;
+  productId: string;
+};
+
+export type LogRecommendationsPayload = {
+  recomVariantId: string;
+  recomEvents: RecommendationEvent[];
+};
+
 /**
  * Payload received when a push notification is received.
  * Contains the data from the notification bundle.

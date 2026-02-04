@@ -24,6 +24,13 @@ import com.reteno.core.RetenoConfig;
 import com.reteno.core.domain.callback.appinbox.RetenoResultCallback;
 import com.reteno.core.domain.model.event.LifecycleTrackingOptions;
 import com.reteno.core.features.iam.InAppPauseBehaviour;
+import com.reteno.core.domain.model.recommendation.get.RecomBase;
+import com.reteno.core.domain.model.recommendation.get.RecomFilter;
+import com.reteno.core.domain.model.recommendation.get.RecomRequest;
+import com.reteno.core.domain.model.recommendation.get.Recoms;
+import com.reteno.core.domain.model.recommendation.post.RecomEvent;
+import com.reteno.core.domain.model.recommendation.post.RecomEventType;
+import com.reteno.core.domain.model.recommendation.post.RecomEvents;
 import com.reteno.core.view.iam.callback.InAppCloseData;
 import com.reteno.core.view.iam.callback.InAppData;
 import com.reteno.core.view.iam.callback.InAppErrorData;
@@ -35,7 +42,13 @@ import com.reteno.core.domain.model.user.UserAttributesAnonymous;
 import com.reteno.core.features.appinbox.AppInboxStatus;
 import com.reteno.push.RetenoNotificationService;
 import com.reteno.push.RetenoNotifications;
+import com.reteno.core.recommendation.GetRecommendationResponseCallback;
 
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -341,6 +354,34 @@ public class RetenoPlugin extends CordovaPlugin {
         public void run() {
           try {
             markAllMessagesAsOpened(callbackContext);
+          } catch (Exception e) {
+            callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
+          }
+        }
+      });
+      return true;
+    }
+
+    if ("getRecommendations".equals(action)) {
+      cordova.getThreadPool().execute(new Runnable() {
+        @Override
+        public void run() {
+          try {
+            getRecommendations(args, callbackContext);
+          } catch (Exception e) {
+            callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
+          }
+        }
+      });
+      return true;
+    }
+
+    if ("logRecommendations".equals(action)) {
+      cordova.getThreadPool().execute(new Runnable() {
+        @Override
+        public void run() {
+          try {
+            logRecommendations(args, callbackContext);
           } catch (Exception e) {
             callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
           }
@@ -1273,6 +1314,304 @@ public class RetenoPlugin extends CordovaPlugin {
     } catch (Exception e) {
       callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
     }
+  }
+
+  private void getRecommendations(JSONArray args, CallbackContext callbackContext) throws JSONException {
+    if (args == null || args.length() == 0) {
+      callbackContext.error("Missing argument: payload");
+      return;
+    }
+
+    Object arg0 = args.opt(0);
+    if (arg0 instanceof JSONArray) {
+      arg0 = ((JSONArray) arg0).opt(0);
+    }
+
+    if (!(arg0 instanceof JSONObject)) {
+      callbackContext.error("Invalid argument: expected an object payload");
+      return;
+    }
+
+    JSONObject payload = (JSONObject) arg0;
+    String recomVariantId = payload.optString("recomVariantId", null);
+    if (recomVariantId != null) {
+      recomVariantId = recomVariantId.trim();
+    }
+    if (TextUtils.isEmpty(recomVariantId)) {
+      callbackContext.error("Missing argument: recomVariantId");
+      return;
+    }
+
+    List<String> productIds = null;
+    if (payload.has("productIds") && payload.opt("productIds") != JSONObject.NULL) {
+      productIds = parseStringList(payload.opt("productIds"));
+      if (productIds == null) {
+        callbackContext.error("Invalid argument: productIds");
+        return;
+      }
+      if (productIds.isEmpty()) {
+        callbackContext.error("Invalid argument: productIds");
+        return;
+      }
+    }
+
+    String categoryId = null;
+    if (payload.has("categoryId") && payload.opt("categoryId") != JSONObject.NULL) {
+      categoryId = payload.optString("categoryId", null);
+      if (categoryId != null) {
+        categoryId = categoryId.trim();
+      }
+      if (TextUtils.isEmpty(categoryId)) {
+        callbackContext.error("Invalid argument: categoryId");
+        return;
+      }
+    }
+
+    List<String> fields = null;
+    if (payload.has("fields") && payload.opt("fields") != JSONObject.NULL) {
+      fields = parseStringList(payload.opt("fields"));
+      if (fields == null) {
+        callbackContext.error("Invalid argument: fields");
+        return;
+      }
+    }
+
+    RecomFilter filter = null;
+    if (payload.has("filters") && payload.opt("filters") != JSONObject.NULL) {
+      filter = parseRecomFilter(payload.opt("filters"));
+      if (filter == null) {
+        callbackContext.error("Invalid argument: filters");
+        return;
+      }
+    }
+
+    RecomRequest request = new RecomRequest(productIds, categoryId, fields, filter);
+
+    try {
+      Reteno reteno = getRetenoInstanceOrThrow();
+      Class<? extends RecomBase> responseClass = RecomBase.class;
+      reteno.getRecommendation().fetchRecommendation(
+        recomVariantId,
+        request,
+        responseClass,
+        new GetRecommendationResponseCallback<RecomBase>() {
+          @Override
+          public void onSuccess(Recoms<RecomBase> recoms) {
+            try {
+              JSONObject result = new JSONObject(new Gson().toJson(recoms));
+              callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK, result));
+            } catch (Exception e) {
+              callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
+            }
+          }
+
+          @Override
+          public void onSuccessFallbackToJson(String json) {
+            if (json == null || json.length() == 0) {
+              callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK, new JSONObject()));
+              return;
+            }
+            try {
+              JSONObject result = new JSONObject(json);
+              callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK, result));
+            } catch (Exception e) {
+              callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK, json));
+            }
+          }
+
+          @Override
+          public void onFailure(Integer code, String message, Throwable throwable) {
+            StringBuilder sb = new StringBuilder("Reteno Android SDK Error");
+            if (message != null && message.length() > 0) {
+              sb.append(": ").append(message);
+            } else if (throwable != null && throwable.getLocalizedMessage() != null) {
+              sb.append(": ").append(throwable.getLocalizedMessage());
+            }
+            if (code != null) {
+              sb.append(" (code ").append(code).append(")");
+            }
+            callbackContext.error(sb.toString());
+          }
+        }
+      );
+    } catch (Exception e) {
+      callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
+    }
+  }
+
+  private void logRecommendations(JSONArray args, CallbackContext callbackContext) throws JSONException {
+    if (args == null || args.length() == 0) {
+      callbackContext.error("Missing argument: payload");
+      return;
+    }
+
+    Object arg0 = args.opt(0);
+    if (arg0 instanceof JSONArray) {
+      arg0 = ((JSONArray) arg0).opt(0);
+    }
+
+    if (!(arg0 instanceof JSONObject)) {
+      callbackContext.error("Invalid argument: expected an object payload");
+      return;
+    }
+
+    JSONObject payload = (JSONObject) arg0;
+    String recomVariantId = payload.optString("recomVariantId", null);
+    if (recomVariantId != null) {
+      recomVariantId = recomVariantId.trim();
+    }
+    if (TextUtils.isEmpty(recomVariantId)) {
+      callbackContext.error("Missing argument: recomVariantId");
+      return;
+    }
+
+    Object rawEvents = payload.opt("recomEvents");
+    if (rawEvents == null || rawEvents == JSONObject.NULL) {
+      callbackContext.error("Missing argument: recomEvents");
+      return;
+    }
+
+    List<RecomEvent> events = parseRecomEvents(rawEvents);
+    if (events == null || events.isEmpty()) {
+      callbackContext.error("Invalid argument: recomEvents");
+      return;
+    }
+
+    try {
+      Reteno reteno = getRetenoInstanceOrThrow();
+      reteno.getRecommendation().logRecommendations(new RecomEvents(recomVariantId, events));
+      callbackContext.success(1);
+    } catch (Exception e) {
+      callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
+    }
+  }
+
+  private List<String> parseStringList(Object raw) {
+    if (raw == null || raw == JSONObject.NULL) {
+      return null;
+    }
+    List<String> list = new ArrayList<>();
+    if (raw instanceof JSONArray) {
+      JSONArray arr = (JSONArray) raw;
+      for (int i = 0; i < arr.length(); i++) {
+        String value = arr.optString(i, null);
+        if (value != null) {
+          value = value.trim();
+        }
+        if (!TextUtils.isEmpty(value)) {
+          list.add(value);
+        }
+      }
+    } else if (raw instanceof String) {
+      String value = ((String) raw).trim();
+      if (!TextUtils.isEmpty(value)) {
+        list.add(value);
+      }
+    } else {
+      return null;
+    }
+    return list;
+  }
+
+  private RecomFilter parseRecomFilter(Object raw) throws JSONException {
+    if (raw == null || raw == JSONObject.NULL) {
+      return null;
+    }
+    if (raw instanceof JSONArray) {
+      raw = ((JSONArray) raw).opt(0);
+    }
+    if (!(raw instanceof JSONObject)) {
+      return null;
+    }
+    JSONObject filterJson = (JSONObject) raw;
+    String name = filterJson.optString("name", null);
+    if (name != null) {
+      name = name.trim();
+    }
+    if (TextUtils.isEmpty(name)) {
+      return null;
+    }
+    List<String> values = parseStringList(filterJson.opt("values"));
+    if (values == null || values.isEmpty()) {
+      return null;
+    }
+    return new RecomFilter(name, values);
+  }
+
+  private List<RecomEvent> parseRecomEvents(Object raw) throws JSONException {
+    if (raw == null || raw == JSONObject.NULL) {
+      return null;
+    }
+    if (raw instanceof JSONArray) {
+      JSONArray array = (JSONArray) raw;
+      List<RecomEvent> events = new ArrayList<>();
+      for (int i = 0; i < array.length(); i++) {
+        Object item = array.opt(i);
+        if (!(item instanceof JSONObject)) {
+          return null;
+        }
+        JSONObject eventJson = (JSONObject) item;
+        RecomEventType type = parseRecomEventType(eventJson.opt("recomEventType"));
+        if (type == null) {
+          return null;
+        }
+        ZonedDateTime occurred = parseZonedDateTime(eventJson.opt("occurred"));
+        if (occurred == null) {
+          return null;
+        }
+        String productId = eventJson.optString("productId", null);
+        if (productId != null) {
+          productId = productId.trim();
+        }
+        if (TextUtils.isEmpty(productId)) {
+          return null;
+        }
+        events.add(new RecomEvent(type, occurred, productId));
+      }
+      return events;
+    }
+    return null;
+  }
+
+  private RecomEventType parseRecomEventType(Object raw) {
+    if (!(raw instanceof String)) {
+      return null;
+    }
+    String value = ((String) raw).trim();
+    if (value.length() == 0) {
+      return null;
+    }
+    try {
+      return RecomEventType.valueOf(value.toUpperCase());
+    } catch (IllegalArgumentException ignored) {
+      return null;
+    }
+  }
+
+  private ZonedDateTime parseZonedDateTime(Object raw) {
+    if (raw == null || raw == JSONObject.NULL) {
+      return null;
+    }
+    if (raw instanceof Number) {
+      long epochMillis = ((Number) raw).longValue();
+      return ZonedDateTime.ofInstant(Instant.ofEpochMilli(epochMillis), ZoneOffset.UTC);
+    }
+    if (raw instanceof String) {
+      String value = ((String) raw).trim();
+      if (value.length() == 0) {
+        return null;
+      }
+      try {
+        return ZonedDateTime.parse(value);
+      } catch (DateTimeParseException ignored) {
+        try {
+          return ZonedDateTime.ofInstant(Instant.parse(value), ZoneOffset.UTC);
+        } catch (DateTimeParseException ignored2) {
+          return null;
+        }
+      }
+    }
+    return null;
   }
 
   private Integer parseIntegerLenient(Object raw) {

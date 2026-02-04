@@ -412,6 +412,47 @@ function __callWithAutoInit(action, args, success, error) {
     markAllMessagesAsOpened: function (success, error) {
       return __callWithAutoInit('markAllMessagesAsOpened', [], success, error);
     },
+
+    /*
+        payload: GetRecommendationsPayload
+        */
+    getRecommendations: function (arg0, success, error) {
+      // Accept either `payload` or legacy `[payload]`.
+      var payload = Array.isArray(arg0) ? arg0[0] : arg0;
+      if (!payload || typeof payload !== 'object') {
+        return Promise.reject(new Error('Missing argument: payload'));
+      }
+      if (
+        !payload.recomVariantId ||
+        typeof payload.recomVariantId !== 'string' ||
+        payload.recomVariantId.trim().length === 0
+      ) {
+        return Promise.reject(new Error('Missing argument: recomVariantId'));
+      }
+      return __callWithAutoInit('getRecommendations', [payload], success, error);
+    },
+
+    /*
+        payload: LogRecommendationsPayload
+        */
+    logRecommendations: function (arg0, success, error) {
+      // Accept either `payload` or legacy `[payload]`.
+      var payload = Array.isArray(arg0) ? arg0[0] : arg0;
+      if (!payload || typeof payload !== 'object') {
+        return Promise.reject(new Error('Missing argument: payload'));
+      }
+      if (
+        !payload.recomVariantId ||
+        typeof payload.recomVariantId !== 'string' ||
+        payload.recomVariantId.trim().length === 0
+      ) {
+        return Promise.reject(new Error('Missing argument: recomVariantId'));
+      }
+      if (!Array.isArray(payload.recomEvents) || payload.recomEvents.length === 0) {
+        return Promise.reject(new Error('Missing argument: recomEvents'));
+      }
+      return __callWithAutoInit('logRecommendations', [payload], success, error);
+    },
   };
 
   module.exports = RetenoPluginFunctions;

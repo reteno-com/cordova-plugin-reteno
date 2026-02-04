@@ -311,9 +311,6 @@ function onDeviceReady() {
     var demoInitialized = false;
 
     function logScreenView(screenName) {
-        if (!demoInitialized) {
-            return;
-        }
         var sdk = getRetenoSdk();
         if (!sdk || typeof sdk.logScreenView !== 'function') {
             return;

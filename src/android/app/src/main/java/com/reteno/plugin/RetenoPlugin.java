@@ -442,21 +442,6 @@ public class RetenoPlugin extends CordovaPlugin {
     }
 
     try {
-      if (Reteno.getInstance() != null) {
-        initialized = true;
-        callbackContext.success(1);
-        return;
-      }
-
-      String accessKey = readAccessKeyFromManifest();
-      if (TextUtils.isEmpty(accessKey)) {
-        callbackContext.error(
-          "Missing SDK_ACCESS_KEY. Provide it when installing the Cordova plugin " +
-          "(e.g. --variable SDK_ACCESS_KEY=YOUR_KEY) or set AndroidManifest meta-data 'com.reteno.SDK_ACCESS_KEY'."
-        );
-        return;
-      }
-
       JSONObject options = null;
       if (args != null && args.length() > 0) {
         Object arg0 = args.opt(0);
@@ -468,12 +453,28 @@ public class RetenoPlugin extends CordovaPlugin {
         }
       }
 
+      String accessKey = readAccessKeyFromOptions(options);
+      if (TextUtils.isEmpty(accessKey)) {
+        accessKey = readAccessKeyFromManifest();
+      }
+      if (TextUtils.isEmpty(accessKey)) {
+        callbackContext.error(
+          "Missing SDK_ACCESS_KEY. Provide it when installing the Cordova plugin " +
+          "(e.g. --variable SDK_ACCESS_KEY=YOUR_KEY), pass it to retenosdk.init({accessKey: ...}), " +
+          "or set AndroidManifest meta-data 'com.reteno.SDK_ACCESS_KEY'."
+        );
+        return;
+      }
+
+      Boolean debugOverride = readBooleanFromOptions(options, "debugMode", "debug");
+      boolean debugMode = debugOverride != null ? debugOverride.booleanValue() : readDebugModeEnabled();
+
       boolean pauseInAppMessages = options != null && options.optBoolean("pauseInAppMessages", false);
       boolean pausePushInAppMessages = options != null && options.optBoolean("pausePushInAppMessages", false);
 
       RetenoConfig.Builder builder = new RetenoConfig.Builder()
         .accessKey(accessKey)
-        .setDebug(readDebugModeEnabled());
+        .setDebug(debugMode);
 
       if (pauseInAppMessages) {
         builder.pauseInAppMessages(true);
@@ -489,13 +490,72 @@ public class RetenoPlugin extends CordovaPlugin {
         }
       }
 
+      // Ensure AndroidX Startup initializer has created the Reteno instance.
+      // We intentionally do not short-circuit initialization just because getInstance() is non-null;
+      // the SDK still needs to receive config (access key/debug/etc.).
+      Reteno existing = safeGetRetenoInstance();
+      if (existing == null) {
+        callbackContext.error(
+          "Reteno SDK instance is not available yet. Ensure AndroidX Startup is enabled and " +
+          "call retenosdk.init(...) after deviceready / Activity.onCreate()."
+        );
+        return;
+      }
+
       Reteno.initWithConfig(builder.build());
+
+      // Defensive: verify instance is still available after applying config.
+      if (safeGetRetenoInstance() == null) {
+        callbackContext.error("Reteno SDK initialization failed: instance is not available.");
+        return;
+      }
 
       initialized = true;
       callbackContext.success(1);
     } catch (Exception e) {
       callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
     }
+  }
+
+  private String readAccessKeyFromOptions(JSONObject options) {
+    if (options == null) {
+      return null;
+    }
+    String[] keys = new String[] {"accessKey", "access_key", "sdkAccessKey", "SDK_ACCESS_KEY"};
+    for (String keyName : keys) {
+      String raw = options.optString(keyName, null);
+      String normalized = normalizeAccessKey(raw);
+      if (!TextUtils.isEmpty(normalized)) {
+        return normalized;
+      }
+    }
+    return null;
+  }
+
+  private Boolean readBooleanFromOptions(JSONObject options, String... keys) {
+    if (options == null || keys == null) {
+      return null;
+    }
+    for (String key : keys) {
+      if (key == null || !options.has(key)) {
+        continue;
+      }
+      Object raw = options.opt(key);
+      if (raw == null || raw == JSONObject.NULL) {
+        continue;
+      }
+      if (raw instanceof Boolean) {
+        return (Boolean) raw;
+      }
+      if (raw instanceof Number) {
+        return ((Number) raw).intValue() != 0;
+      }
+      if (raw instanceof String) {
+        return parseBooleanLenient((String) raw, null);
+      }
+      return parseBooleanLenient(String.valueOf(raw), null);
+    }
+    return null;
   }
 
   private void pauseInAppMessages(JSONArray args, CallbackContext callbackContext) {
@@ -1707,13 +1767,23 @@ public class RetenoPlugin extends CordovaPlugin {
     json.put(key, value != null ? value : JSONObject.NULL);
   }
 
-  private Reteno getRetenoInstanceOrThrow() {
-    Reteno reteno = Reteno.getInstance();
-    if (reteno == null) {
-      throw new IllegalStateException(
-        "Reteno SDK is not initialized. Call retenosdk.init(...) before using the plugin."
-      );
+  private Reteno safeGetRetenoInstance() {
+    try {
+      return Reteno.getInstance();
+    } catch (Exception ignored) {
+      return null;
     }
-    return reteno;
+  }
+
+  private Reteno getRetenoInstanceOrThrow() {
+    Reteno reteno = safeGetRetenoInstance();
+    if (reteno != null) {
+      return reteno;
+    }
+
+    throw new IllegalStateException(
+      "Reteno SDK is not initialized. Ensure AndroidX Startup initializer is enabled and call retenosdk.init(...) " +
+      "after deviceready before using the plugin."
+    );
   }
 }

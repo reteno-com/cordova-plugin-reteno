@@ -14,18 +14,32 @@ Optional: enable Reteno Android Debug Mode (Reteno SDK 2.7.0+):
 cordova plugin add cordova-plugin-reteno --variable SDK_ACCESS_KEY=YOUR_KEY --variable RETENO_DEBUG_MODE=true
 ```
 
+### Configure via config.xml (Cordova)
+
+If you prefer to keep the access key in your Cordova app config (instead of passing `--variable` during installation), you can set it in `config.xml`:
+
+```xml
+<widget ...>
+  <!-- Reteno SDK access key (required) -->
+  <preference name="SDK_ACCESS_KEY" value="YOUR_KEY" />
+
+  <!-- Optional: enable Reteno debug mode on Android -->
+  <preference name="RETENO_DEBUG_MODE" value="true" />
+
+  <!-- Optional: Reteno Android FCM module version override -->
+  <preference name="ANDROID_RETENO_FCM_VERSION" value="2.8.9" />
+</widget>
+```
+
+Notes:
+
+- Precedence for `SDK_ACCESS_KEY` (highest → lowest): AndroidManifest meta-data (plugin `--variable`) → Cordova preferences (`config.xml`).
+- After changing `config.xml`, run `cordova prepare android` (or rebuild) to ensure preferences are applied.
+
 Notes:
 
 - Debug mode is intended for test devices/developer accounts.
-- If you override `ANDROID_RETENO_FCM_VERSION` to a version **before 2.7.0**, `setDebug(true)` is not available. In that case use Reteno's legacy toggle:
-  - Enable: `adb shell setprop debug.com.reteno.debug.view enable`
-  - Disable: `adb shell setprop debug.com.reteno.debug.view disable`
-
-2. Also you may need to increase `minSdkVersion` in project level `build.gradle` to `26`, since `Reteno` uses this version as minimal;
-
-## Setting up SDK
-
-1. Follow `Step 1` described in Android SDK setup guide: [link](https://docs.reteno.com/reference/android-sdk-setup#step-1-make-sure-to-enable-androidx-in-your-gradleproperties-file);
+```
 
 2. Reteno dependency is added automatically by the plugin via its Gradle hook.
 

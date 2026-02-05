@@ -16,25 +16,29 @@ cordova plugin add cordova-plugin-reteno --variable SDK_ACCESS_KEY=YOUR_KEY --va
 
 ### Configure via config.xml (Cordova)
 
-If you prefer to keep the access key in your Cordova app config (instead of passing `--variable` during installation), you can set it in `config.xml`:
+If you prefer to keep the access key in your Cordova app config (instead of passing `--variable` during installation), configure it as **plugin variables** in `config.xml`:
 
 ```xml
 <widget ...>
-  <!-- Reteno SDK access key (required) -->
-  <preference name="SDK_ACCESS_KEY" value="YOUR_KEY" />
+  <plugin name="cordova-plugin-reteno" spec="cordova-plugin-reteno">
+    <!-- Reteno SDK access key (required) -->
+    <variable name="SDK_ACCESS_KEY" value="YOUR_KEY" />
 
-  <!-- Optional: enable Reteno debug mode on Android -->
-  <preference name="RETENO_DEBUG_MODE" value="true" />
+    <!-- Optional: enable Reteno debug mode on Android -->
+    <variable name="RETENO_DEBUG_MODE" value="true" />
 
-  <!-- Optional: Reteno Android FCM module version override -->
-  <preference name="ANDROID_RETENO_FCM_VERSION" value="2.8.9" />
+    <!-- Optional: Reteno Android SDK (FCM) version override -->
+    <variable name="ANDROID_RETENO_FCM_VERSION" value="2.8.9" />
+  </plugin>
 </widget>
 ```
 
 Notes:
 
-- Precedence for `SDK_ACCESS_KEY` (highest → lowest): AndroidManifest meta-data (plugin `--variable`) → Cordova preferences (`config.xml`).
-- After changing `config.xml`, run `cordova prepare android` (or rebuild) to ensure preferences are applied.
+- Precedence for `SDK_ACCESS_KEY` is plugin variables (from install command or `config.xml`) → AndroidManifest meta-data injected by the plugin.
+- Changing plugin variables often requires reinstalling the plugin or re-adding the platform:
+  - `cordova plugin rm cordova-plugin-reteno && cordova plugin add ...`
+  - or `cordova platform rm android && cordova platform add android`
 
 Notes:
 

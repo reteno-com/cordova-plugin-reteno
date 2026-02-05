@@ -30,9 +30,7 @@ export class EventPage implements OnInit {
 
   ngOnInit(): void {}
 
-  ionViewDidEnter(): void {
-    this.reteno.logScreenView('Log event').catch(() => {});
-  }
+  // Screen view is tracked globally in AppComponent.
 
   sendForm() {
     const v = this.form.getRawValue();

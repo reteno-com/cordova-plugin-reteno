@@ -23,9 +23,7 @@ export class LifecyclePage implements OnInit {
 
   ngOnInit(): void {}
 
-  ionViewDidEnter(): void {
-    this.reteno.logScreenView('App lifecycle events').catch(() => {});
-  }
+  // Screen view is tracked globally in AppComponent.
 
   save() {
     const v = this.form.getRawValue();

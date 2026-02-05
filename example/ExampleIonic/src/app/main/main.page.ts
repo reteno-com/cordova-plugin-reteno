@@ -25,9 +25,6 @@ export class MainPage implements OnInit {
 
   ionViewDidEnter(): void {
     this.initialized = this.reteno.isInitialized();
-    if (this.initialized) {
-      this.reteno.logScreenView('Home').catch(() => {});
-    }
   }
 
   onInitOptionsChanged(): void {

@@ -41,9 +41,7 @@ export class InAppPage implements OnInit {
 
   ngOnInit(): void {}
 
-  ionViewDidEnter(): void {
-    this.reteno.logScreenView('In-App messages').catch(() => {});
-  }
+  // Screen view is tracked globally in AppComponent.
 
   togglePause(enabled: boolean) {
     this.isPaused = enabled;

@@ -49,10 +49,6 @@ export class HomePage implements OnInit {
     this.updateUserMode();
   }
 
-  ionViewDidEnter(): void {
-    this.reteno.logScreenView('User data').catch(() => {});
-  }
-
   sendForm() {
     const v = this.form.getRawValue();
     const clean = (value: string | null | undefined): string | null => {

@@ -38,9 +38,7 @@ export class NotificationsPage implements OnInit {
 
   ngOnInit(): void {}
 
-  ionViewDidEnter(): void {
-    this.reteno.logScreenView('Notifications').catch(() => {});
-  }
+  // Screen view is tracked globally in AppComponent.
 
   apply() {
     const v = this.form.getRawValue();

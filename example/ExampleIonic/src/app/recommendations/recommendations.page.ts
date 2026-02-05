@@ -45,9 +45,7 @@ export class RecommendationsPage implements OnInit {
 
   ngOnInit(): void {}
 
-  ionViewDidEnter(): void {
-    this.reteno.logScreenView('Recommendations').catch(() => {});
-  }
+  // Screen view is tracked globally in AppComponent.
 
   fetchRecommendations() {
     const v = this.form.getRawValue();

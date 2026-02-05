@@ -93,6 +93,7 @@
                     <button class="nav-button" data-target="notifications" type="button">Notifications</button>
                     <button class="nav-button" data-target="in-app" type="button">In-App messages</button>
                     <button class="nav-button" data-target="app-inbox" type="button">App inbox</button>
+                    <button class="nav-button" data-target="recommendations" type="button">Recommendations</button>
                 </div>
             </section>
 
@@ -467,6 +468,112 @@
                     </button>
 
                     <pre id="retenoInboxMarkStatus" class="reteno-status" aria-live="polite"></pre>
+                </div>
+            </section>
+
+            <section class="page" data-page="recommendations" data-screen-name="Recommendations">
+                <div class="page-header">
+                    <button class="back-button" data-target="home" type="button">Back</button>
+                    <h2>Recommendations</h2>
+                </div>
+
+                <div class="reteno-form" aria-label="Reteno recommendations fetch">
+                    <h2>Reteno: getRecommendations</h2>
+
+                    <label class="reteno-label" for="retenoRecomVariantId">recomVariantId</label>
+                    <input
+                        id="retenoRecomVariantId"
+                        class="reteno-input"
+                        type="text"
+                        autocomplete="off"
+                        placeholder="variant-id"
+                    />
+
+                    <label class="reteno-label" for="retenoRecomProductIds">productIds (comma-separated)</label>
+                    <input
+                        id="retenoRecomProductIds"
+                        class="reteno-input"
+                        type="text"
+                        autocomplete="off"
+                        placeholder="sku-1, sku-2"
+                    />
+
+                    <label class="reteno-label" for="retenoRecomCategoryId">categoryId</label>
+                    <input
+                        id="retenoRecomCategoryId"
+                        class="reteno-input"
+                        type="text"
+                        autocomplete="off"
+                        placeholder="category-id"
+                    />
+
+                    <label class="reteno-label" for="retenoRecomFields">fields (comma-separated)</label>
+                    <input
+                        id="retenoRecomFields"
+                        class="reteno-input"
+                        type="text"
+                        autocomplete="off"
+                        placeholder="title, price"
+                    />
+
+                    <label class="reteno-label" for="retenoRecomFilterName">filter name</label>
+                    <input
+                        id="retenoRecomFilterName"
+                        class="reteno-input"
+                        type="text"
+                        autocomplete="off"
+                        placeholder="brand"
+                    />
+
+                    <label class="reteno-label" for="retenoRecomFilterValues">filter values (comma-separated)</label>
+                    <input
+                        id="retenoRecomFilterValues"
+                        class="reteno-input"
+                        type="text"
+                        autocomplete="off"
+                        placeholder="nike, adidas"
+                    />
+
+                    <button id="retenoGetRecommendationsBtn" class="reteno-button" type="button">
+                        Fetch recommendations
+                    </button>
+
+                    <pre id="retenoRecommendationsStatus" class="reteno-status" aria-live="polite"></pre>
+                    <ul id="retenoRecommendationsList" class="reteno-event-list" aria-label="Recommendations list"></ul>
+                </div>
+
+                <div class="reteno-form" aria-label="Reteno recommendations log">
+                    <h2>Reteno: logRecommendations</h2>
+
+                    <label class="reteno-label" for="retenoRecomLogVariantId">recomVariantId</label>
+                    <input
+                        id="retenoRecomLogVariantId"
+                        class="reteno-input"
+                        type="text"
+                        autocomplete="off"
+                        placeholder="variant-id"
+                    />
+
+                    <label class="reteno-label" for="retenoRecomLogEventType">event type</label>
+                    <select id="retenoRecomLogEventType" class="reteno-input">
+                        <option value="IMPRESSIONS" selected>IMPRESSIONS</option>
+                        <option value="CLICKS">CLICKS</option>
+                    </select>
+
+                    <label class="reteno-label" for="retenoRecomLogProductIds">productIds (comma-separated)</label>
+                    <input
+                        id="retenoRecomLogProductIds"
+                        class="reteno-input"
+                        type="text"
+                        autocomplete="off"
+                        placeholder="sku-1, sku-2"
+                    />
+
+                    <button id="retenoLogRecommendationsBtn" class="reteno-button" type="button">
+                        Log recommendations
+                    </button>
+
+                    <pre id="retenoRecommendationsLogStatus" class="reteno-status" aria-live="polite"></pre>
                 </div>
             </section>
         </div>

@@ -30,6 +30,10 @@ export const routes: Routes = [
     loadComponent: () => import('./in-app/in-app.page').then((m) => m.InAppPage),
   },
   {
+    path: 'recommendations',
+    loadComponent: () => import('./recommendations/recommendations.page').then((m) => m.RecommendationsPage),
+  },
+  {
     path: '',
     redirectTo: 'main',
     pathMatch: 'full',

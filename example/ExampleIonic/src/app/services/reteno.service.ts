@@ -92,6 +92,12 @@ declare global {
       ) => Promise<void>;
       markAsOpened?: (messageId: string, success?: () => void, error?: (err: unknown) => void) => Promise<void>;
       markAllMessagesAsOpened?: (success?: () => void, error?: (err: unknown) => void) => Promise<void>;
+      getRecommendations?: (
+        payload: unknown,
+        success?: (result: unknown) => void,
+        error?: (err: unknown) => void
+      ) => Promise<unknown>;
+      logRecommendations?: (payload: unknown, success?: () => void, error?: (err: unknown) => void) => Promise<void>;
     };
   }
 }
@@ -473,6 +479,26 @@ export class RetenoService {
         return Promise.reject(new Error('retenosdk.markAllMessagesAsOpened is not available'));
       }
       return sdk.markAllMessagesAsOpened();
+    });
+  }
+
+  getRecommendations(payload: unknown): Promise<unknown> {
+    return this.withInit(() => {
+      const sdk = window.retenosdk;
+      if (!sdk?.getRecommendations) {
+        return Promise.reject(new Error('retenosdk.getRecommendations is not available'));
+      }
+      return sdk.getRecommendations(payload);
+    });
+  }
+
+  logRecommendations(payload: unknown): Promise<void> {
+    return this.withInit(() => {
+      const sdk = window.retenosdk;
+      if (!sdk?.logRecommendations) {
+        return Promise.reject(new Error('retenosdk.logRecommendations is not available'));
+      }
+      return sdk.logRecommendations(payload);
     });
   }
 

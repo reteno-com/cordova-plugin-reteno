@@ -61,6 +61,20 @@ function onDeviceReady() {
     var inboxPageSizeEl = document.getElementById('retenoInboxPageSize');
     var inboxStatusSelectEl = document.getElementById('retenoInboxStatusSelect');
     var inboxMessageIdEl = document.getElementById('retenoInboxMessageId');
+    var recomVariantIdEl = document.getElementById('retenoRecomVariantId');
+    var recomProductIdsEl = document.getElementById('retenoRecomProductIds');
+    var recomCategoryIdEl = document.getElementById('retenoRecomCategoryId');
+    var recomFieldsEl = document.getElementById('retenoRecomFields');
+    var recomFilterNameEl = document.getElementById('retenoRecomFilterName');
+    var recomFilterValuesEl = document.getElementById('retenoRecomFilterValues');
+    var recomStatusEl = document.getElementById('retenoRecommendationsStatus');
+    var recomListEl = document.getElementById('retenoRecommendationsList');
+    var recomLogVariantIdEl = document.getElementById('retenoRecomLogVariantId');
+    var recomLogEventTypeEl = document.getElementById('retenoRecomLogEventType');
+    var recomLogProductIdsEl = document.getElementById('retenoRecomLogProductIds');
+    var recomLogStatusEl = document.getElementById('retenoRecommendationsLogStatus');
+    var getRecommendationsBtn = document.getElementById('retenoGetRecommendationsBtn');
+    var logRecommendationsBtn = document.getElementById('retenoLogRecommendationsBtn');
     var getInboxMessagesBtn = document.getElementById('retenoGetInboxMessagesBtn');
     var getInboxCountBtn = document.getElementById('retenoGetInboxCountBtn');
     var subscribeInboxCountBtn = document.getElementById('retenoSubscribeInboxCountBtn');
@@ -155,6 +169,15 @@ function onDeviceReady() {
     if (notificationDescriptionEl && !String(notificationDescriptionEl.value || '').trim()) {
         notificationDescriptionEl.value = 'General updates and announcements';
     }
+    if (recomVariantIdEl && !String(recomVariantIdEl.value || '').trim()) {
+        recomVariantIdEl.value = 'demo_recom_variant';
+    }
+    if (recomLogVariantIdEl && !String(recomLogVariantIdEl.value || '').trim()) {
+        recomLogVariantIdEl.value = recomVariantIdEl ? String(recomVariantIdEl.value || '').trim() : 'demo_recom_variant';
+    }
+    if (recomLogEventTypeEl && !String(recomLogEventTypeEl.value || '').trim()) {
+        recomLogEventTypeEl.value = 'IMPRESSIONS';
+    }
     if (inboxPageEl && !String(inboxPageEl.value || '').trim()) inboxPageEl.value = '1';
     if (inboxPageSizeEl && !String(inboxPageSizeEl.value || '').trim()) inboxPageSizeEl.value = '20';
 
@@ -197,6 +220,18 @@ function onDeviceReady() {
     function setInboxMarkStatus(text) {
         if (inboxMarkStatusEl) {
             inboxMarkStatusEl.textContent = text;
+        }
+    }
+
+    function setRecommendationsStatus(text) {
+        if (recomStatusEl) {
+            recomStatusEl.textContent = text;
+        }
+    }
+
+    function setRecommendationsLogStatus(text) {
+        if (recomLogStatusEl) {
+            recomLogStatusEl.textContent = text;
         }
     }
 
@@ -264,6 +299,16 @@ function onDeviceReady() {
         setFieldGroupVisibility(phoneGroupEl, !isAnonymous);
     }
 
+    function parseCsv(value) {
+        if (!value) {
+            return [];
+        }
+        return String(value)
+            .split(',')
+            .map(function (item) { return item.trim(); })
+            .filter(function (item) { return item.length > 0; });
+    }
+
     function safeStringify(payload) {
         try {
             return JSON.stringify(payload);
@@ -302,12 +347,29 @@ function onDeviceReady() {
         });
     }
 
+    function renderRecommendations(recoms) {
+        if (!recomListEl) return;
+        recomListEl.innerHTML = '';
+        if (!recoms || !recoms.length) {
+            return;
+        }
+        recoms.forEach(function (item, index) {
+            var productId = item && item.productId ? item.productId : ('item-' + (index + 1));
+            var label = 'productId: ' + productId;
+            if (item && typeof item === 'object') {
+                label += ' | data: ' + safeStringify(item);
+            }
+            appendEventItem(recomListEl, label);
+        });
+    }
+
     var pushReceivedHandler = null;
     var notificationClickedHandler = null;
     var inboxCountSubscribed = false;
     var inboxCountHandler = null;
     var inAppLifecycleHandler = null;
     var inAppCustomDataHandler = null;
+    var lastRecommendationProductIds = [];
     var demoInitialized = false;
 
     function logScreenView(screenName) {
@@ -1078,6 +1140,132 @@ function onDeviceReady() {
                     });
             }, function (err) {
                 setInboxMarkStatus('Reteno init error: ' + (err && err.message ? err.message : String(err)));
+            });
+        });
+    }
+
+    if (getRecommendationsBtn) {
+        getRecommendationsBtn.addEventListener('click', function () {
+            withInit(function () {
+                var sdk = getRetenoSdk();
+                if (!sdk || typeof sdk.getRecommendations !== 'function') {
+                    setRecommendationsStatus('Reteno getRecommendations is not available.');
+                    return;
+                }
+
+                var recomVariantId = recomVariantIdEl ? String(recomVariantIdEl.value || '').trim() : '';
+                if (!recomVariantId) {
+                    setRecommendationsStatus('Please provide recomVariantId.');
+                    return;
+                }
+
+                var payload = { recomVariantId: recomVariantId };
+                var productIds = parseCsv(recomProductIdsEl ? recomProductIdsEl.value : '');
+                if (productIds.length) {
+                    payload.productIds = productIds;
+                }
+                var categoryId = recomCategoryIdEl ? String(recomCategoryIdEl.value || '').trim() : '';
+                if (categoryId) {
+                    payload.categoryId = categoryId;
+                }
+                var fields = parseCsv(recomFieldsEl ? recomFieldsEl.value : '');
+                if (fields.length) {
+                    payload.fields = fields;
+                }
+                var filterName = recomFilterNameEl ? String(recomFilterNameEl.value || '').trim() : '';
+                var filterValues = parseCsv(recomFilterValuesEl ? recomFilterValuesEl.value : '');
+                if (filterName && filterValues.length) {
+                    payload.filters = { name: filterName, values: filterValues };
+                }
+
+                setRecommendationsStatus('Fetching recommendations...');
+                sdk.getRecommendations(payload)
+                    .then(function (result) {
+                        var recoms = result && result.recoms ? result.recoms : [];
+                        if (!Array.isArray(recoms)) {
+                            recoms = [];
+                        }
+                        renderRecommendations(recoms);
+                        lastRecommendationProductIds = recoms
+                            .map(function (item) { return item && item.productId ? String(item.productId) : ''; })
+                            .filter(function (id) { return id; });
+                        setRecommendationsStatus('getRecommendations: OK (' + recoms.length + ' items)');
+
+                        if (recomLogVariantIdEl && !String(recomLogVariantIdEl.value || '').trim()) {
+                            recomLogVariantIdEl.value = recomVariantId;
+                        }
+                        if (
+                            recomLogProductIdsEl &&
+                            !String(recomLogProductIdsEl.value || '').trim() &&
+                            lastRecommendationProductIds.length
+                        ) {
+                            recomLogProductIdsEl.value = lastRecommendationProductIds.join(', ');
+                        }
+                    })
+                    .catch(function (err) {
+                        setRecommendationsStatus(
+                            'getRecommendations: error: ' + (err && err.message ? err.message : String(err))
+                        );
+                    });
+            }, function (err) {
+                setRecommendationsStatus('Reteno init error: ' + (err && err.message ? err.message : String(err)));
+            });
+        });
+    }
+
+    if (logRecommendationsBtn) {
+        logRecommendationsBtn.addEventListener('click', function () {
+            withInit(function () {
+                var sdk = getRetenoSdk();
+                if (!sdk || typeof sdk.logRecommendations !== 'function') {
+                    setRecommendationsLogStatus('Reteno logRecommendations is not available.');
+                    return;
+                }
+
+                var recomVariantId = recomLogVariantIdEl ? String(recomLogVariantIdEl.value || '').trim() : '';
+                if (!recomVariantId && recomVariantIdEl) {
+                    recomVariantId = String(recomVariantIdEl.value || '').trim();
+                }
+                if (!recomVariantId) {
+                    setRecommendationsLogStatus('Please provide recomVariantId.');
+                    return;
+                }
+
+                var eventType = recomLogEventTypeEl ? String(recomLogEventTypeEl.value || '').trim() : 'IMPRESSIONS';
+                if (!eventType) {
+                    eventType = 'IMPRESSIONS';
+                }
+
+                var productIds = parseCsv(recomLogProductIdsEl ? recomLogProductIdsEl.value : '');
+                if (!productIds.length && lastRecommendationProductIds.length) {
+                    productIds = lastRecommendationProductIds.slice(0);
+                }
+                if (!productIds.length) {
+                    setRecommendationsLogStatus('Please provide productIds.');
+                    return;
+                }
+
+                var occurred = new Date().toISOString();
+                var recomEvents = productIds.map(function (productId) {
+                    return {
+                        recomEventType: eventType,
+                        occurred: occurred,
+                        productId: productId,
+                    };
+                });
+
+                setRecommendationsLogStatus('Logging recommendation events...');
+                sdk.logRecommendations({ recomVariantId: recomVariantId, recomEvents: recomEvents })
+                    .then(function () {
+                        setRecommendationsLogStatus('logRecommendations: OK (' + recomEvents.length + ' events)');
+                    })
+                    .catch(function (err) {
+                        setRecommendationsLogStatus(
+                            'logRecommendations: error: ' + (err && err.message ? err.message : String(err))
+                        );
+                    });
+            }, function (err) {
+                setRecommendationsLogStatus('Reteno init error: ' + (err && err.message ? err.message : String(err)));
             });
         });
     }

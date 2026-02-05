@@ -24,10 +24,10 @@ import com.reteno.core.RetenoConfig;
 import com.reteno.core.domain.callback.appinbox.RetenoResultCallback;
 import com.reteno.core.domain.model.event.LifecycleTrackingOptions;
 import com.reteno.core.features.iam.InAppPauseBehaviour;
-import com.reteno.core.domain.model.recommendation.get.RecomBase;
+import com.reteno.core.data.remote.model.recommendation.get.RecomBase;
 import com.reteno.core.domain.model.recommendation.get.RecomFilter;
 import com.reteno.core.domain.model.recommendation.get.RecomRequest;
-import com.reteno.core.domain.model.recommendation.get.Recoms;
+import com.reteno.core.data.remote.model.recommendation.get.Recoms;
 import com.reteno.core.domain.model.recommendation.post.RecomEvent;
 import com.reteno.core.domain.model.recommendation.post.RecomEventType;
 import com.reteno.core.domain.model.recommendation.post.RecomEvents;
@@ -42,7 +42,7 @@ import com.reteno.core.domain.model.user.UserAttributesAnonymous;
 import com.reteno.core.features.appinbox.AppInboxStatus;
 import com.reteno.push.RetenoNotificationService;
 import com.reteno.push.RetenoNotifications;
-import com.reteno.core.recommendation.GetRecommendationResponseCallback;
+import com.reteno.core.features.recommendation.GetRecommendationResponseCallback;
 
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -948,7 +948,7 @@ public class RetenoPlugin extends CordovaPlugin {
       return null;
     }
     key = key.trim();
-    if (key.length() == 0 || "$SDK_ACCESS_KEY".equals(key)) {
+    if (key.length() == 0 || "$SDK_ACCESS_KEY".equals(key) || "MISSING".equals(key)) {
       return null;
     }
     return key;
@@ -1376,24 +1376,25 @@ public class RetenoPlugin extends CordovaPlugin {
       }
     }
 
-    RecomFilter filter = null;
+    List<RecomFilter> filters = null;
     if (payload.has("filters") && payload.opt("filters") != JSONObject.NULL) {
-      filter = parseRecomFilter(payload.opt("filters"));
+      RecomFilter filter = parseRecomFilter(payload.opt("filters"));
       if (filter == null) {
         callbackContext.error("Invalid argument: filters");
         return;
       }
+      filters = new ArrayList<>();
+      filters.add(filter);
     }
 
-    RecomRequest request = new RecomRequest(productIds, categoryId, fields, filter);
+    RecomRequest request = new RecomRequest(productIds, categoryId, fields, filters);
 
     try {
       Reteno reteno = getRetenoInstanceOrThrow();
-      Class<? extends RecomBase> responseClass = RecomBase.class;
       reteno.getRecommendation().fetchRecommendation(
         recomVariantId,
         request,
-        responseClass,
+        RecomBase.class,
         new GetRecommendationResponseCallback<RecomBase>() {
           @Override
           public void onSuccess(Recoms<RecomBase> recoms) {

@@ -13,6 +13,7 @@ import { RetenoService } from '../services/reteno.service';
 export class HomePage implements OnInit {
   status: string | null = null;
   isAnonymous = false;
+  private lastMultiAccountUserId: string | null = null;
 
   private readonly formBuilder = inject(FormBuilder);
   private readonly reteno = inject(RetenoService);
@@ -34,8 +35,8 @@ export class HomePage implements OnInit {
     town: this.formBuilder.control<string>('Kyiv'),
     address: this.formBuilder.control<string>('Main street 1'),
     postcode: this.formBuilder.control<string>('01001'),
-    fieldKey: this.formBuilder.control<string>('plan'),
-    fieldValue: this.formBuilder.control<string>('premium'),
+    fieldKey: this.formBuilder.control<string>(''),
+    fieldValue: this.formBuilder.control<string>(''),
   });
 
   ngOnInit(): void {
@@ -134,17 +135,27 @@ export class HomePage implements OnInit {
     };
 
     if (isMultiAccount) {
-      this.sendToReteno('setMultiAccountUserAttributes', {
-        externalUserId,
-        user: { userAttributes },
-      });
+      const previousUserId = this.lastMultiAccountUserId;
+      const nextUserId = externalUserId;
+      this.sendToReteno(
+        'setMultiAccountUserAttributes',
+        {
+          externalUserId,
+          user: { userAttributes },
+        },
+        { previousUserId, nextUserId }
+      );
       return;
     }
 
     this.sendToReteno('setUserAttributes', payload);
   }
 
-  private async sendToReteno(method: 'setUserAttributes' | 'setMultiAccountUserAttributes' | 'setAnonymousUserAttributes', payload: unknown) {
+  private async sendToReteno(
+    method: 'setUserAttributes' | 'setMultiAccountUserAttributes' | 'setAnonymousUserAttributes',
+    payload: unknown,
+    context?: { previousUserId?: string | null; nextUserId?: string | null }
+  ) {
     this.status = 'Sending…';
     try {
       if (method === 'setAnonymousUserAttributes') {
@@ -153,6 +164,15 @@ export class HomePage implements OnInit {
         await this.reteno.setMultiAccountUserAttributes(payload);
       } else {
         await this.reteno.setUserAttributes(payload);
+      }
+      if (method === 'setMultiAccountUserAttributes' && context?.nextUserId) {
+        const previousUserId = context.previousUserId;
+        const nextUserId = context.nextUserId;
+        this.lastMultiAccountUserId = nextUserId;
+        if (previousUserId && previousUserId !== nextUserId) {
+          this.status = `${method}: OK (session switch ${previousUserId} -> ${nextUserId})`;
+          return;
+        }
       }
       this.status = `${method}: OK`;
     } catch (err) {
@@ -177,6 +197,9 @@ export class HomePage implements OnInit {
     }
 
     this.isAnonymous = !!anonymousControl.value;
+    if (!multiControl.value) {
+      this.lastMultiAccountUserId = null;
+    }
 
     if (this.isAnonymous) {
       externalUserIdControl.clearValidators();

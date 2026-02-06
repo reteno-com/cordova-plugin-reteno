@@ -128,6 +128,7 @@ function onDeviceReady() {
     var externalUserGroupEl = document.querySelector('[data-field-group="external-user-id"]');
     var emailGroupEl = document.querySelector('[data-field-group="email"]');
     var phoneGroupEl = document.querySelector('[data-field-group="phone"]');
+    var lastMultiAccountUserId = null;
 
     // Prefill defaults for demo convenience (don't override user's edits).
     if (externalUserIdEl && !String(externalUserIdEl.value || '').trim()) {
@@ -145,9 +146,6 @@ function onDeviceReady() {
     if (addressTownEl && !String(addressTownEl.value || '').trim()) addressTownEl.value = 'Kyiv';
     if (addressLineEl && !String(addressLineEl.value || '').trim()) addressLineEl.value = 'Main street 1';
     if (addressPostcodeEl && !String(addressPostcodeEl.value || '').trim()) addressPostcodeEl.value = '01001';
-
-    if (fieldKeyEl && !String(fieldKeyEl.value || '').trim()) fieldKeyEl.value = 'plan';
-    if (fieldValueEl && !String(fieldValueEl.value || '').trim()) fieldValueEl.value = 'premium';
 
     if (eventNameEl && !String(eventNameEl.value || '').trim()) eventNameEl.value = 'purchase';
     if (eventDateEl && !String(eventDateEl.value || '').trim()) eventDateEl.value = new Date().toISOString();
@@ -297,6 +295,9 @@ function onDeviceReady() {
         setFieldGroupVisibility(externalUserGroupEl, !isAnonymous);
         setFieldGroupVisibility(emailGroupEl, !isAnonymous);
         setFieldGroupVisibility(phoneGroupEl, !isAnonymous);
+        if (!(multiAccountEl && multiAccountEl.checked)) {
+            lastMultiAccountUserId = null;
+        }
     }
 
     function parseCsv(value) {
@@ -553,12 +554,25 @@ function onDeviceReady() {
                             );
                         });
                 } else if (isMultiAccount) {
+                    var previousUserId = lastMultiAccountUserId;
+                    var nextUserId = externalUserId;
                     setStatus('Sending setMultiAccountUserAttributes...');
                     sdk.setMultiAccountUserAttributes({
                         externalUserId: externalUserId,
                         user: { userAttributes: userAttributes },
                     })
                         .then(function () {
+                            lastMultiAccountUserId = nextUserId;
+                            if (previousUserId && previousUserId !== nextUserId) {
+                                setStatus(
+                                    'setMultiAccountUserAttributes: success (session switch ' +
+                                        previousUserId +
+                                        ' -> ' +
+                                        nextUserId +
+                                        ')'
+                                );
+                                return;
+                            }
                             setStatus('setMultiAccountUserAttributes: success');
                         })
                         .catch(function (err) {

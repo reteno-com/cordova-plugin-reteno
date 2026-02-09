@@ -50,6 +50,8 @@ function onDeviceReady() {
     var btn = document.getElementById('retenoSetUserAttributesBtn');
     var logEventBtn = document.getElementById('retenoLogEventBtn');
     var lifecycleSaveBtn = document.getElementById('retenoLifecycleSaveBtn');
+    var lifecycleAllBtn = document.getElementById('retenoLifecycleAllBtn');
+    var lifecycleNoneBtn = document.getElementById('retenoLifecycleNoneBtn');
     var notificationApplyBtn = document.getElementById('retenoNotificationApplyBtn');
     var pushReceivedListenerToggle = document.getElementById('retenoPushReceivedListenerToggle');
     var notificationClickedListenerToggle = document.getElementById('retenoNotificationClickedListenerToggle');
@@ -714,6 +716,64 @@ function onDeviceReady() {
                 sdk.setLifecycleTrackingOptions(options)
                     .then(function () {
                         setLifecycleStatus('setLifecycleTrackingOptions: success');
+                    })
+                    .catch(function (err) {
+                        setLifecycleStatus(
+                            'setLifecycleTrackingOptions: error: ' +
+                                (err && err.message ? err.message : String(err))
+                        );
+                    });
+            }, function (err) {
+                setLifecycleStatus('Reteno init error: ' + (err && err.message ? err.message : String(err)));
+            });
+        });
+    }
+
+    if (lifecycleAllBtn) {
+        lifecycleAllBtn.addEventListener('click', function () {
+            withInit(function () {
+                var sdk = getRetenoSdk();
+                if (!sdk || typeof sdk.setLifecycleTrackingOptions !== 'function') {
+                    setLifecycleStatus('Reteno setLifecycleTrackingOptions is not available.');
+                    return;
+                }
+
+                setLifecycleStatus('Saving...');
+                sdk.setLifecycleTrackingOptions('ALL')
+                    .then(function () {
+                        if (lifecycleAppEl) lifecycleAppEl.checked = true;
+                        if (lifecyclePushEl) lifecyclePushEl.checked = true;
+                        if (lifecycleSessionEl) lifecycleSessionEl.checked = true;
+                        setLifecycleStatus('setLifecycleTrackingOptions: success (ALL)');
+                    })
+                    .catch(function (err) {
+                        setLifecycleStatus(
+                            'setLifecycleTrackingOptions: error: ' +
+                                (err && err.message ? err.message : String(err))
+                        );
+                    });
+            }, function (err) {
+                setLifecycleStatus('Reteno init error: ' + (err && err.message ? err.message : String(err)));
+            });
+        });
+    }
+
+    if (lifecycleNoneBtn) {
+        lifecycleNoneBtn.addEventListener('click', function () {
+            withInit(function () {
+                var sdk = getRetenoSdk();
+                if (!sdk || typeof sdk.setLifecycleTrackingOptions !== 'function') {
+                    setLifecycleStatus('Reteno setLifecycleTrackingOptions is not available.');
+                    return;
+                }
+
+                setLifecycleStatus('Saving...');
+                sdk.setLifecycleTrackingOptions('NONE')
+                    .then(function () {
+                        if (lifecycleAppEl) lifecycleAppEl.checked = false;
+                        if (lifecyclePushEl) lifecyclePushEl.checked = false;
+                        if (lifecycleSessionEl) lifecycleSessionEl.checked = false;
+                        setLifecycleStatus('setLifecycleTrackingOptions: success (NONE)');
                     })
                     .catch(function (err) {
                         setLifecycleStatus(

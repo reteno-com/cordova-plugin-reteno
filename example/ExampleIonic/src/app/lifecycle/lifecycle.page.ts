@@ -45,4 +45,42 @@ export class LifecyclePage implements OnInit {
         console.error('setLifecycleTrackingOptions: ERROR', err);
       });
   }
+
+  setAll() {
+    this.status = 'Saving…';
+    this.reteno
+      .setLifecycleTrackingOptions('ALL')
+      .then(() => {
+        this.form.patchValue({
+          appLifecycleEnabled: true,
+          pushSubscriptionEnabled: true,
+          sessionEventsEnabled: true,
+        });
+        this.status = 'setLifecycleTrackingOptions: OK (ALL)';
+      })
+      .catch((err) => {
+        this.status = 'setLifecycleTrackingOptions: ERROR (see console)';
+        // eslint-disable-next-line no-console
+        console.error('setLifecycleTrackingOptions: ERROR', err);
+      });
+  }
+
+  setNone() {
+    this.status = 'Saving…';
+    this.reteno
+      .setLifecycleTrackingOptions('NONE')
+      .then(() => {
+        this.form.patchValue({
+          appLifecycleEnabled: false,
+          pushSubscriptionEnabled: false,
+          sessionEventsEnabled: false,
+        });
+        this.status = 'setLifecycleTrackingOptions: OK (NONE)';
+      })
+      .catch((err) => {
+        this.status = 'setLifecycleTrackingOptions: ERROR (see console)';
+        // eslint-disable-next-line no-console
+        console.error('setLifecycleTrackingOptions: ERROR', err);
+      });
+  }
 }

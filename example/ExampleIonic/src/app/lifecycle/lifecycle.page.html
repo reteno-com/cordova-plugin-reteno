@@ -36,6 +36,12 @@
     <ion-button expand="block" (click)="save()">
       Save
     </ion-button>
+    <ion-button expand="block" color="medium" (click)="setAll()">
+      Use LifecycleTrackingOptions.ALL
+    </ion-button>
+    <ion-button expand="block" color="medium" (click)="setNone()">
+      Use LifecycleTrackingOptions.NONE
+    </ion-button>
   </form>
 
   @if (status) {

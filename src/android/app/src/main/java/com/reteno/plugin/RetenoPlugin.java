@@ -24,6 +24,14 @@ import com.reteno.core.RetenoConfig;
 import com.reteno.core.domain.callback.appinbox.RetenoResultCallback;
 import com.reteno.core.domain.model.event.LifecycleTrackingOptions;
 import com.reteno.core.features.iam.InAppPauseBehaviour;
+import com.reteno.core.domain.model.ecom.Attributes;
+import com.reteno.core.domain.model.ecom.EcomEvent;
+import com.reteno.core.domain.model.ecom.Order;
+import com.reteno.core.domain.model.ecom.OrderItem;
+import com.reteno.core.domain.model.ecom.OrderStatus;
+import com.reteno.core.domain.model.ecom.ProductCategoryView;
+import com.reteno.core.domain.model.ecom.ProductInCart;
+import com.reteno.core.domain.model.ecom.ProductView;
 import com.reteno.core.data.remote.model.recommendation.get.RecomBase;
 import com.reteno.core.domain.model.recommendation.get.RecomFilter;
 import com.reteno.core.domain.model.recommendation.get.RecomRequest;
@@ -40,6 +48,7 @@ import com.reteno.core.domain.model.appinbox.AppInboxMessages;
 import com.reteno.core.domain.model.user.User;
 import com.reteno.core.domain.model.user.UserAttributesAnonymous;
 import com.reteno.core.features.appinbox.AppInboxStatus;
+import android.util.Pair;
 import com.reteno.push.RetenoNotificationService;
 import com.reteno.push.RetenoNotifications;
 import com.reteno.core.features.recommendation.GetRecommendationResponseCallback;
@@ -49,7 +58,9 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 public class RetenoPlugin extends CordovaPlugin {
@@ -134,6 +145,16 @@ public class RetenoPlugin extends CordovaPlugin {
         @Override
         public void run() {
           logEvent(args, callbackContext);
+        }
+      });
+      return true;
+    }
+
+    if ("logEcommerceEvent".equals(action)) {
+      cordova.getThreadPool().execute(new Runnable() {
+        @Override
+        public void run() {
+          logEcommerceEvent(args, callbackContext);
         }
       });
       return true;
@@ -762,6 +783,33 @@ public class RetenoPlugin extends CordovaPlugin {
       Reteno reteno = getRetenoInstanceOrThrow();
       reteno.logEvent(RetenoEvent.buildEventFromPayload(args.getJSONObject(0)));
       callbackContext.success(1);
+    } catch (Exception e) {
+      callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
+    }
+  }
+
+  private void logEcommerceEvent(JSONArray args, CallbackContext callbackContext) {
+    if (args == null || args.length() == 0) {
+      callbackContext.error("Missing argument: payload");
+      return;
+    }
+
+    Object arg0 = args.opt(0);
+    if (arg0 instanceof JSONArray) {
+      arg0 = ((JSONArray) arg0).opt(0);
+    }
+    if (!(arg0 instanceof JSONObject)) {
+      callbackContext.error("Invalid argument: payload");
+      return;
+    }
+
+    try {
+      EcomEvent ecomEvent = parseEcomEvent((JSONObject) arg0);
+      Reteno reteno = getRetenoInstanceOrThrow();
+      reteno.logEcommerceEvent(ecomEvent);
+      callbackContext.success(1);
+    } catch (IllegalArgumentException e) {
+      callbackContext.error(e.getMessage());
     } catch (Exception e) {
       callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
     }
@@ -1572,6 +1620,403 @@ public class RetenoPlugin extends CordovaPlugin {
       return null;
     }
     return list;
+  }
+
+  private EcomEvent parseEcomEvent(JSONObject payload) {
+    String rawType = parseString(payload.opt("eventType"));
+    if (rawType == null) {
+      rawType = parseString(payload.opt("type"));
+    }
+    if (rawType == null) {
+      throw new IllegalArgumentException("Missing argument: eventType");
+    }
+    String eventType = normalizeEcomEventType(rawType);
+    ZonedDateTime occurred = parseZonedDateTime(payload.opt("occurred"));
+
+    if ("productviewed".equals(eventType)) {
+      ProductView product = parseProductView(payload.opt("product"));
+      String currencyCode = parseString(payload.opt("currencyCode"));
+      if (occurred != null) {
+        return new EcomEvent.ProductViewed(product, currencyCode, occurred);
+      }
+      if (currencyCode != null) {
+        return new EcomEvent.ProductViewed(product, currencyCode);
+      }
+      return new EcomEvent.ProductViewed(product);
+    }
+
+    if ("productcategoryviewed".equals(eventType)) {
+      ProductCategoryView category = parseProductCategoryView(payload.opt("category"));
+      if (occurred != null) {
+        return new EcomEvent.ProductCategoryViewed(category, occurred);
+      }
+      return new EcomEvent.ProductCategoryViewed(category);
+    }
+
+    if ("productaddedtowishlist".equals(eventType)) {
+      ProductView product = parseProductView(payload.opt("product"));
+      String currencyCode = parseString(payload.opt("currencyCode"));
+      if (occurred != null) {
+        return new EcomEvent.ProductAddedToWishlist(product, currencyCode, occurred);
+      }
+      if (currencyCode != null) {
+        return new EcomEvent.ProductAddedToWishlist(product, currencyCode);
+      }
+      return new EcomEvent.ProductAddedToWishlist(product);
+    }
+
+    if ("cartupdated".equals(eventType)) {
+      String cartId = parseRequiredString(payload.opt("cartId"), "cartId");
+      List<ProductInCart> products = parseProductInCartList(payload.opt("products"));
+      if (products == null || products.isEmpty()) {
+        throw new IllegalArgumentException("Missing argument: products");
+      }
+      String currencyCode = parseString(payload.opt("currencyCode"));
+      if (occurred != null) {
+        return new EcomEvent.CartUpdated(cartId, products, currencyCode, occurred);
+      }
+      if (currencyCode != null) {
+        return new EcomEvent.CartUpdated(cartId, products, currencyCode);
+      }
+      return new EcomEvent.CartUpdated(cartId, products);
+    }
+
+    if ("ordercreated".equals(eventType)) {
+      Order order = parseOrder(payload.opt("order"));
+      String currencyCode = parseString(payload.opt("currencyCode"));
+      if (occurred != null) {
+        return new EcomEvent.OrderCreated(order, currencyCode, occurred);
+      }
+      if (currencyCode != null) {
+        return new EcomEvent.OrderCreated(order, currencyCode);
+      }
+      return new EcomEvent.OrderCreated(order);
+    }
+
+    if ("orderupdated".equals(eventType)) {
+      Order order = parseOrder(payload.opt("order"));
+      String currencyCode = parseString(payload.opt("currencyCode"));
+      if (occurred != null) {
+        return new EcomEvent.OrderUpdated(order, currencyCode, occurred);
+      }
+      if (currencyCode != null) {
+        return new EcomEvent.OrderUpdated(order, currencyCode);
+      }
+      return new EcomEvent.OrderUpdated(order);
+    }
+
+    if ("orderdelivered".equals(eventType)) {
+      String externalOrderId = parseRequiredString(payload.opt("externalOrderId"), "externalOrderId");
+      if (occurred != null) {
+        return new EcomEvent.OrderDelivered(externalOrderId, occurred);
+      }
+      return new EcomEvent.OrderDelivered(externalOrderId);
+    }
+
+    if ("ordercancelled".equals(eventType)) {
+      String externalOrderId = parseRequiredString(payload.opt("externalOrderId"), "externalOrderId");
+      if (occurred != null) {
+        return new EcomEvent.OrderCancelled(externalOrderId, occurred);
+      }
+      return new EcomEvent.OrderCancelled(externalOrderId);
+    }
+
+    if ("searchrequest".equals(eventType)) {
+      String search = parseRequiredString(payload.opt("search"), "search");
+      Boolean isFound = parseBooleanLenient(payload.opt("isFound"));
+      if (isFound == null) {
+        isFound = false;
+      }
+      if (occurred != null) {
+        return new EcomEvent.SearchRequest(search, isFound.booleanValue(), occurred);
+      }
+      return new EcomEvent.SearchRequest(search, isFound.booleanValue());
+    }
+
+    throw new IllegalArgumentException("Invalid argument: eventType");
+  }
+
+  private String normalizeEcomEventType(String raw) {
+    String s = raw.trim().toLowerCase(Locale.US);
+    StringBuilder out = new StringBuilder();
+    for (int i = 0; i < s.length(); i++) {
+      char ch = s.charAt(i);
+      if ((ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9')) {
+        out.append(ch);
+      }
+    }
+    return out.toString();
+  }
+
+  private ProductCategoryView parseProductCategoryView(Object raw) {
+    JSONObject obj = parseObject(raw, "category");
+    String productCategoryId = parseRequiredString(obj.opt("productCategoryId"), "productCategoryId");
+    List<Attributes> attributes = parseAttributesList(obj.opt("attributes"));
+    return new ProductCategoryView(productCategoryId, attributes);
+  }
+
+  private ProductView parseProductView(Object raw) {
+    JSONObject obj = parseObject(raw, "product");
+    String productId = parseRequiredString(obj.opt("productId"), "productId");
+    Double price = parseRequiredDouble(obj.opt("price"), "price");
+    Boolean isInStock = parseBooleanLenient(obj.opt("isInStock"));
+    if (isInStock == null) {
+      throw new IllegalArgumentException("Missing argument: isInStock");
+    }
+    List<Attributes> attributes = parseAttributesList(obj.opt("attributes"));
+    return new ProductView(productId, price.doubleValue(), isInStock.booleanValue(), attributes);
+  }
+
+  private ProductInCart parseProductInCart(Object raw) {
+    JSONObject obj = parseObject(raw, "product");
+    String productId = parseRequiredString(obj.opt("productId"), "productId");
+    Integer quantity = parseIntegerLenient(obj.opt("quantity"));
+    if (quantity == null) {
+      throw new IllegalArgumentException("Missing argument: quantity");
+    }
+    Double price = parseRequiredDouble(obj.opt("price"), "price");
+    Double discount = parseDoubleLenient(obj.opt("discount"));
+    String name = parseString(obj.opt("name"));
+    String category = parseString(obj.opt("category"));
+    List<Attributes> attributes = parseAttributesList(obj.opt("attributes"));
+    return new ProductInCart(productId, quantity.intValue(), price.doubleValue(), discount, name, category, attributes);
+  }
+
+  private List<ProductInCart> parseProductInCartList(Object raw) {
+    if (!(raw instanceof JSONArray)) {
+      return null;
+    }
+    JSONArray arr = (JSONArray) raw;
+    List<ProductInCart> list = new ArrayList<>();
+    for (int i = 0; i < arr.length(); i++) {
+      Object item = arr.opt(i);
+      list.add(parseProductInCart(item));
+    }
+    return list;
+  }
+
+  private OrderItem parseOrderItem(Object raw) {
+    JSONObject obj = parseObject(raw, "orderItem");
+    String externalItemId = parseRequiredString(obj.opt("externalItemId"), "externalItemId");
+    String name = parseRequiredString(obj.opt("name"), "name");
+    String category = parseRequiredString(obj.opt("category"), "category");
+    Double quantity = parseRequiredDouble(obj.opt("quantity"), "quantity");
+    Double cost = parseRequiredDouble(obj.opt("cost"), "cost");
+    String url = parseRequiredString(obj.opt("url"), "url");
+    String imageUrl = parseString(obj.opt("imageUrl"));
+    String description = parseString(obj.opt("description"));
+    return new OrderItem(externalItemId, name, category, quantity.doubleValue(), cost.doubleValue(), url, imageUrl, description);
+  }
+
+  private List<OrderItem> parseOrderItems(Object raw) {
+    if (!(raw instanceof JSONArray)) {
+      return null;
+    }
+    JSONArray arr = (JSONArray) raw;
+    List<OrderItem> list = new ArrayList<>();
+    for (int i = 0; i < arr.length(); i++) {
+      Object item = arr.opt(i);
+      list.add(parseOrderItem(item));
+    }
+    return list;
+  }
+
+  private Order parseOrder(Object raw) {
+    JSONObject obj = parseObject(raw, "order");
+    String externalOrderId = parseRequiredString(obj.opt("externalOrderId"), "externalOrderId");
+    String externalCustomerId = parseString(obj.opt("externalCustomerId"));
+    Double totalCost = parseRequiredDouble(obj.opt("totalCost"), "totalCost");
+    OrderStatus status = parseOrderStatus(obj.opt("status"));
+    if (status == null) {
+      throw new IllegalArgumentException("Missing argument: status");
+    }
+    ZonedDateTime date = parseZonedDateTime(obj.opt("date"));
+    if (date == null) {
+      throw new IllegalArgumentException("Missing argument: date");
+    }
+
+    Order.Builder builder = new Order.Builder(
+      externalOrderId,
+      externalCustomerId,
+      totalCost.doubleValue(),
+      status,
+      date
+    );
+
+    builder.setCartId(parseString(obj.opt("cartId")));
+    builder.setEmail(parseString(obj.opt("email")));
+    builder.setPhone(parseString(obj.opt("phone")));
+    builder.setFirstName(parseString(obj.opt("firstName")));
+    builder.setLastName(parseString(obj.opt("lastName")));
+    builder.setShipping(parseDoubleLenient(obj.opt("shipping")));
+    builder.setDiscount(parseDoubleLenient(obj.opt("discount")));
+    builder.setTaxes(parseDoubleLenient(obj.opt("taxes")));
+    builder.setRestoreUrl(parseString(obj.opt("restoreUrl")));
+    builder.setStatusDescription(parseString(obj.opt("statusDescription")));
+    builder.setStoreId(parseString(obj.opt("storeId")));
+    builder.setSource(parseString(obj.opt("source")));
+    builder.setDeliveryMethod(parseString(obj.opt("deliveryMethod")));
+    builder.setPaymentMethod(parseString(obj.opt("paymentMethod")));
+    builder.setDeliveryAddress(parseString(obj.opt("deliveryAddress")));
+    builder.setItems(parseOrderItems(obj.opt("items")));
+    builder.setAttributes(parseOrderAttributes(obj.opt("attributes")));
+
+    return builder.build();
+  }
+
+  private OrderStatus parseOrderStatus(Object raw) {
+    String value = parseString(raw);
+    if (value == null) {
+      return null;
+    }
+    try {
+      return OrderStatus.valueOf(value.toUpperCase(Locale.US));
+    } catch (IllegalArgumentException ignored) {
+      return null;
+    }
+  }
+
+  private List<Attributes> parseAttributesList(Object raw) {
+    if (raw == null || raw == JSONObject.NULL) {
+      return null;
+    }
+    if (!(raw instanceof JSONArray)) {
+      throw new IllegalArgumentException("Invalid argument: attributes");
+    }
+    JSONArray arr = (JSONArray) raw;
+    List<Attributes> list = new ArrayList<>();
+    for (int i = 0; i < arr.length(); i++) {
+      Object item = arr.opt(i);
+      if (!(item instanceof JSONObject)) {
+        throw new IllegalArgumentException("Invalid argument: attributes");
+      }
+      JSONObject obj = (JSONObject) item;
+      String name = parseRequiredString(obj.opt("name"), "attributes.name");
+      List<String> values = parseStringList(obj.opt("value"));
+      if (values == null || values.isEmpty()) {
+        throw new IllegalArgumentException("Missing argument: attributes.value");
+      }
+      list.add(new Attributes(name, values));
+    }
+    return list;
+  }
+
+  private List<Pair<String, String>> parseOrderAttributes(Object raw) {
+    if (raw == null || raw == JSONObject.NULL) {
+      return null;
+    }
+    List<Pair<String, String>> list = new ArrayList<>();
+    if (raw instanceof JSONArray) {
+      JSONArray arr = (JSONArray) raw;
+      for (int i = 0; i < arr.length(); i++) {
+        Object item = arr.opt(i);
+        if (!(item instanceof JSONObject)) {
+          throw new IllegalArgumentException("Invalid argument: attributes");
+        }
+        JSONObject obj = (JSONObject) item;
+        String key = parseString(obj.opt("key"));
+        if (key == null) {
+          key = parseString(obj.opt("name"));
+        }
+        String value = parseString(obj.opt("value"));
+        if (key == null || value == null) {
+          throw new IllegalArgumentException("Invalid argument: attributes");
+        }
+        list.add(new Pair<>(key, value));
+      }
+      return list;
+    }
+    if (raw instanceof JSONObject) {
+      JSONObject obj = (JSONObject) raw;
+      Iterator<String> it = obj.keys();
+      while (it.hasNext()) {
+        String key = it.next();
+        Object valueRaw = obj.opt(key);
+        if (valueRaw == null || valueRaw == JSONObject.NULL) {
+          continue;
+        }
+        String value;
+        if (valueRaw instanceof String) {
+          value = ((String) valueRaw).trim();
+        } else {
+          value = String.valueOf(valueRaw);
+        }
+        if (value.length() == 0) {
+          continue;
+        }
+        list.add(new Pair<>(key, value));
+      }
+      return list;
+    }
+    throw new IllegalArgumentException("Invalid argument: attributes");
+  }
+
+  private JSONObject parseObject(Object raw, String fieldName) {
+    if (raw instanceof JSONObject) {
+      return (JSONObject) raw;
+    }
+    throw new IllegalArgumentException("Invalid argument: " + fieldName);
+  }
+
+  private String parseRequiredString(Object raw, String fieldName) {
+    String value = parseString(raw);
+    if (value == null) {
+      throw new IllegalArgumentException("Missing argument: " + fieldName);
+    }
+    return value;
+  }
+
+  private Double parseRequiredDouble(Object raw, String fieldName) {
+    Double value = parseDoubleLenient(raw);
+    if (value == null) {
+      throw new IllegalArgumentException("Missing argument: " + fieldName);
+    }
+    return value;
+  }
+
+  private String parseString(Object raw) {
+    if (raw == null || raw == JSONObject.NULL) {
+      return null;
+    }
+    if (raw instanceof String) {
+      String value = ((String) raw).trim();
+      if (value.length() == 0) {
+        return null;
+      }
+      return value;
+    }
+    return null;
+  }
+
+  private Double parseDoubleLenient(Object raw) {
+    if (raw instanceof Number) {
+      return ((Number) raw).doubleValue();
+    }
+    if (raw instanceof String) {
+      String s = ((String) raw).trim();
+      if (s.length() == 0) {
+        return null;
+      }
+      try {
+        return Double.valueOf(s);
+      } catch (NumberFormatException ignored) {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  private Boolean parseBooleanLenient(Object raw) {
+    if (raw instanceof Boolean) {
+      return (Boolean) raw;
+    }
+    if (raw instanceof Number) {
+      return ((Number) raw).intValue() != 0;
+    }
+    if (raw instanceof String) {
+      return parseBooleanLenient((String) raw, null);
+    }
+    return null;
   }
 
   private RecomFilter parseRecomFilter(Object raw) throws JSONException {

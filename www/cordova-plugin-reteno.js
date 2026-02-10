@@ -155,6 +155,22 @@ function __callWithAutoInit(action, args, success, error) {
     },
 
     /*
+        payload: LogEcommerceEventPayload
+        See https://docs.reteno.com/reference/android-ecommerce-activity-tracking
+        */
+    logEcommerceEvent: function (arg0, success, error) {
+      // Accept either `payload` or legacy `[payload]`.
+      var payload = Array.isArray(arg0) ? arg0[0] : arg0;
+      if (!payload || typeof payload !== 'object') {
+        return Promise.reject(new Error('Missing argument: payload'));
+      }
+      if (!payload.eventType || typeof payload.eventType !== 'string' || payload.eventType.trim().length === 0) {
+        return Promise.reject(new Error('Missing argument: eventType'));
+      }
+      return __callWithAutoInit('logEcommerceEvent', [payload], success, error);
+    },
+
+    /*
         payload: SetUserAttributesPayload
         */
     setUserAttributes: function (arg0, success, error) {

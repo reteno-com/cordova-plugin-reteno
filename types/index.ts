@@ -165,6 +165,162 @@ export type LogRecommendationsPayload = {
   recomEvents: RecommendationEvent[];
 };
 
+export type EcommerceDate = string | number;
+
+export type EcommerceAttribute = {
+  name: string;
+  value: string[];
+};
+
+export type ProductView = {
+  productId: string;
+  price: number;
+  isInStock: boolean;
+  attributes?: EcommerceAttribute[] | null;
+};
+
+export type ProductCategoryView = {
+  productCategoryId: string;
+  attributes?: EcommerceAttribute[] | null;
+};
+
+export type ProductInCart = {
+  productId: string;
+  quantity: number;
+  price: number;
+  discount?: number | null;
+  name?: string | null;
+  category?: string | null;
+  attributes?: EcommerceAttribute[] | null;
+};
+
+export type OrderItem = {
+  externalItemId: string;
+  name: string;
+  category: string;
+  quantity: number;
+  cost: number;
+  url: string;
+  imageUrl?: string | null;
+  description?: string | null;
+};
+
+export type OrderStatus = 'INITIALIZED' | 'IN_PROGRESS' | 'DELIVERED' | 'CANCELLED' | string;
+
+export type OrderAttribute = {
+  key: string;
+  value: string;
+};
+
+export type Order = {
+  externalOrderId: string;
+  externalCustomerId?: string | null;
+  totalCost: number;
+  status: OrderStatus;
+  date: EcommerceDate;
+  cartId?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  shipping?: number | null;
+  discount?: number | null;
+  taxes?: number | null;
+  restoreUrl?: string | null;
+  statusDescription?: string | null;
+  storeId?: string | null;
+  source?: string | null;
+  deliveryMethod?: string | null;
+  paymentMethod?: string | null;
+  deliveryAddress?: string | null;
+  items?: OrderItem[] | null;
+  attributes?: OrderAttribute[] | Record<string, string> | null;
+};
+
+export type EcommerceEventType =
+  | 'productViewed'
+  | 'productCategoryViewed'
+  | 'productAddedToWishlist'
+  | 'cartUpdated'
+  | 'orderCreated'
+  | 'orderUpdated'
+  | 'orderDelivered'
+  | 'orderCancelled'
+  | 'searchRequest'
+  | string;
+
+export type ProductViewedEvent = {
+  eventType: 'productViewed';
+  product: ProductView;
+  currencyCode?: string | null;
+  occurred?: EcommerceDate | null;
+};
+
+export type ProductCategoryViewedEvent = {
+  eventType: 'productCategoryViewed';
+  category: ProductCategoryView;
+  occurred?: EcommerceDate | null;
+};
+
+export type ProductAddedToWishlistEvent = {
+  eventType: 'productAddedToWishlist';
+  product: ProductView;
+  currencyCode?: string | null;
+  occurred?: EcommerceDate | null;
+};
+
+export type CartUpdatedEvent = {
+  eventType: 'cartUpdated';
+  cartId: string;
+  products: ProductInCart[];
+  currencyCode?: string | null;
+  occurred?: EcommerceDate | null;
+};
+
+export type OrderCreatedEvent = {
+  eventType: 'orderCreated';
+  order: Order;
+  currencyCode?: string | null;
+  occurred?: EcommerceDate | null;
+};
+
+export type OrderUpdatedEvent = {
+  eventType: 'orderUpdated';
+  order: Order;
+  currencyCode?: string | null;
+  occurred?: EcommerceDate | null;
+};
+
+export type OrderDeliveredEvent = {
+  eventType: 'orderDelivered';
+  externalOrderId: string;
+  occurred?: EcommerceDate | null;
+};
+
+export type OrderCancelledEvent = {
+  eventType: 'orderCancelled';
+  externalOrderId: string;
+  occurred?: EcommerceDate | null;
+};
+
+export type SearchRequestEvent = {
+  eventType: 'searchRequest';
+  search: string;
+  isFound?: boolean | null;
+  occurred?: EcommerceDate | null;
+};
+
+export type LogEcommerceEventPayload =
+  | ProductViewedEvent
+  | ProductCategoryViewedEvent
+  | ProductAddedToWishlistEvent
+  | CartUpdatedEvent
+  | OrderCreatedEvent
+  | OrderUpdatedEvent
+  | OrderDeliveredEvent
+  | OrderCancelledEvent
+  | SearchRequestEvent;
+
 /**
  * Payload received when a push notification is received.
  * Contains the data from the notification bundle.

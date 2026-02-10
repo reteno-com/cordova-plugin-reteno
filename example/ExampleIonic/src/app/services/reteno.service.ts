@@ -98,6 +98,7 @@ declare global {
         error?: (err: unknown) => void
       ) => Promise<unknown>;
       logRecommendations?: (payload: unknown, success?: () => void, error?: (err: unknown) => void) => Promise<void>;
+      logEcommerceEvent?: (payload: unknown, success?: () => void, error?: (err: unknown) => void) => Promise<void>;
     };
   }
 }
@@ -499,6 +500,16 @@ export class RetenoService {
         return Promise.reject(new Error('retenosdk.logRecommendations is not available'));
       }
       return sdk.logRecommendations(payload);
+    });
+  }
+
+  logEcommerceEvent(payload: unknown): Promise<void> {
+    return this.withInit(() => {
+      const sdk = window.retenosdk;
+      if (!sdk?.logEcommerceEvent) {
+        return Promise.reject(new Error('retenosdk.logEcommerceEvent is not available'));
+      }
+      return sdk.logEcommerceEvent(payload);
     });
   }
 

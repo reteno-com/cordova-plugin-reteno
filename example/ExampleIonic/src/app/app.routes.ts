@@ -42,6 +42,11 @@ export const routes: Routes = [
     data: { retenoScreen: 'Recommendations' },
   },
   {
+    path: 'ecommerce-events',
+    loadComponent: () => import('./ecommerce-events/ecommerce-events.page').then((m) => m.EcommerceEventsPage),
+    data: { retenoScreen: 'Ecommerce events' },
+  },
+  {
     path: '',
     redirectTo: 'main',
     pathMatch: 'full',

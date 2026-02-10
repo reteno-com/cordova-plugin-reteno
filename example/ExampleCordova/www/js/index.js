@@ -77,6 +77,16 @@ function onDeviceReady() {
     var recomLogStatusEl = document.getElementById('retenoRecommendationsLogStatus');
     var getRecommendationsBtn = document.getElementById('retenoGetRecommendationsBtn');
     var logRecommendationsBtn = document.getElementById('retenoLogRecommendationsBtn');
+    var ecomStatusEl = document.getElementById('retenoEcomStatus');
+    var ecomProductViewedBtn = document.getElementById('retenoEcomProductViewedBtn');
+    var ecomProductCategoryViewedBtn = document.getElementById('retenoEcomProductCategoryViewedBtn');
+    var ecomProductAddedToWishlistBtn = document.getElementById('retenoEcomProductAddedToWishlistBtn');
+    var ecomCartUpdatedBtn = document.getElementById('retenoEcomCartUpdatedBtn');
+    var ecomOrderCreatedBtn = document.getElementById('retenoEcomOrderCreatedBtn');
+    var ecomOrderUpdatedBtn = document.getElementById('retenoEcomOrderUpdatedBtn');
+    var ecomOrderDeliveredBtn = document.getElementById('retenoEcomOrderDeliveredBtn');
+    var ecomOrderCancelledBtn = document.getElementById('retenoEcomOrderCancelledBtn');
+    var ecomSearchRequestBtn = document.getElementById('retenoEcomSearchRequestBtn');
     var getInboxMessagesBtn = document.getElementById('retenoGetInboxMessagesBtn');
     var getInboxCountBtn = document.getElementById('retenoGetInboxCountBtn');
     var subscribeInboxCountBtn = document.getElementById('retenoSubscribeInboxCountBtn');
@@ -235,6 +245,12 @@ function onDeviceReady() {
         }
     }
 
+    function setEcomStatus(text) {
+        if (ecomStatusEl) {
+            ecomStatusEl.textContent = text;
+        }
+    }
+
     function setInAppStatus(text) {
         if (inAppStatusEl) {
             inAppStatusEl.textContent = text;
@@ -328,6 +344,112 @@ function onDeviceReady() {
             listEl.insertBefore(item, listEl.firstChild);
         } else {
             listEl.appendChild(item);
+        }
+    }
+
+    function buildEcomPayload(eventType) {
+        var occurred = new Date().toISOString();
+        switch (eventType) {
+            case 'productCategoryViewed':
+                return {
+                    eventType: 'productCategoryViewed',
+                    category: {
+                        productCategoryId: 'category-1',
+                        attributes: [{ name: 'department', value: ['shoes'] }],
+                    },
+                    occurred: occurred,
+                };
+            case 'productAddedToWishlist':
+                return {
+                    eventType: 'productAddedToWishlist',
+                    product: {
+                        productId: 'sku-2',
+                        price: 149.99,
+                        isInStock: true,
+                        attributes: [{ name: 'color', value: ['blue'] }],
+                    },
+                    currencyCode: 'USD',
+                    occurred: occurred,
+                };
+            case 'cartUpdated':
+                return {
+                    eventType: 'cartUpdated',
+                    cartId: 'cart-123',
+                    products: [
+                        {
+                            productId: 'sku-1',
+                            quantity: 2,
+                            price: 89.5,
+                            discount: 10,
+                            name: 'Sneakers',
+                            category: 'Shoes',
+                            attributes: [{ name: 'size', value: ['42'] }],
+                        },
+                    ],
+                    currencyCode: 'USD',
+                    occurred: occurred,
+                };
+            case 'orderCreated':
+            case 'orderUpdated':
+                return {
+                    eventType: eventType,
+                    order: {
+                        externalOrderId: 'order-1001',
+                        externalCustomerId: 'customer-77',
+                        totalCost: 199.99,
+                        status: 'IN_PROGRESS',
+                        date: occurred,
+                        cartId: 'cart-123',
+                        email: 'john.doe@example.com',
+                        phone: '+1234567890',
+                        items: [
+                            {
+                                externalItemId: 'sku-1',
+                                name: 'Sneakers',
+                                category: 'Shoes',
+                                quantity: 1,
+                                cost: 99.99,
+                                url: 'https://example.com/products/sku-1',
+                                imageUrl: 'https://example.com/images/sku-1.png',
+                            },
+                        ],
+                        attributes: [{ key: 'promo', value: 'newyear' }],
+                    },
+                    currencyCode: 'USD',
+                    occurred: occurred,
+                };
+            case 'orderDelivered':
+                return {
+                    eventType: 'orderDelivered',
+                    externalOrderId: 'order-1001',
+                    occurred: occurred,
+                };
+            case 'orderCancelled':
+                return {
+                    eventType: 'orderCancelled',
+                    externalOrderId: 'order-1001',
+                    occurred: occurred,
+                };
+            case 'searchRequest':
+                return {
+                    eventType: 'searchRequest',
+                    search: 'running shoes',
+                    isFound: true,
+                    occurred: occurred,
+                };
+            case 'productViewed':
+            default:
+                return {
+                    eventType: 'productViewed',
+                    product: {
+                        productId: 'sku-1',
+                        price: 99.99,
+                        isInStock: true,
+                        attributes: [{ name: 'color', value: ['red'] }],
+                    },
+                    currencyCode: 'USD',
+                    occurred: occurred,
+                };
         }
     }
 
@@ -1343,4 +1465,41 @@ function onDeviceReady() {
             });
         });
     }
+
+    function bindEcomButton(button, eventType) {
+        if (!button) return;
+        button.addEventListener('click', function () {
+            withInit(function () {
+                var sdk = getRetenoSdk();
+                if (!sdk || typeof sdk.logEcommerceEvent !== 'function') {
+                    setEcomStatus('Reteno logEcommerceEvent is not available.');
+                    return;
+                }
+                var payload = buildEcomPayload(eventType);
+                setEcomStatus('Logging ecommerce event: ' + eventType + '...');
+                sdk
+                    .logEcommerceEvent(payload)
+                    .then(function () {
+                        setEcomStatus('logEcommerceEvent: OK (' + eventType + ')');
+                    })
+                    .catch(function (err) {
+                        setEcomStatus(
+                            'logEcommerceEvent: error: ' + (err && err.message ? err.message : String(err))
+                        );
+                    });
+            }, function (err) {
+                setEcomStatus('Reteno init error: ' + (err && err.message ? err.message : String(err)));
+            });
+        });
+    }
+
+    bindEcomButton(ecomProductViewedBtn, 'productViewed');
+    bindEcomButton(ecomProductCategoryViewedBtn, 'productCategoryViewed');
+    bindEcomButton(ecomProductAddedToWishlistBtn, 'productAddedToWishlist');
+    bindEcomButton(ecomCartUpdatedBtn, 'cartUpdated');
+    bindEcomButton(ecomOrderCreatedBtn, 'orderCreated');
+    bindEcomButton(ecomOrderUpdatedBtn, 'orderUpdated');
+    bindEcomButton(ecomOrderDeliveredBtn, 'orderDelivered');
+    bindEcomButton(ecomOrderCancelledBtn, 'orderCancelled');
+    bindEcomButton(ecomSearchRequestBtn, 'searchRequest');
 }

@@ -94,6 +94,7 @@
                     <button class="nav-button" data-target="in-app" type="button">In-App messages</button>
                     <button class="nav-button" data-target="app-inbox" type="button">App inbox</button>
                     <button class="nav-button" data-target="recommendations" type="button">Recommendations</button>
+                    <button class="nav-button" data-target="ecommerce-events" type="button">Ecommerce Events</button>
                 </div>
             </section>
 
@@ -580,6 +581,49 @@
                     </button>
 
                     <pre id="retenoRecommendationsLogStatus" class="reteno-status" aria-live="polite"></pre>
+                </div>
+            </section>
+
+            <section class="page" data-page="ecommerce-events" data-screen-name="Ecommerce Events">
+                <div class="page-header">
+                    <button class="back-button" data-target="home" type="button">Back</button>
+                    <h2>Ecommerce Events</h2>
+                </div>
+
+                <div class="reteno-form" aria-label="Reteno ecommerce events">
+                    <h2>Reteno: logEcommerceEvent</h2>
+
+                    <div class="reteno-grid">
+                        <button id="retenoEcomProductViewedBtn" class="reteno-button" type="button">
+                            productViewed
+                        </button>
+                        <button id="retenoEcomProductCategoryViewedBtn" class="reteno-button" type="button">
+                            productCategoryViewed
+                        </button>
+                        <button id="retenoEcomProductAddedToWishlistBtn" class="reteno-button" type="button">
+                            productAddedToWishlist
+                        </button>
+                        <button id="retenoEcomCartUpdatedBtn" class="reteno-button" type="button">
+                            cartUpdated
+                        </button>
+                        <button id="retenoEcomOrderCreatedBtn" class="reteno-button" type="button">
+                            orderCreated
+                        </button>
+                        <button id="retenoEcomOrderUpdatedBtn" class="reteno-button" type="button">
+                            orderUpdated
+                        </button>
+                        <button id="retenoEcomOrderDeliveredBtn" class="reteno-button" type="button">
+                            orderDelivered
+                        </button>
+                        <button id="retenoEcomOrderCancelledBtn" class="reteno-button" type="button">
+                            orderCancelled
+                        </button>
+                        <button id="retenoEcomSearchRequestBtn" class="reteno-button" type="button">
+                            searchRequest
+                        </button>
+                    </div>
+
+                    <pre id="retenoEcomStatus" class="reteno-status" aria-live="polite"></pre>
                 </div>
             </section>
         </div>

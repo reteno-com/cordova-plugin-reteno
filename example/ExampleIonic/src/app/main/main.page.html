@@ -1,0 +1,88 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-title>Reteno Demo</ion-title>
+    <ion-buttons slot="end">
+      <ion-badge class="app-version" color="medium">v0.0.12</ion-badge>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  @if (!initialized) {
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>Reteno init options</ion-card-title>
+        <ion-card-subtitle>Set before initialization</ion-card-subtitle>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-item>
+          <ion-toggle
+            [checked]="initPauseInAppMessages"
+            (ionChange)="initPauseInAppMessages = $event.detail.checked; onInitOptionsChanged()"
+          >
+            pauseInAppMessages
+          </ion-toggle>
+        </ion-item>
+        <ion-item>
+          <ion-toggle
+            [checked]="initPausePushInAppMessages"
+            (ionChange)="initPausePushInAppMessages = $event.detail.checked; onInitOptionsChanged()"
+          >
+            pausePushInAppMessages
+          </ion-toggle>
+        </ion-item>
+        <ion-item>
+          <ion-toggle
+            [checked]="initLifecycleApp"
+            (ionChange)="initLifecycleApp = $event.detail.checked; onInitOptionsChanged()"
+          >
+            appLifecycleEnabled
+          </ion-toggle>
+        </ion-item>
+        <ion-item>
+          <ion-toggle
+            [checked]="initLifecyclePush"
+            (ionChange)="initLifecyclePush = $event.detail.checked; onInitOptionsChanged()"
+          >
+            pushSubscriptionEnabled
+          </ion-toggle>
+        </ion-item>
+        <ion-item>
+          <ion-toggle
+            [checked]="initLifecycleSession"
+            (ionChange)="initLifecycleSession = $event.detail.checked; onInitOptionsChanged()"
+          >
+            sessionEventsEnabled
+          </ion-toggle>
+        </ion-item>
+      </ion-card-content>
+    </ion-card>
+  }
+
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Force push data</ion-card-title>
+      <ion-card-subtitle>Send cached data immediately</ion-card-subtitle>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-button expand="block" (click)="forcePushData()">Force push data</ion-button>
+    </ion-card-content>
+  </ion-card>
+
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Navigation</ion-card-title>
+      <ion-card-subtitle>Choose a demo flow</ion-card-subtitle>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-button expand="block" routerLink="/home">User data</ion-button>
+      <ion-button expand="block" routerLink="/event">Log event</ion-button>
+      <ion-button expand="block" routerLink="/lifecycle">App lifecycle events</ion-button>
+      <ion-button expand="block" routerLink="/notifications">Notifications</ion-button>
+      <ion-button expand="block" routerLink="/in-app">In-App messages</ion-button>
+      <ion-button expand="block" routerLink="/app-inbox">App inbox</ion-button>
+      <ion-button expand="block" routerLink="/recommendations">Recommendations</ion-button>
+      <ion-button expand="block" routerLink="/ecommerce-events">Ecommerce events</ion-button>
+    </ion-card-content>
+  </ion-card>
+</ion-content>

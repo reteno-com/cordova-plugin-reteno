@@ -1,0 +1,78 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/main"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Reteno – Log event</ion-title>
+    <ion-buttons slot="end">
+      <ion-badge class="app-version" color="medium">v0.0.12</ion-badge>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <form [formGroup]="form">
+    <ion-list>
+      <ion-item>
+        <ion-input
+          label="Event name"
+          labelPlacement="stacked"
+          formControlName="eventName"
+          placeholder="purchase"
+        ></ion-input>
+      </ion-item>
+
+      <ion-item>
+        <ion-input
+          label="Date (ISO8601)"
+          labelPlacement="stacked"
+          formControlName="date"
+          placeholder="2024-01-01T10:00:00.000Z"
+        ></ion-input>
+      </ion-item>
+
+      <ion-item-divider>
+        <ion-label>Parameter (optional)</ion-label>
+      </ion-item-divider>
+
+      <ion-grid class="form-grid">
+        <ion-row>
+          <ion-col size="12" size-md="6">
+            <ion-item>
+              <ion-input
+                label="Name"
+                labelPlacement="stacked"
+                formControlName="paramKey"
+                placeholder="orderId"
+              ></ion-input>
+            </ion-item>
+          </ion-col>
+
+          <ion-col size="12" size-md="6">
+            <ion-item>
+              <ion-input
+                label="Value"
+                labelPlacement="stacked"
+                formControlName="paramValue"
+                placeholder="A-123"
+              ></ion-input>
+            </ion-item>
+          </ion-col>
+        </ion-row>
+      </ion-grid>
+    </ion-list>
+
+    <ion-button expand="block" [disabled]="form.invalid" (click)="sendForm()">
+      Send logEvent
+    </ion-button>
+    <ion-button expand="block" color="secondary" (click)="sendForcePushData()">
+      Force push data
+    </ion-button>
+  </form>
+
+  @if (status) {
+    <ion-text class="status">
+      <p>{{ status }}</p>
+    </ion-text>
+  }
+</ion-content>

@@ -1,11 +1,15 @@
 {
-  "name": "com.reteno.sample",
+  "name": "example-cordova",
   "displayName": "ExampleCordova",
   "version": "1.0.0",
   "description": "A sample Apache Cordova application that responds to the deviceready event.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build:android:debug": "cordova build android --debug",
+    "build:android:release": "cordova build android --release",
+    "run:android:emulator": "cordova run android --emulator",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "add:plugin": "cordova plugin add \"file:/Users/serhiiporaiko/projects/Yalantis/reteno-cordova/cordova-plugin-reteno-0.0.1.tgz\" --variable SDK_ACCESS_KEY=630A66AF-C1D3-4F2A-ACC1-0D51C38D2B05 --variable ANDROID_RETENO_FCM_VERSION=2.8.9 --variable ANDROID_FIREBASE_MESSAGING_VERSION=23.1.0 --variable RETENO_DEBUG_MODE=true"
   },
   "keywords": [
     "ecosystem:cordova"
@@ -13,13 +17,23 @@
   "author": "Apache Cordova Team",
   "license": "Apache-2.0",
   "devDependencies": {
-    "cordova-android": "^12.0.0",
-    "cordova-ios": "^6.3.0"
+    "cordova": "^13.0.0",
+    "cordova-android": "^14.0.1",
+    "cordova-ios": "^6.3.0",
+    "cordova-plugin-reteno": "file:../../cordova-plugin-reteno-0.0.1.tgz"
   },
   "cordova": {
     "platforms": [
-      "android",
-      "ios"
-    ]
+      "ios",
+      "android"
+    ],
+    "plugins": {
+      "cordova-plugin-reteno": {
+        "SDK_ACCESS_KEY": "630A66AF-C1D3-4F2A-ACC1-0D51C38D2B05",
+        "ANDROID_RETENO_FCM_VERSION": "2.8.9",
+        "ANDROID_FIREBASE_MESSAGING_VERSION": "23.1.0",
+        "RETENO_DEBUG_MODE": "true"
+      }
+    }
   }
 }

@@ -1,0 +1,379 @@
+/*
+ * Cordova hook: ensure Firebase/FCM prerequisites for Reteno on Android.
+ *
+ * What it does (idempotent):
+ * - Copies google-services.json into platforms/android/app/ if found in common locations
+ * - Ensures Google Services Gradle plugin is applied (classpath + apply plugin)
+ * - When RETENO_DEBUG_MODE is enabled: injects network_security_config.xml so that
+ *   proxy tools (Charles, mitmproxy) can inspect native HTTPS traffic in debug builds
+ */
+
+const fs = require('fs');
+const path = require('path');
+
+function exists(filePath) {
+  try {
+    fs.accessSync(filePath, fs.constants.F_OK);
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+function readText(filePath) {
+  return fs.readFileSync(filePath, 'utf8');
+}
+
+function writeText(filePath, text) {
+  fs.writeFileSync(filePath, text, 'utf8');
+}
+
+function ensureDir(dirPath) {
+  fs.mkdirSync(dirPath, { recursive: true });
+}
+
+function upsertLineOnce(text, needle, insertAfterRe, lineToInsert) {
+  if (text.includes(needle)) return { text, changed: false };
+
+  const lines = text.split(/\r?\n/);
+  for (let i = 0; i < lines.length; i += 1) {
+    if (insertAfterRe.test(lines[i])) {
+      lines.splice(i + 1, 0, lineToInsert);
+      return { text: lines.join('\n'), changed: true };
+    }
+  }
+
+  // If we can't find the insertion point, append at end (best-effort).
+  return { text: `${text.replace(/\s*$/, '')}\n${lineToInsert}\n`, changed: true };
+}
+
+function ensureGoogleServicesClasspath(platformsAndroidBuildGradlePath, googleServicesVersion) {
+  if (!exists(platformsAndroidBuildGradlePath)) return false;
+
+  const hasClasspath = (text) =>
+    /classpath\s+['"]com\.google\.gms:google-services:/.test(text);
+
+  const original = readText(platformsAndroidBuildGradlePath);
+  if (hasClasspath(original)) return false;
+
+  // Try to insert into buildscript { dependencies { ... } }
+  // Common Cordova pattern: buildscript { repositories { ... } dependencies { ... } }
+  const classpathLine = `        classpath 'com.google.gms:google-services:${googleServicesVersion}'`;
+
+  // Prefer inserting after the line that opens the buildscript dependencies block.
+  const result = upsertLineOnce(
+    original,
+    classpathLine,
+    /^\s*dependencies\s*\{\s*$/,
+    classpathLine
+  );
+
+  if (result.changed) {
+    writeText(platformsAndroidBuildGradlePath, result.text);
+    return true;
+  }
+
+  return false;
+}
+
+function ensureGoogleServicesApplied(platformsAndroidAppBuildGradlePath) {
+  if (!exists(platformsAndroidAppBuildGradlePath)) return false;
+
+  const guardNeedle = "plugins.hasPlugin('com.google.gms.google-services')";
+  const original = readText(platformsAndroidAppBuildGradlePath);
+  if (original.includes(guardNeedle)) return false;
+
+  // Cordova's template may already contain a conditional apply based on cordovaConfig.
+  // Add our own guard so the plugin is applied whenever google-services.json exists.
+  const appended = `${original.replace(/\s*$/, '')}\n\nif (!project.plugins.hasPlugin('com.google.gms.google-services')) {\n    apply plugin: 'com.google.gms.google-services'\n}\n`;
+  writeText(platformsAndroidAppBuildGradlePath, appended);
+  return true;
+}
+
+// ---------------------------------------------------------------------------
+// Network security config (debug-only proxy support)
+// ---------------------------------------------------------------------------
+
+const NETWORK_SECURITY_CONFIG_XML = [
+  '<?xml version="1.0" encoding="utf-8"?>',
+  '<network-security-config>',
+  '    <debug-overrides>',
+  '        <trust-anchors>',
+  '            <certificates src="user" />',
+  '            <certificates src="system" />',
+  '        </trust-anchors>',
+  '    </debug-overrides>',
+  '</network-security-config>',
+  '',
+].join('\n');
+
+function isTruthyString(val) {
+  if (!val) return false;
+  const s = String(val).trim().toLowerCase();
+  return s === 'true' || s === '1' || s === 'yes';
+}
+
+function readDebugModeFromManifest(manifestPath) {
+  if (!exists(manifestPath)) return false;
+  const text = readText(manifestPath);
+  const match = text.match(
+    /com\.reteno\.plugin\.DEBUG_MODE["']\s+android:value=["']([^"']+)["']/
+  );
+  if (!match) return false;
+  return isTruthyString(match[1]);
+}
+
+function readDebugModeFromCapacitorConfig(androidAppDir) {
+  const configPath = path.join(androidAppDir, 'src', 'main', 'assets', 'capacitor.config.json');
+  if (!exists(configPath)) return false;
+  try {
+    const config = JSON.parse(readText(configPath));
+    const prefs =
+      (config && config.cordova && config.cordova.preferences) ||
+      {};
+    return isTruthyString(prefs.RETENO_DEBUG_MODE);
+  } catch (_) {
+    return false;
+  }
+}
+
+/**
+ * Checks whether RETENO_DEBUG_MODE is enabled by looking at:
+ * 1. The main app manifest (Cordova — resolved plugin.xml variables)
+ * 2. The capacitor-cordova-android-plugins manifest (Capacitor)
+ * 3. capacitor.config.json preferences (Capacitor fallback,
+ *    because Capacitor may not substitute $RETENO_DEBUG_MODE correctly)
+ */
+function isDebugModeEnabled(androidAppDir, androidProjectDir) {
+  const mainManifest = path.join(androidAppDir, 'src', 'main', 'AndroidManifest.xml');
+  if (readDebugModeFromManifest(mainManifest)) return true;
+
+  if (androidProjectDir) {
+    const capPluginManifest = path.join(
+      androidProjectDir, 'capacitor-cordova-android-plugins', 'src', 'main', 'AndroidManifest.xml'
+    );
+    if (readDebugModeFromManifest(capPluginManifest)) return true;
+  }
+
+  if (readDebugModeFromCapacitorConfig(androidAppDir)) return true;
+
+  return false;
+}
+
+/**
+ * When RETENO_DEBUG_MODE is enabled, writes network_security_config.xml into
+ * res/xml/ and adds the android:networkSecurityConfig attribute to the
+ * <application> tag so that user-installed CA certificates (e.g. Charles) are
+ * trusted in debug builds.
+ *
+ * When disabled, removes the file and attribute to keep production builds clean.
+ */
+function ensureNetworkSecurityConfig(androidAppDir, androidProjectDir) {
+  const mainDir = path.join(androidAppDir, 'src', 'main');
+  const manifestPath = path.join(mainDir, 'AndroidManifest.xml');
+  const resXmlDir = path.join(mainDir, 'res', 'xml');
+  const nscPath = path.join(resXmlDir, 'network_security_config.xml');
+
+  const isDebug = isDebugModeEnabled(androidAppDir, androidProjectDir);
+
+  if (!isDebug) {
+    // Clean up: remove NSC file and manifest attribute when debug mode is off.
+    let removed = false;
+    if (exists(nscPath)) {
+      try { fs.unlinkSync(nscPath); removed = true; } catch (_) { /* ignore */ }
+    }
+    if (exists(manifestPath)) {
+      const text = readText(manifestPath);
+      const cleaned = text.replace(
+        /\s*android:networkSecurityConfig="@xml\/network_security_config"/g,
+        ''
+      );
+      if (cleaned !== text) {
+        writeText(manifestPath, cleaned);
+        removed = true;
+      }
+    }
+    return removed ? 'removed' : 'skip';
+  }
+
+  // Write the NSC file.
+  ensureDir(resXmlDir);
+  writeText(nscPath, NETWORK_SECURITY_CONFIG_XML);
+
+  // Add networkSecurityConfig attribute to <application> if missing.
+  if (exists(manifestPath)) {
+    const text = readText(manifestPath);
+    if (!text.includes('networkSecurityConfig')) {
+      const updated = text.replace(
+        /<application\b/,
+        '<application android:networkSecurityConfig="@xml/network_security_config"'
+      );
+      if (updated !== text) {
+        writeText(manifestPath, updated);
+      }
+    }
+  }
+
+  return 'applied';
+}
+
+// ---------------------------------------------------------------------------
+// Capacitor: plugin variable substitution
+// ---------------------------------------------------------------------------
+
+/**
+ * Capacitor does NOT substitute $VARIABLE placeholders from plugin.xml in the
+ * generated capacitor-cordova-android-plugins manifest.  This leaves values
+ * like $SDK_ACCESS_KEY and $RETENO_DEBUG_MODE unresolved (defaults are used).
+ *
+ * This function reads the Cordova preferences from capacitor.config.json and
+ * performs the substitution so that the manifest contains the real values.
+ */
+function substituteCapacitorPluginVariables(androidProjectDir, androidAppDir) {
+  const capPluginManifest = path.join(
+    androidProjectDir, 'capacitor-cordova-android-plugins', 'src', 'main', 'AndroidManifest.xml'
+  );
+  if (!exists(capPluginManifest)) return 'skip';
+
+  const configPath = path.join(androidAppDir, 'src', 'main', 'assets', 'capacitor.config.json');
+  if (!exists(configPath)) return 'skip';
+
+  let prefs;
+  try {
+    const config = JSON.parse(readText(configPath));
+    prefs = (config && config.cordova && config.cordova.preferences) || {};
+  } catch (_) {
+    return 'skip';
+  }
+
+  if (Object.keys(prefs).length === 0) return 'skip';
+
+  let text = readText(capPluginManifest);
+  let changed = false;
+
+  const allowedKeys = new Set([
+    'SDK_ACCESS_KEY',
+    'RETENO_DEBUG_MODE',
+    'ANDROID_RETENO_FCM_VERSION',
+    'ANDROID_FIREBASE_MESSAGING_VERSION',
+  ]);
+
+  for (const key of Object.keys(prefs)) {
+    if (!allowedKeys.has(key)) continue;
+    const placeholder = '$' + key;
+    if (text.includes(placeholder)) {
+      text = text.split(placeholder).join(String(prefs[key]));
+      changed = true;
+    }
+  }
+
+  if (changed) {
+    writeText(capPluginManifest, text);
+    return 'applied';
+  }
+
+  return 'ok';
+}
+
+// ---------------------------------------------------------------------------
+// google-services.json helpers
+// ---------------------------------------------------------------------------
+
+function findGoogleServicesJson(projectRoot) {
+  const candidates = [
+    path.join(projectRoot, 'google-services.json'),
+    path.join(projectRoot, 'resources', 'google-services.json'),
+    path.join(projectRoot, 'resources', 'android', 'google-services.json'),
+  ];
+
+  for (const candidate of candidates) {
+    if (exists(candidate)) return candidate;
+  }
+
+  return null;
+}
+
+function copyGoogleServicesJson(projectRoot, platformsAndroidAppDir) {
+  const src = findGoogleServicesJson(projectRoot);
+  if (!src) return { copied: false, reason: 'not-found' };
+
+  const dest = path.join(platformsAndroidAppDir, 'google-services.json');
+  ensureDir(platformsAndroidAppDir);
+
+  const srcText = readText(src);
+  if (exists(dest)) {
+    const destText = readText(dest);
+    if (destText === srcText) return { copied: false, reason: 'already-same' };
+  }
+
+  fs.copyFileSync(src, dest);
+  return { copied: true, reason: 'copied' };
+}
+
+module.exports = function (context) {
+  const projectRoot =
+    (context && context.opts && context.opts.projectRoot) ||
+    (context && context.opts && context.opts.cordova && context.opts.cordova.project && context.opts.cordova.project.root) ||
+    null;
+
+  if (!projectRoot) return;
+
+  const cordovaAndroidDir = path.join(projectRoot, 'platforms', 'android');
+  const capacitorAndroidDir = path.join(projectRoot, 'android');
+  const androidProjectDir = exists(cordovaAndroidDir)
+    ? cordovaAndroidDir
+    : (exists(capacitorAndroidDir) ? capacitorAndroidDir : null);
+
+  if (!androidProjectDir) return;
+
+  const androidAppDir = path.join(androidProjectDir, 'app');
+  const platformsAndroidBuildGradlePath = path.join(androidProjectDir, 'build.gradle');
+  const platformsAndroidAppBuildGradlePath = path.join(androidAppDir, 'build.gradle');
+
+  // --- Capacitor: substitute plugin variables in generated manifest ----------
+  const varsResult = substituteCapacitorPluginVariables(androidProjectDir, androidAppDir);
+
+  // --- Network security config (conditional on RETENO_DEBUG_MODE) -----------
+  const nscResult = ensureNetworkSecurityConfig(androidAppDir, androidProjectDir);
+
+  // --- Google Services / FCM ------------------------------------------------
+  // Default Google Services Gradle plugin version.
+  // We only add it if the project doesn't already have it.
+  const googleServicesVersion = '4.3.15';
+
+  // Only patch Gradle if google-services.json is available.
+  // This matches the common Cordova approach used by push SDKs (e.g. OneSignal):
+  // if Firebase isn't configured, do not modify build files.
+  const googleServicesSrc = findGoogleServicesJson(projectRoot);
+
+  if (!googleServicesSrc) {
+    // eslint-disable-next-line no-console
+    console.log(
+      `cordova-plugin-reteno: Android setup: capacitor-vars=${varsResult} network-security-config=${nscResult} google-services.json=not-found (skipping google-services Gradle plugin).`
+    );
+    return;
+  }
+
+  const copyResult = copyGoogleServicesJson(projectRoot, androidAppDir);
+  const classpathChangedRoot = ensureGoogleServicesClasspath(
+    platformsAndroidBuildGradlePath,
+    googleServicesVersion
+  );
+  const classpathChangedApp = ensureGoogleServicesClasspath(
+    platformsAndroidAppBuildGradlePath,
+    googleServicesVersion
+  );
+  const applyChanged = ensureGoogleServicesApplied(platformsAndroidAppBuildGradlePath);
+
+  // eslint-disable-next-line no-console
+  console.log(
+    [
+      'cordova-plugin-reteno: Android setup:',
+      `capacitor-vars=${varsResult}`,
+      `network-security-config=${nscResult}`,
+      `google-services.json=${copyResult.reason}`,
+      `google-services-classpath=${classpathChangedRoot || classpathChangedApp ? 'added' : 'ok'}`,
+      `google-services-apply=${applyChanged ? 'added' : 'ok'}`,
+    ].join(' ')
+  );
+};

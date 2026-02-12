@@ -1,0 +1,44 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/main"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Reteno – Ecommerce events</ion-title>
+    <ion-buttons slot="end">
+      <ion-badge class="app-version" color="medium">v0.0.12</ion-badge>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <ion-list>
+    <ion-item lines="none">
+      <ion-label class="ion-text-wrap">
+        <h2>Choose an event type</h2>
+        <p>Each button sends a demo payload for the selected ecommerce event.</p>
+      </ion-label>
+    </ion-item>
+  </ion-list>
+
+  <div class="button-grid">
+    <ion-button expand="block" (click)="logEcommerceEvent('productViewed')">productViewed</ion-button>
+    <ion-button expand="block" (click)="logEcommerceEvent('productCategoryViewed')"
+      >productCategoryViewed</ion-button
+    >
+    <ion-button expand="block" (click)="logEcommerceEvent('productAddedToWishlist')"
+      >productAddedToWishlist</ion-button
+    >
+    <ion-button expand="block" (click)="logEcommerceEvent('cartUpdated')">cartUpdated</ion-button>
+    <ion-button expand="block" (click)="logEcommerceEvent('orderCreated')">orderCreated</ion-button>
+    <ion-button expand="block" (click)="logEcommerceEvent('orderUpdated')">orderUpdated</ion-button>
+    <ion-button expand="block" (click)="logEcommerceEvent('orderDelivered')">orderDelivered</ion-button>
+    <ion-button expand="block" (click)="logEcommerceEvent('orderCancelled')">orderCancelled</ion-button>
+    <ion-button expand="block" (click)="logEcommerceEvent('searchRequest')">searchRequest</ion-button>
+  </div>
+
+  @if (status) {
+    <ion-text class="status">
+      <p>{{ status }}</p>
+    </ion-text>
+  }
+</ion-content>

@@ -1,20 +1,206 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
-    <ion-title>
-      Blank
-    </ion-title>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/main"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Reteno – User attributes</ion-title>
+    <ion-buttons slot="end">
+      <ion-badge class="app-version" color="medium">v0.0.12</ion-badge>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Blank</ion-title>
-    </ion-toolbar>
-  </ion-header>
+  <form [formGroup]="form">
+    <ion-list>
+      <ion-item-divider>
+        <ion-label>User mode</ion-label>
+      </ion-item-divider>
 
-  <div id="container">
-    <strong>Ready to create an app?</strong>
-    <p>Start with Ionic <a target="_blank" rel="noopener noreferrer" href="https://ionicframework.com/docs/components">UI Components</a></p>
-  </div>
+      <ion-item>
+        <ion-label>Multi-account user</ion-label>
+        <ion-checkbox slot="end" formControlName="multiAccount"></ion-checkbox>
+      </ion-item>
+
+      <ion-item>
+        <ion-label>Anonymous user</ion-label>
+        <ion-checkbox slot="end" formControlName="anonymousUser"></ion-checkbox>
+      </ion-item>
+
+      @if (!isAnonymous) {
+        <ion-item>
+          <ion-input
+            label="External user id"
+            labelPlacement="stacked"
+            formControlName="externalUserId"
+            placeholder="user-123"
+          ></ion-input>
+        </ion-item>
+      }
+
+      <ion-item-divider>
+        <ion-label>User attributes</ion-label>
+      </ion-item-divider>
+
+      <ion-grid class="form-grid">
+        <ion-row>
+          @if (!isAnonymous) {
+            <ion-col size="12" size-md="6">
+              <ion-item>
+                <ion-input
+                  label="Email"
+                  labelPlacement="stacked"
+                  formControlName="email"
+                  placeholder="john.doe@example.com"
+                ></ion-input>
+              </ion-item>
+            </ion-col>
+          }
+
+          @if (!isAnonymous) {
+            <ion-col size="12" size-md="6">
+              <ion-item>
+                <ion-input
+                  label="Phone"
+                  labelPlacement="stacked"
+                  formControlName="phone"
+                  placeholder="+1234567890"
+                ></ion-input>
+              </ion-item>
+            </ion-col>
+          }
+
+          <ion-col size="12" size-md="6">
+            <ion-item>
+              <ion-input
+                label="First name"
+                labelPlacement="stacked"
+                formControlName="firstName"
+              ></ion-input>
+            </ion-item>
+          </ion-col>
+
+          <ion-col size="12" size-md="6">
+            <ion-item>
+              <ion-input
+                label="Last name"
+                labelPlacement="stacked"
+                formControlName="lastName"
+              ></ion-input>
+            </ion-item>
+          </ion-col>
+
+          <ion-col size="12" size-md="6">
+            <ion-item>
+              <ion-input
+                label="Language code"
+                labelPlacement="stacked"
+                formControlName="languageCode"
+                placeholder="en"
+              ></ion-input>
+            </ion-item>
+          </ion-col>
+
+          <ion-col size="12" size-md="6">
+            <ion-item>
+              <ion-input
+                label="Time zone"
+                labelPlacement="stacked"
+                formControlName="timeZone"
+                placeholder="Europe/Kyiv"
+              ></ion-input>
+            </ion-item>
+          </ion-col>
+        </ion-row>
+      </ion-grid>
+
+      <ion-item-divider>
+        <ion-label>Address (optional)</ion-label>
+      </ion-item-divider>
+
+      <ion-grid class="form-grid">
+        <ion-row>
+          <ion-col size="12" size-md="6">
+            <ion-item>
+              <ion-input
+                label="Region"
+                labelPlacement="stacked"
+                formControlName="region"
+              ></ion-input>
+            </ion-item>
+          </ion-col>
+
+          <ion-col size="12" size-md="6">
+            <ion-item>
+              <ion-input
+                label="Town"
+                labelPlacement="stacked"
+                formControlName="town"
+              ></ion-input>
+            </ion-item>
+          </ion-col>
+
+          <ion-col size="12" size-md="6">
+            <ion-item>
+              <ion-input
+                label="Address"
+                labelPlacement="stacked"
+                formControlName="address"
+              ></ion-input>
+            </ion-item>
+          </ion-col>
+
+          <ion-col size="12" size-md="6">
+            <ion-item>
+              <ion-input
+                label="Postcode"
+                labelPlacement="stacked"
+                formControlName="postcode"
+              ></ion-input>
+            </ion-item>
+          </ion-col>
+        </ion-row>
+      </ion-grid>
+
+      <ion-item-divider>
+        <ion-label>Custom field (optional)</ion-label>
+      </ion-item-divider>
+
+      <ion-grid class="form-grid">
+        <ion-row>
+          <ion-col size="12" size-md="6">
+            <ion-item>
+              <ion-input
+                label="Key"
+                labelPlacement="stacked"
+                formControlName="fieldKey"
+                placeholder="plan"
+              ></ion-input>
+            </ion-item>
+          </ion-col>
+
+          <ion-col size="12" size-md="6">
+            <ion-item>
+              <ion-input
+                label="Value"
+                labelPlacement="stacked"
+                formControlName="fieldValue"
+                placeholder="premium"
+              ></ion-input>
+            </ion-item>
+          </ion-col>
+        </ion-row>
+      </ion-grid>
+    </ion-list>
+
+    <ion-button expand="block" [disabled]="form.invalid" (click)="sendForm()">
+      Send user data
+    </ion-button>
+  </form>
+
+  @if (status) {
+    <ion-text class="status">
+      <p>{{ status }}</p>
+    </ion-text>
+  }
 </ion-content>

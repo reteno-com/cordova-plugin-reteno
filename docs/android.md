@@ -28,7 +28,7 @@ If you prefer to keep the access key in your Cordova app config (instead of pass
     <variable name="RETENO_DEBUG_MODE" value="true" />
 
     <!-- Optional: Reteno Android SDK (FCM) version override -->
-    <variable name="ANDROID_RETENO_FCM_VERSION" value="2.8.9" />
+    <variable name="ANDROID_RETENO_FCM_VERSION" value="2.9.0" />
   </plugin>
 </widget>
 ```
@@ -51,7 +51,7 @@ Notes:
    - During plugin installation:
 
      ```sh
-     cordova plugin add cordova-plugin-reteno --variable ANDROID_RETENO_FCM_VERSION=2.8.9
+     cordova plugin add cordova-plugin-reteno --variable ANDROID_RETENO_FCM_VERSION=2.9.0
      ```
 
    - Or from your Android project (for example in `platforms/android/build.gradle`):

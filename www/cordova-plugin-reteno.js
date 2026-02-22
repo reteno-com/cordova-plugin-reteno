@@ -284,6 +284,30 @@ function __callWithAutoInit(action, args, success, error) {
       document.removeEventListener('reteno-in-app-custom-data', listener);
     },
 
+    // SDK 2.9.0+: push notification dismissed (swiped away)
+    setOnRetenoPushDismissedListener: function (arg0, arg1) {
+      var listener = typeof arg0 === 'function' ? arg0 : arg1;
+      if (typeof listener !== 'function') return;
+      document.addEventListener('reteno-push-dismissed', listener);
+    },
+
+    removeOnRetenoPushDismissedListener: function (listener) {
+      if (typeof listener !== 'function') return;
+      document.removeEventListener('reteno-push-dismissed', listener);
+    },
+
+    // SDK 2.9.0+: custom push notification received
+    setOnRetenoCustomPushReceivedListener: function (arg0, arg1) {
+      var listener = typeof arg0 === 'function' ? arg0 : arg1;
+      if (typeof listener !== 'function') return;
+      document.addEventListener('reteno-custom-push-received', listener);
+    },
+
+    removeOnRetenoCustomPushReceivedListener: function (listener) {
+      if (typeof listener !== 'function') return;
+      document.removeEventListener('reteno-custom-push-received', listener);
+    },
+
     setOnInAppLifecycleCallback: function (arg0, arg1) {
       var listener = typeof arg0 === 'function' ? arg0 : arg1;
       if (listener === null) {

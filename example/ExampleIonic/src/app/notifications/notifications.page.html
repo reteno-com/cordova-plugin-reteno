@@ -55,6 +55,24 @@
       Notification clicked listener
     </ion-toggle>
   </ion-item>
+
+  <ion-item>
+    <ion-toggle
+      [checked]="isPushDismissedListenerEnabled"
+      (ionChange)="togglePushDismissedListener($event.detail.checked)"
+    >
+      Push dismissed listener (2.9.0+)
+    </ion-toggle>
+  </ion-item>
+
+  <ion-item>
+    <ion-toggle
+      [checked]="isCustomPushReceivedListenerEnabled"
+      (ionChange)="toggleCustomPushReceivedListener($event.detail.checked)"
+    >
+      Custom push received listener (2.9.0+)
+    </ion-toggle>
+  </ion-item>
 </ion-list>
 
 @if (pushListenerStatus) {
@@ -82,6 +100,38 @@
 @if (notificationClickedEvents.length) {
   <ion-list>
     @for (event of notificationClickedEvents; track event.key) {
+      <ion-item>
+        <ion-label>{{ event.text }}</ion-label>
+      </ion-item>
+    }
+  </ion-list>
+}
+
+@if (pushDismissedListenerStatus) {
+  <ion-text class="status">
+    <p>{{ pushDismissedListenerStatus }}</p>
+  </ion-text>
+}
+
+@if (pushDismissedEvents.length) {
+  <ion-list>
+    @for (event of pushDismissedEvents; track event.key) {
+      <ion-item>
+        <ion-label>{{ event.text }}</ion-label>
+      </ion-item>
+    }
+  </ion-list>
+}
+
+@if (customPushReceivedListenerStatus) {
+  <ion-text class="status">
+    <p>{{ customPushReceivedListenerStatus }}</p>
+  </ion-text>
+}
+
+@if (customPushReceivedEvents.length) {
+  <ion-list>
+    @for (event of customPushReceivedEvents; track event.key) {
       <ion-item>
         <ion-label>{{ event.text }}</ion-label>
       </ion-item>

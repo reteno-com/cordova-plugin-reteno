@@ -15,11 +15,19 @@ export class NotificationsPage implements OnInit {
   clickListenerStatus: string | null = null;
   pushReceivedEvents: { key: string; text: string }[] = [];
   notificationClickedEvents: { key: string; text: string }[] = [];
+  pushDismissedEvents: { key: string; text: string }[] = [];
+  customPushReceivedEvents: { key: string; text: string }[] = [];
   isPushListenerEnabled = false;
   isNotificationClickListenerEnabled = false;
+  isPushDismissedListenerEnabled = false;
+  isCustomPushReceivedListenerEnabled = false;
+  pushDismissedListenerStatus: string | null = null;
+  customPushReceivedListenerStatus: string | null = null;
 
   private pushListenerHandler: ((event: Event) => void) | null = null;
   private clickListenerHandler: ((event: Event) => void) | null = null;
+  private pushDismissedListenerHandler: ((event: Event) => void) | null = null;
+  private customPushReceivedListenerHandler: ((event: Event) => void) | null = null;
 
   private readonly formBuilder = inject(FormBuilder);
   private readonly reteno = inject(RetenoService);
@@ -103,6 +111,48 @@ export class NotificationsPage implements OnInit {
       this.clickListenerHandler = null;
       this.isNotificationClickListenerEnabled = false;
       this.clickListenerStatus = 'Notification click listener removed.';
+    }
+  }
+
+  togglePushDismissedListener(enabled: boolean) {
+    if (enabled && !this.pushDismissedListenerHandler) {
+      this.pushDismissedListenerStatus = 'Listening for push dismissed events...';
+      this.pushDismissedListenerHandler = this.reteno.setOnRetenoPushDismissedListener((payload) => {
+        this.zone.run(() => {
+          const message = this.buildEventMessage('Push dismissed', payload);
+          this.addEvent(this.pushDismissedEvents, 'Push dismissed', payload, message);
+        });
+      });
+      this.isPushDismissedListenerEnabled = true;
+      return;
+    }
+
+    if (!enabled && this.pushDismissedListenerHandler) {
+      this.reteno.removeOnRetenoPushDismissedListener(this.pushDismissedListenerHandler);
+      this.pushDismissedListenerHandler = null;
+      this.isPushDismissedListenerEnabled = false;
+      this.pushDismissedListenerStatus = 'Push dismissed listener removed.';
+    }
+  }
+
+  toggleCustomPushReceivedListener(enabled: boolean) {
+    if (enabled && !this.customPushReceivedListenerHandler) {
+      this.customPushReceivedListenerStatus = 'Listening for custom push received events...';
+      this.customPushReceivedListenerHandler = this.reteno.setOnRetenoCustomPushReceivedListener((payload) => {
+        this.zone.run(() => {
+          const message = this.buildEventMessage('Custom push received', payload);
+          this.addEvent(this.customPushReceivedEvents, 'Custom push received', payload, message);
+        });
+      });
+      this.isCustomPushReceivedListenerEnabled = true;
+      return;
+    }
+
+    if (!enabled && this.customPushReceivedListenerHandler) {
+      this.reteno.removeOnRetenoCustomPushReceivedListener(this.customPushReceivedListenerHandler);
+      this.customPushReceivedListenerHandler = null;
+      this.isCustomPushReceivedListenerEnabled = false;
+      this.customPushReceivedListenerStatus = 'Custom push received listener removed.';
     }
   }
 

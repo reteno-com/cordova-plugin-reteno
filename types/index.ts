@@ -59,6 +59,19 @@ export type LogEventPayload = {
 
 export type RequestNotificationPermissionResult = 0 | 1;
 
+export type NotificationPresentationOption = 'badge' | 'sound' | 'alert' | 'banner' | 'list';
+
+export type WillPresentNotificationOptionsPayload = {
+  options?: NotificationPresentationOption[];
+  presentationOptions?: NotificationPresentationOption[];
+  emitEvent?: boolean;
+};
+
+export type NotificationResponseHandlerOptions = {
+  enabled?: boolean;
+  emitEvent?: boolean;
+};
+
 export type LifecycleTrackingOptions =
   | {
       appLifecycleEnabled?: boolean | null;

@@ -352,6 +352,25 @@ function __callWithAutoInit(action, args, success, error) {
     },
 
     /*
+        options: string[] | { options?: string[], presentationOptions?: string[], emitEvent?: boolean }
+        Passing null removes the handler.
+        Supported options: "badge", "sound", "alert", "banner", "list"
+        If emitEvent is true, the plugin will emit "reteno-push-received".
+        */
+    setWillPresentNotificationOptions: function (arg0, success, error) {
+      return __callWithExec('setWillPresentNotificationOptions', [arg0], success, error);
+    },
+
+    /*
+        payload: boolean | { enabled?: boolean, emitEvent?: boolean }
+        If emitEvent is true, the plugin will emit "reteno-notification-clicked".
+        Passing false or null removes the handler.
+        */
+    setDidReceiveNotificationResponseHandler: function (arg0, success, error) {
+      return __callWithExec('setDidReceiveNotificationResponseHandler', [arg0], success, error);
+    },
+
+    /*
         config: NotificationChannelConfig
         {
           name: string,

@@ -5,6 +5,7 @@ Notes:
 - Recommended: call `retenosdk.init(...)` once on app startup before calling SDK-dependent methods like `logEvent`, `setUserAttributes`, `setAnonymousUserAttributes`, or `setDeviceToken`.
 - As a convenience, the JS wrapper will auto-call init when you call those methods, but explicit init gives you clearer error handling and predictable timing.
 - All methods that call native code return a `Promise`. Optional `success` / `error` callbacks are still supported for backward compatibility.
+- Android SDK support: **2.8.9+**. Listener-based push APIs are available in **2.9.0+** and fall back to legacy receivers in 2.8.9.
 
 | Method                                                             | Supported platform | Description                                                                                                                                       |
 | ------------------------------------------------------------------ | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |

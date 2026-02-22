@@ -99,9 +99,11 @@ If you need advanced Reteno configuration (custom `RetenoConfig`, custom device 
 5. Set up Firebase for Cloud Messaging (create Firebase project, add `google-services.json`, etc):
    [link](https://docs.reteno.com/reference/setting-up-your-firebase-application-for-firebase-cloud-messaging).
 
-## Push notification listeners (SDK 2.9.0+)
+## Push notification listeners (SDK 2.8.9+; new listener API in 2.9.0)
 
-The Android SDK 2.9.0 introduces new listener-based callbacks for push events:
+The Android SDK 2.9.0 introduces new listener-based callbacks for push events. The plugin supports
+Android SDK **2.8.9+**; on 2.8.9 it falls back to legacy broadcast receivers, while 2.9.0+ uses
+listener APIs where available.
 
 - `setOnRetenoPushDismissedListener(listener)` — called when a push notification is dismissed (swiped away).
 - `setOnRetenoCustomPushReceivedListener(listener)` — called when a custom push notification is received.

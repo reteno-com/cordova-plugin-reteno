@@ -22,6 +22,10 @@ public class RetenoNotificationClickedReceiver extends BroadcastReceiver {
       return;
     }
 
+    if (RetenoPlugin.shouldUseListenerNotificationClicked()) {
+      return;
+    }
+
     RetenoPlugin.emitJsEvent("reteno-notification-clicked", RetenoUtil.bundleToJson(intent.getExtras()));
   }
 }

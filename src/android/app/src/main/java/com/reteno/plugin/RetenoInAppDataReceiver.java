@@ -11,6 +11,10 @@ public class RetenoInAppDataReceiver extends BroadcastReceiver {
       return;
     }
 
+    if (RetenoPlugin.shouldUseListenerInAppCustomData()) {
+      return;
+    }
+
     RetenoPlugin.emitJsEvent("reteno-in-app-custom-data", RetenoUtil.bundleToJson(intent.getExtras()));
   }
 }

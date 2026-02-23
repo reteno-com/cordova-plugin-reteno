@@ -917,6 +917,11 @@ function onDeviceReady() {
 
     if (lifecycleSaveBtn) {
         lifecycleSaveBtn.addEventListener('click', function () {
+            if (cordova && cordova.platformId === 'ios') {
+                setLifecycleStatus('iOS: configure lifecycle tracking only in init options.');
+                return;
+            }
+
             withInit(function () {
                 var sdk = getRetenoSdk();
                 if (!sdk || typeof sdk.setLifecycleTrackingOptions !== 'function') {
@@ -949,6 +954,11 @@ function onDeviceReady() {
 
     if (lifecycleAllBtn) {
         lifecycleAllBtn.addEventListener('click', function () {
+            if (cordova && cordova.platformId === 'ios') {
+                setLifecycleStatus('iOS: configure lifecycle tracking only in init options.');
+                return;
+            }
+
             withInit(function () {
                 var sdk = getRetenoSdk();
                 if (!sdk || typeof sdk.setLifecycleTrackingOptions !== 'function') {
@@ -978,6 +988,11 @@ function onDeviceReady() {
 
     if (lifecycleNoneBtn) {
         lifecycleNoneBtn.addEventListener('click', function () {
+            if (cordova && cordova.platformId === 'ios') {
+                setLifecycleStatus('iOS: configure lifecycle tracking only in init options.');
+                return;
+            }
+
             withInit(function () {
                 var sdk = getRetenoSdk();
                 if (!sdk || typeof sdk.setLifecycleTrackingOptions !== 'function') {

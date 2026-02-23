@@ -137,11 +137,12 @@ export class HomePage implements OnInit {
     if (isMultiAccount) {
       const previousUserId = this.lastMultiAccountUserId;
       const nextUserId = externalUserId;
+      const user = Object.keys(userAttributes).length > 0 ? { userAttributes } : {};
       this.sendToReteno(
         'setMultiAccountUserAttributes',
         {
           externalUserId,
-          user: { userAttributes },
+          user,
         },
         { previousUserId, nextUserId }
       );

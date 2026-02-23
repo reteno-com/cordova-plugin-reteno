@@ -740,10 +740,13 @@ function onDeviceReady() {
                 } else if (isMultiAccount) {
                     var previousUserId = lastMultiAccountUserId;
                     var nextUserId = externalUserId;
+                    var multiAccountUser = Object.keys(userAttributes).length > 0
+                        ? { userAttributes: userAttributes }
+                        : {};
                     setStatus('Sending setMultiAccountUserAttributes...');
                     sdk.setMultiAccountUserAttributes({
                         externalUserId: externalUserId,
-                        user: { userAttributes: userAttributes },
+                        user: multiAccountUser,
                     })
                         .then(function () {
                             lastMultiAccountUserId = nextUserId;

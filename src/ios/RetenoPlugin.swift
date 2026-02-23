@@ -118,6 +118,107 @@ class RetenoPlugin: CDVPlugin {
     commandDelegate.send(result, callbackId: command.callbackId)
   }
 
+  @objc(setUserAttributes:)
+  func setUserAttributes(_ command: CDVInvokedUrlCommand) {
+    guard let payload = extractPayload(from: command) else {
+      sendError("Invalid setUserAttributes payload.", to: command)
+      return
+    }
+
+    guard let externalUserId = stringValue(payload["externalUserId"]) else {
+      sendError("Missing argument: externalUserId", to: command)
+      return
+    }
+
+    let userDict = dictionaryValue(payload["user"])
+    let userAttributes = buildUserAttributes(from: dictionaryValue(userDict?["userAttributes"]))
+    let subscriptionKeys = stringArrayValue(userDict?["subscriptionKeys"])
+    let groupNamesInclude = stringArrayValue(userDict?["groupNamesInclude"])
+    let groupNamesExclude = stringArrayValue(userDict?["groupNamesExclude"])
+
+    DispatchQueue.main.async {
+      Reteno.updateUserAttributes(
+        externalUserId: externalUserId,
+        userAttributes: userAttributes,
+        subscriptionKeys: subscriptionKeys,
+        groupNamesInclude: groupNamesInclude,
+        groupNamesExclude: groupNamesExclude
+      )
+      let result = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: 1)
+      self.commandDelegate.send(result, callbackId: command.callbackId)
+    }
+  }
+
+  @objc(setAnonymousUserAttributes:)
+  func setAnonymousUserAttributes(_ command: CDVInvokedUrlCommand) {
+    guard let payload = extractPayload(from: command) else {
+      sendError("Invalid setAnonymousUserAttributes payload.", to: command)
+      return
+    }
+
+    let nestedAttributes = dictionaryValue(payload["userAttributes"])
+    if hasPhoneOrEmail(payload) || hasPhoneOrEmail(nestedAttributes) {
+      sendError(
+        "Anonymous user attributes cannot include phone/email. Use setUserAttributes(externalUserId, user) instead.",
+        to: command
+      )
+      return
+    }
+
+    let attributesSource = nestedAttributes ?? payload
+    let anonymousAttributes = buildAnonymousUserAttributes(from: attributesSource)
+    let subscriptionKeys = stringArrayValue(payload["subscriptionKeys"])
+    let groupNamesInclude = stringArrayValue(payload["groupNamesInclude"])
+    let groupNamesExclude = stringArrayValue(payload["groupNamesExclude"])
+
+    DispatchQueue.main.async {
+      Reteno.updateAnonymousUserAttributes(
+        userAttributes: anonymousAttributes,
+        subscriptionKeys: subscriptionKeys,
+        groupNamesInclude: groupNamesInclude,
+        groupNamesExclude: groupNamesExclude
+      )
+      let result = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: 1)
+      self.commandDelegate.send(result, callbackId: command.callbackId)
+    }
+  }
+
+  @objc(setMultiAccountUserAttributes:)
+  func setMultiAccountUserAttributes(_ command: CDVInvokedUrlCommand) {
+    guard let payload = extractPayload(from: command) else {
+      sendError("Invalid setMultiAccountUserAttributes payload.", to: command)
+      return
+    }
+
+    guard let externalUserId = stringValue(payload["externalUserId"]) else {
+      sendError("Missing argument: externalUserId", to: command)
+      return
+    }
+
+    guard let userDict = dictionaryValue(payload["user"]) else {
+      sendError("Missing argument: user", to: command)
+      return
+    }
+
+    let userAttributes = buildUserAttributes(from: dictionaryValue(userDict["userAttributes"]))
+    let subscriptionKeys = stringArrayValue(userDict["subscriptionKeys"])
+    let groupNamesInclude = stringArrayValue(userDict["groupNamesInclude"])
+    let groupNamesExclude = stringArrayValue(userDict["groupNamesExclude"])
+
+    DispatchQueue.main.async {
+      Reteno.updateMultiAccountUserAttributes(
+        externalUserId: externalUserId,
+        userAttributes: userAttributes,
+        subscriptionKeys: subscriptionKeys,
+        groupNamesInclude: groupNamesInclude,
+        groupNamesExclude: groupNamesExclude,
+        accountSuffix: externalUserId
+      )
+      let result = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: 1)
+      self.commandDelegate.send(result, callbackId: command.callbackId)
+    }
+  }
+
   @objc(setDidReceiveNotificationResponseHandler:)
   func setDidReceiveNotificationResponseHandler(_ command: CDVInvokedUrlCommand) {
     let arg0 = command.arguments.first
@@ -168,6 +269,117 @@ class RetenoPlugin: CDVPlugin {
   private func sendError(_ message: String, to command: CDVInvokedUrlCommand) {
     let result = CDVPluginResult(status: CDVCommandStatus_ERROR, messageAs: message)
     commandDelegate.send(result, callbackId: command.callbackId)
+  }
+
+  private func extractPayload(from command: CDVInvokedUrlCommand) -> [String: Any]? {
+    guard let arg0 = command.arguments.first, !(arg0 is NSNull) else { return nil }
+    if let dict = dictionaryValue(arg0) { return dict }
+    if let array = arg0 as? [Any], let first = array.first, let dict = dictionaryValue(first) {
+      return dict
+    }
+    if let jsonString = arg0 as? String, let data = jsonString.data(using: .utf8) {
+      if let object = try? JSONSerialization.jsonObject(with: data, options: []),
+         let dict = dictionaryValue(object) {
+        return dict
+      }
+    }
+    return nil
+  }
+
+  private func dictionaryValue(_ value: Any?) -> [String: Any]? {
+    if let dict = value as? [String: Any] { return dict }
+    if let dict = value as? NSDictionary { return dict as? [String: Any] }
+    return nil
+  }
+
+  private func stringValue(_ value: Any?) -> String? {
+    guard let raw = value as? String else { return nil }
+    let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+    return trimmed.isEmpty ? nil : trimmed
+  }
+
+  private func stringArrayValue(_ value: Any?) -> [String] {
+    if let array = value as? [String] {
+      return array.compactMap { stringValue($0) }
+    }
+    if let array = value as? [Any] {
+      return array.compactMap { item in
+        if let str = item as? String { return stringValue(str) }
+        return nil
+      }
+    }
+    return []
+  }
+
+  private func hasPhoneOrEmail(_ payload: [String: Any]?) -> Bool {
+    guard let payload else { return false }
+    let phone = stringValue(payload["phone"])
+    let email = stringValue(payload["email"])
+    return phone != nil || email != nil
+  }
+
+  private func buildUserAttributes(from payload: [String: Any]?) -> UserAttributes? {
+    guard let payload else { return nil }
+
+    let phone = stringValue(payload["phone"])
+    let email = stringValue(payload["email"])
+    let firstName = stringValue(payload["firstName"])
+    let lastName = stringValue(payload["lastName"])
+    let languageCode = stringValue(payload["languageCode"])
+    let timeZone = stringValue(payload["timeZone"]) ?? TimeZone.current.identifier
+    let address = buildAddress(from: payload["address"])
+    let fields = buildCustomFields(from: payload["fields"])
+
+    return UserAttributes(
+      phone: phone,
+      email: email,
+      firstName: firstName,
+      lastName: lastName,
+      languageCode: languageCode,
+      timeZone: timeZone,
+      address: address,
+      fields: fields
+    )
+  }
+
+  private func buildAnonymousUserAttributes(from payload: [String: Any]) -> AnonymousUserAttributes {
+    let firstName = stringValue(payload["firstName"])
+    let lastName = stringValue(payload["lastName"])
+    let languageCode = stringValue(payload["languageCode"])
+    let timeZone = stringValue(payload["timeZone"]) ?? TimeZone.current.identifier
+    let address = buildAddress(from: payload["address"])
+    let fields = buildCustomFields(from: payload["fields"])
+
+    return AnonymousUserAttributes(
+      firstName: firstName,
+      lastName: lastName,
+      languageCode: languageCode,
+      timeZone: timeZone,
+      address: address,
+      fields: fields
+    )
+  }
+
+  private func buildAddress(from value: Any?) -> Address? {
+    guard let payload = dictionaryValue(value) else { return nil }
+    let region = stringValue(payload["region"])
+    let town = stringValue(payload["town"])
+    let address = stringValue(payload["address"])
+    let postcode = stringValue(payload["postcode"])
+
+    if region == nil && town == nil && address == nil && postcode == nil { return nil }
+    return Address(region: region, town: town, address: address, postcode: postcode)
+  }
+
+  private func buildCustomFields(from value: Any?) -> [UserCustomField] {
+    guard let array = value as? [Any] else { return [] }
+    var result: [UserCustomField] = []
+    for item in array {
+      guard let dict = dictionaryValue(item) else { continue }
+      guard let key = stringValue(dict["key"]), let value = stringValue(dict["value"]) else { continue }
+      result.append(UserCustomField(key: key, value: value))
+    }
+    return result
   }
 
   private static func buildPresentationOptions(from options: [String]) -> UNNotificationPresentationOptions {

@@ -687,54 +687,46 @@ public class RetenoPlugin extends CordovaPlugin {
   }
 
   private Object createProcedureListener(final String eventName) {
-    try {
-      Class<?> procedureClass = resolveProcedureClass();
-      if (procedureClass == null) {
-        return null;
-      }
-      return Proxy.newProxyInstance(
-        procedureClass.getClassLoader(),
-        new Class<?>[] { procedureClass },
-        new InvocationHandler() {
-          @Override
-          public Object invoke(Object proxy, Method method, Object[] args) {
-            if ("execute".equals(method.getName()) && args != null && args.length > 0) {
-              Object payload = args[0];
-              if (payload instanceof Bundle) {
-                emitJsEvent(eventName, RetenoUtil.bundleToJson((Bundle) payload));
-              }
-            }
-            return null;
-          }
-        }
-      );
-    } catch (ClassNotFoundException e) {
+    Class<?> procedureClass = resolveProcedureClass();
+    if (procedureClass == null) {
       return null;
     }
+    return Proxy.newProxyInstance(
+      procedureClass.getClassLoader(),
+      new Class<?>[] { procedureClass },
+      new InvocationHandler() {
+        @Override
+        public Object invoke(Object proxy, Method method, Object[] args) {
+          if ("execute".equals(method.getName()) && args != null && args.length > 0) {
+            Object payload = args[0];
+            if (payload instanceof Bundle) {
+              emitJsEvent(eventName, RetenoUtil.bundleToJson((Bundle) payload));
+            }
+          }
+          return null;
+        }
+      }
+    );
   }
 
   private Object createInAppCustomDataListener() {
-    try {
-      Class<?> procedureClass = resolveProcedureClass();
-      if (procedureClass == null) {
-        return null;
-      }
-      return Proxy.newProxyInstance(
-        procedureClass.getClassLoader(),
-        new Class<?>[] { procedureClass },
-        new InvocationHandler() {
-          @Override
-          public Object invoke(Object proxy, Method method, Object[] args) {
-            if ("execute".equals(method.getName()) && args != null && args.length > 0) {
-              emitInAppCustomDataEvent(args[0]);
-            }
-            return null;
-          }
-        }
-      );
-    } catch (ClassNotFoundException e) {
+    Class<?> procedureClass = resolveProcedureClass();
+    if (procedureClass == null) {
       return null;
     }
+    return Proxy.newProxyInstance(
+      procedureClass.getClassLoader(),
+      new Class<?>[] { procedureClass },
+      new InvocationHandler() {
+        @Override
+        public Object invoke(Object proxy, Method method, Object[] args) {
+          if ("execute".equals(method.getName()) && args != null && args.length > 0) {
+            emitInAppCustomDataEvent(args[0]);
+          }
+          return null;
+        }
+      }
+    );
   }
 
   private void addNotificationListener(String getterName, Object listener) throws Exception {

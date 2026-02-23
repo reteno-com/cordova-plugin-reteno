@@ -1,6 +1,7 @@
 import { Component, NgZone, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
+import { AppHeaderComponent } from '../shared/app-header/app-header.component';
 import { RetenoService } from '../services/reteno.service';
 
 type EventView = {
@@ -12,7 +13,7 @@ type EventView = {
   selector: 'app-in-app',
   templateUrl: 'in-app.page.html',
   styleUrls: ['in-app.page.scss'],
-  imports: [IonicModule, ReactiveFormsModule],
+  imports: [IonicModule, ReactiveFormsModule, AppHeaderComponent],
 })
 export class InAppPage implements OnInit {
   pauseStatus: string | null = null;

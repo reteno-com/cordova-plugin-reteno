@@ -1,13 +1,14 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
+import { AppHeaderComponent } from '../shared/app-header/app-header.component';
 import { RetenoService } from '../services/reteno.service';
 
 @Component({
   selector: 'app-lifecycle',
   templateUrl: 'lifecycle.page.html',
   styleUrls: ['lifecycle.page.scss'],
-  imports: [IonicModule, ReactiveFormsModule],
+  imports: [IonicModule, ReactiveFormsModule, AppHeaderComponent],
 })
 export class LifecyclePage implements OnInit {
   status: string | null = null;

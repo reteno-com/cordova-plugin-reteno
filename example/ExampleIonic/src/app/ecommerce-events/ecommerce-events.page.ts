@@ -1,5 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { IonicModule } from '@ionic/angular';
+import { AppHeaderComponent } from '../shared/app-header/app-header.component';
 import { RetenoService } from '../services/reteno.service';
 
 type EcommerceEventType =
@@ -17,7 +18,7 @@ type EcommerceEventType =
   selector: 'app-ecommerce-events',
   templateUrl: 'ecommerce-events.page.html',
   styleUrls: ['ecommerce-events.page.scss'],
-  imports: [IonicModule],
+  imports: [IonicModule, AppHeaderComponent],
 })
 export class EcommerceEventsPage implements OnInit {
   status: string | null = null;

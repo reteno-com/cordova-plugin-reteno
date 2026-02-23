@@ -1,5 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { IonicModule } from '@ionic/angular';
+import { AppHeaderComponent } from '../shared/app-header/app-header.component';
 import { RouterModule } from '@angular/router';
 import { RetenoService } from '../services/reteno.service';
 
@@ -7,7 +8,7 @@ import { RetenoService } from '../services/reteno.service';
   selector: 'app-main',
   templateUrl: 'main.page.html',
   styleUrls: ['main.page.scss'],
-  imports: [IonicModule, RouterModule],
+  imports: [IonicModule, RouterModule, AppHeaderComponent],
 })
 export class MainPage implements OnInit {
   private readonly reteno = inject(RetenoService);

@@ -3,6 +3,8 @@
 This section lists everything that must be done in the **app project** that consumes this plugin.
 
 Official guide: https://docs.reteno.com/reference/ios
+User behaviour reference: https://docs.reteno.com/reference/ios-user-behaviour
+User information reference: https://docs.reteno.com/reference/ios-user-information
 
 ## Minimum SDK Requirements
 
@@ -129,3 +131,19 @@ await retenosdk.setDidReceiveNotificationResponseHandler({
 ```
 
 If `emitEvent` is `true`, the plugin will emit `reteno-notification-clicked` with the payload.
+
+## 9) User Information and User Behaviour methods
+
+The plugin supports the main iOS methods described in Reteno docs:
+
+- `setUserAttributes(...)`
+- `setAnonymousUserAttributes(...)` (without `phone`/`email`)
+- `setMultiAccountUserAttributes(...)`
+- `logEvent(...)`
+- `logScreenView(...)`
+- `forcePushData(...)`
+
+Lifecycle tracking note for iOS:
+
+- iOS lifecycle tracking is configured during SDK initialization (`retenosdk.init({ lifecycleTrackingOptions: ... })`).
+- Calling `setLifecycleTrackingOptions(...)` after initialization is not supported on iOS.

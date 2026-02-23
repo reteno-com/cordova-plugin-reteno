@@ -31,8 +31,21 @@ class RetenoPlugin: CDVPlugin {
       return
     }
 
+    let pauseInAppMessages = (options["pauseInAppMessages"] as? Bool) ?? false
+    let lifecycleOptions = parseLifecycleTrackingOptions(options["lifecycleTrackingOptions"])
+    let lifecycleAppEnabled = lifecycleOptions?.appLifecycleEnabled ?? true
+    let lifecyclePushEnabled = lifecycleOptions?.pushSubscriptionEnabled ?? true
+    let lifecycleSessionEnabled = lifecycleOptions?.sessionEventsEnabled ?? true
+
+    let configuration = RetenoConfiguration(
+      isAutomaticAppLifecycleReportingEnabled: lifecycleAppEnabled,
+      isAutomaticPushSubsriptionReportingEnabled: lifecyclePushEnabled,
+      isAutomaticSessionReportingEnabled: lifecycleSessionEnabled,
+      isPausedInAppMessages: pauseInAppMessages
+    )
+
     DispatchQueue.main.async {
-      Reteno.start(apiKey: apiKey)
+      Reteno.start(apiKey: apiKey, configuration: configuration)
 
       let result = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: 1)
       self.commandDelegate.send(result, callbackId: command.callbackId)
@@ -49,6 +62,84 @@ class RetenoPlugin: CDVPlugin {
       let result = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: 1)
       self.commandDelegate.send(result, callbackId: command.callbackId)
     }
+  }
+
+  @objc(logEvent:)
+  func logEvent(_ command: CDVInvokedUrlCommand) {
+    guard let payload = extractPayload(from: command) else {
+      sendError("Missing argument: payload", to: command)
+      return
+    }
+
+    guard let eventName = stringValue(payload["eventName"]) else {
+      sendError("logEvent: missing 'eventName' parameter!", to: command)
+      return
+    }
+
+    let dateValue = payload["date"]
+    let eventDate: Date
+    if dateValue == nil || dateValue is NSNull {
+      eventDate = Date()
+    } else if let dateString = stringValue(dateValue), let parsedDate = parseIso8601Date(dateString) {
+      eventDate = parsedDate
+    } else {
+      sendError("Invalid argument: date. Expected ISO8601 string.", to: command)
+      return
+    }
+
+    let parameters = buildEventParameters(from: payload["parameters"])
+    let forcePush = (payload["forcePush"] as? Bool) ?? false
+
+    DispatchQueue.main.async {
+      Reteno.logEvent(
+        eventTypeKey: eventName,
+        date: eventDate,
+        parameters: parameters,
+        forcePush: forcePush
+      )
+      let result = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: 1)
+      self.commandDelegate.send(result, callbackId: command.callbackId)
+    }
+  }
+
+  @objc(logScreenView:)
+  func logScreenView(_ command: CDVInvokedUrlCommand) {
+    let arg0 = command.arguments.first
+    var screenName: String?
+
+    if let value = arg0 as? String {
+      screenName = value
+    } else if let payload = dictionaryValue(arg0) {
+      screenName = payload["screenName"] as? String
+    } else if let array = arg0 as? [Any], let first = array.first {
+      if let value = first as? String {
+        screenName = value
+      } else if let payload = dictionaryValue(first) {
+        screenName = payload["screenName"] as? String
+      }
+    }
+
+    guard let resolvedScreenName = stringValue(screenName) else {
+      sendError("Missing argument: screenName", to: command)
+      return
+    }
+
+    DispatchQueue.main.async {
+      Reteno.logEvent(
+        eventTypeKey: "screenView",
+        parameters: [Event.Parameter(name: "screenClass", value: resolvedScreenName)]
+      )
+      let result = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: 1)
+      self.commandDelegate.send(result, callbackId: command.callbackId)
+    }
+  }
+
+  @objc(setLifecycleTrackingOptions:)
+  func setLifecycleTrackingOptions(_ command: CDVInvokedUrlCommand) {
+    sendError(
+      "setLifecycleTrackingOptions is not supported on iOS after initialization. Configure lifecycleTrackingOptions in init(...).",
+      to: command
+    )
   }
 
   @objc(setDeviceToken:)
@@ -311,6 +402,46 @@ class RetenoPlugin: CDVPlugin {
     return []
   }
 
+  private func parseLifecycleTrackingOptions(_ value: Any?) -> (
+    appLifecycleEnabled: Bool,
+    pushSubscriptionEnabled: Bool,
+    sessionEventsEnabled: Bool
+  )? {
+    if let raw = stringValue(value) {
+      if raw.caseInsensitiveCompare("ALL") == .orderedSame {
+        return (true, true, true)
+      }
+      if raw.caseInsensitiveCompare("NONE") == .orderedSame {
+        return (false, false, false)
+      }
+      return nil
+    }
+
+    guard let payload = dictionaryValue(value) else { return nil }
+    return (
+      appLifecycleEnabled: (payload["appLifecycleEnabled"] as? Bool) ?? true,
+      pushSubscriptionEnabled: (payload["pushSubscriptionEnabled"] as? Bool) ?? true,
+      sessionEventsEnabled: (payload["sessionEventsEnabled"] as? Bool) ?? true
+    )
+  }
+
+  private func parseIso8601Date(_ value: String) -> Date? {
+    if let parsed = RetenoPlugin.isoFormatterWithMs.date(from: value) { return parsed }
+    return RetenoPlugin.isoFormatter.date(from: value)
+  }
+
+  private func buildEventParameters(from value: Any?) -> [Event.Parameter] {
+    guard let array = value as? [Any] else { return [] }
+    var result: [Event.Parameter] = []
+    for item in array {
+      guard let dict = dictionaryValue(item) else { continue }
+      guard let name = stringValue(dict["name"]) else { continue }
+      let parameterValue = stringValue(dict["value"]) ?? ""
+      result.append(Event.Parameter(name: name, value: parameterValue))
+    }
+    return result
+  }
+
   private func hasPhoneOrEmail(_ payload: [String: Any]?) -> Bool {
     guard let payload else { return false }
     let phone = stringValue(payload["phone"])
@@ -415,7 +546,17 @@ class RetenoPlugin: CDVPlugin {
     return result
   }
 
-  private static let isoFormatter = ISO8601DateFormatter()
+  private static let isoFormatter: ISO8601DateFormatter = {
+    let formatter = ISO8601DateFormatter()
+    formatter.formatOptions = [.withInternetDateTime]
+    return formatter
+  }()
+
+  private static let isoFormatterWithMs: ISO8601DateFormatter = {
+    let formatter = ISO8601DateFormatter()
+    formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+    return formatter
+  }()
 
   private static func emitJsEvent(_ eventName: String, payload: [AnyHashable: Any]?) {
     guard let instance = activeInstance, instance.webView != nil else { return }

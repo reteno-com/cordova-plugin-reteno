@@ -27,6 +27,52 @@ function onDeviceReady() {
     console.log('Running cordova-' + cordova.platformId + '@' + cordova.version);
     document.getElementById('deviceready').classList.add('ready');
 
+    // Show platform-specific app version/build number (e.g. 1.0.0(410)).
+    (function initAppVersionLabel() {
+        var versionEl = document.getElementById('appVersion');
+        if (!versionEl || !window.cordova || !cordova.getAppVersion) {
+            return;
+        }
+
+        var getVersionNumber = cordova.getAppVersion.getVersionNumber;
+        var getVersionCode = cordova.getAppVersion.getVersionCode;
+        if (typeof getVersionNumber !== 'function' || typeof getVersionCode !== 'function') {
+            return;
+        }
+
+        function wrapGetter(fn) {
+            return new Promise(function (resolve, reject) {
+                try {
+                    // Callback signature: fn(success, error)
+                    if (fn.length >= 1) {
+                        fn(resolve, reject);
+                        return;
+                    }
+                    // Promise signature: fn().then(...)
+                    var res = fn();
+                    if (res && typeof res.then === 'function') {
+                        res.then(resolve).catch(reject);
+                        return;
+                    }
+                    resolve(res);
+                } catch (e) {
+                    reject(e);
+                }
+            });
+        }
+
+        Promise.all([wrapGetter(getVersionNumber), wrapGetter(getVersionCode)])
+            .then(function (parts) {
+                var version = String(parts[0] || '').trim();
+                var build = String(parts[1] || '').trim();
+                if (!version) {
+                    return;
+                }
+                versionEl.textContent = build ? (version + '(' + build + ')') : version;
+            })
+            .catch(function () {});
+    })();
+
     // Request push permission right after startup (Android 13+)
     if (window.retenosdk && typeof window.retenosdk.requestNotificationPermission === 'function') {
         var permissionPromise = window.retenosdk.requestNotificationPermission();

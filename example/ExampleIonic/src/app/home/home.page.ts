@@ -2,13 +2,14 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
+import { AppVersionBadgeComponent } from '../components/app-version-badge/app-version-badge.component';
 import { RetenoService } from '../services/reteno.service';
 
 @Component({
     selector: 'app-home',
     templateUrl: 'home.page.html',
     styleUrls: ['home.page.scss'],
-    imports: [IonicModule, ReactiveFormsModule]
+  imports: [IonicModule, ReactiveFormsModule, AppVersionBadgeComponent]
 })
 export class HomePage implements OnInit {
   status: string | null = null;

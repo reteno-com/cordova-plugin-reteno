@@ -1,13 +1,14 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { IonicModule, Platform } from '@ionic/angular';
+import { AppVersionBadgeComponent } from '../components/app-version-badge/app-version-badge.component';
 import { RetenoService } from '../services/reteno.service';
 
 @Component({
   selector: 'app-lifecycle',
   templateUrl: 'lifecycle.page.html',
   styleUrls: ['lifecycle.page.scss'],
-  imports: [IonicModule, ReactiveFormsModule],
+  imports: [IonicModule, ReactiveFormsModule, AppVersionBadgeComponent],
 })
 export class LifecyclePage implements OnInit {
   status: string | null = null;

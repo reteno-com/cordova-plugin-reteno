@@ -1,13 +1,14 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
+import { AppVersionBadgeComponent } from '../components/app-version-badge/app-version-badge.component';
 import { RetenoService } from '../services/reteno.service';
 
 @Component({
   selector: 'app-event',
   templateUrl: 'event.page.html',
   styleUrls: ['event.page.scss'],
-  imports: [IonicModule, ReactiveFormsModule],
+  imports: [IonicModule, ReactiveFormsModule, AppVersionBadgeComponent],
 })
 export class EventPage implements OnInit {
   status: string | null = null;

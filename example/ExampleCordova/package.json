@@ -22,6 +22,7 @@
     "cordova": "^13.0.0",
     "cordova-android": "^14.0.1",
     "cordova-ios": "^6.3.0",
+    "cordova-plugin-app-version": "^0.1.14",
     "cordova-plugin-reteno": "file:../../cordova-plugin-reteno-0.0.1.tgz"
   },
   "cordova": {
@@ -36,7 +37,8 @@
         "ANDROID_RETENO_FCM_VERSION": "2.8.9",
         "ANDROID_FIREBASE_MESSAGING_VERSION": "23.1.0",
         "RETENO_DEBUG_MODE": "true"
-      }
+      },
+      "cordova-plugin-app-version": {}
     }
   }
 }

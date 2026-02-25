@@ -53,6 +53,10 @@ From the demo root:
 npm run publish:ios:testflight
 ```
 
+This command runs `npm run build:ios:debug`, then invokes fastlane.
+
+Fastlane then builds the archive (Debug configuration, as configured in `fastlane/.env.testflight`) and uploads it to TestFlight.
+
 Or manually:
 
 ```bash

@@ -20,3 +20,12 @@ coverage/
 
 # Packed plugin archives(npm pack)
 cordova-plugin-reteno-*.tgz
+
+# fastlane / TestFlight
+**/fastlane/.env*
+!**/fastlane/.env*.example
+**/fastlane/*.p8
+**/fastlane/report.xml
+**/fastlane/Preview.html
+**/fastlane/test_output/
+**/.fastlane_tmp/

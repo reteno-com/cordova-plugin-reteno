@@ -1,0 +1,102 @@
+default_platform(:ios)
+
+platform :ios do
+  private_lane :maybe_set_build_number do
+    build_number = ENV["BUILD_NUMBER"]
+    return if build_number.nil? || build_number.strip.empty?
+
+    build_number = build_number.strip
+
+    plists = [
+      "App/Info.plist",
+      "App/NotificationServiceExtension/Info.plist"
+    ].select { |p| File.exist?(p) }
+
+    UI.user_error!("No Info.plist files found to set BUILD_NUMBER") if plists.empty?
+
+    plists.each do |plist_path|
+      increment_build_number_in_plist(
+        plist_path: plist_path,
+        build_number: build_number
+      )
+    end
+  end
+
+  private_lane :load_app_store_connect_api_key do
+    key_id = ENV.fetch("APP_STORE_CONNECT_API_KEY_KEY_ID").strip
+    issuer_id = ENV.fetch("APP_STORE_CONNECT_API_KEY_ISSUER_ID").strip
+    in_house = (ENV["APP_STORE_CONNECT_API_KEY_IN_HOUSE"] || "false").to_s == "true"
+
+    key_path = ENV["APP_STORE_CONNECT_API_KEY_PATH"]
+
+    repo_url = ENV["APP_STORE_CONNECT_API_KEY_GIT_REPO_URL"]
+    repo_branch = (ENV["APP_STORE_CONNECT_API_KEY_GIT_REPO_BRANCH"] || "main").strip
+    if (key_path.nil? || key_path.empty?) && repo_url && !repo_url.empty?
+      tmp_dir = File.join(Dir.pwd, ".fastlane_tmp", "appstore_api_key")
+      sh("rm -rf \"#{tmp_dir}\"")
+      sh("git clone --depth 1 --branch \"#{repo_branch}\" \"#{repo_url}\" \"#{tmp_dir}\"")
+
+      candidates = [
+        File.join(tmp_dir, "AuthKey_#{key_id}.p8"),
+        File.join(tmp_dir, "#{key_id}.p8")
+      ]
+
+      key_path = candidates.find { |p| File.exist?(p) }
+      if key_path.nil?
+        p8s = Dir.glob(File.join(tmp_dir, "**", "*.p8"))
+        UI.user_error!("Couldn't find .p8 key in repo #{repo_url}. Expected AuthKey_#{key_id}.p8") if p8s.empty?
+        key_path = p8s.first
+        UI.important("Using first .p8 found at #{key_path} (set APP_STORE_CONNECT_API_KEY_PATH to be explicit)")
+      end
+    end
+
+    UI.user_error!("Set APP_STORE_CONNECT_API_KEY_PATH or APP_STORE_CONNECT_API_KEY_GIT_REPO_URL") if key_path.nil? || key_path.empty?
+
+    app_store_connect_api_key(
+      key_id: key_id,
+      issuer_id: issuer_id,
+      key_filepath: key_path,
+      in_house: in_house
+    )
+  end
+
+  desc "Build and upload to TestFlight"
+  lane :testflight do
+    setup_ci
+
+    maybe_set_build_number
+
+    api_key = load_app_store_connect_api_key
+
+    match(
+      readonly: ENV.key?("CI"),
+      git_url: ENV.fetch("MATCH_GIT_URL"),
+      type: ENV.fetch("MATCH_TYPE", "appstore"),
+      app_identifier: ENV.fetch("MATCH_APP_IDENTIFIER").split(","),
+      team_id: ENV["FASTLANE_TEAM_ID"]
+    )
+
+    cocoapods(clean_install: true) if File.exist?("Podfile")
+
+    export_options = {
+      provisioningProfiles: lane_context[SharedValues::MATCH_PROVISIONING_PROFILE_MAPPING]
+    }
+
+    gym(
+      workspace: ENV.fetch("GYM_WORKSPACE"),
+      scheme: ENV.fetch("GYM_SCHEME"),
+      configuration: ENV.fetch("GYM_CONFIGURATION", "Release"),
+      export_method: ENV.fetch("GYM_EXPORT_METHOD", "app-store"),
+      include_bitcode: (ENV["GYM_INCLUDE_BITCODE"] || "false") == "true",
+      export_options: export_options,
+      derived_data_path: ENV["CI_DERIVED_DATA_PATH"],
+      output_directory: ENV.fetch("CI_OUTPUT_DIRECTORY", "./build"),
+      clean: true
+    )
+
+    upload_to_testflight(
+      api_key: api_key,
+      skip_waiting_for_build_processing: true
+    )
+  end
+end

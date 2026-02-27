@@ -25,6 +25,7 @@ npx cap sync
 
 Notes:
 - iOS requires Xcode + CocoaPods.
+- Reteno iOS SDK requires iOS 15.0+.
 
 ## Publish iOS build to TestFlight
 
@@ -45,6 +46,7 @@ Template:
 Copy it to `.env.testflight` in the same folder and fill in values.
 
 If you need to override the iOS build number, set `BUILD_NUMBER` in `.env.testflight` (this updates `CFBundleVersion`).
+If you need to override the iOS marketing version, set `APP_VERSION` in `.env.testflight` (this updates `CFBundleShortVersionString`).
 
 At minimum you must provide:
 
@@ -80,3 +82,6 @@ bundle exec fastlane ios testflight --env testflight
 
 - `MATCH_APP_IDENTIFIER` must include all bundle IDs present in the Xcode project (main app + extensions).
 - If you see provisioning/profile mapping errors, double-check the list of app identifiers and that the targets exist.
+- If CocoaPods fails with "required a higher minimum deployment target", ensure `ios/App/Podfile` uses `platform :ios, '14.0'` or higher, then run `npx cap sync ios` again.
+- `match` runs in readonly mode by default (`MATCH_READONLY=true`). If you intentionally need to create/repair certs/profiles, run with `MATCH_READONLY=false` and set `MATCH_PASSWORD`.
+- If `match` fails with `couldn't set additional authenticated data`, set `MATCH_FORCE_LEGACY_ENCRYPTION=true` (or use the updated lane which auto-falls back on unsupported OpenSSL builds).

@@ -1,23 +1,93 @@
+require "openssl"
+require "tmpdir"
+
 default_platform(:ios)
 
 platform :ios do
+  project_root = File.expand_path("../../..", __dir__)
+  ios_root = File.expand_path("..", __dir__)
+  match_readonly = (ENV["MATCH_READONLY"] || "true").to_s == "true"
+
+  private_lane :openssl_supports_match_v2_encryption do
+    begin
+      cipher = OpenSSL::Cipher.new("aes-256-gcm")
+      cipher.encrypt
+      cipher.key = "\0" * 32
+      cipher.iv = "\0" * 12
+      cipher.auth_data = "\0" * 24
+      true
+    rescue StandardError
+      false
+    end
+  end
+
+  private_lane :set_plist_build_number do |options|
+    plist_path = options.fetch(:plist_path)
+    build_number = options.fetch(:build_number).to_s
+
+    # Avoid depending on optional fastlane actions; update plist directly.
+    sh("/usr/libexec/PlistBuddy -c \"Set :CFBundleVersion #{build_number}\" \"#{plist_path}\" || /usr/libexec/PlistBuddy -c \"Add :CFBundleVersion string #{build_number}\" \"#{plist_path}\"")
+  end
+
+  private_lane :set_plist_short_version do |options|
+    plist_path = options.fetch(:plist_path)
+    short_version = options.fetch(:short_version).to_s
+
+    sh("/usr/libexec/PlistBuddy -c \"Set :CFBundleShortVersionString #{short_version}\" \"#{plist_path}\" || /usr/libexec/PlistBuddy -c \"Add :CFBundleShortVersionString string #{short_version}\" \"#{plist_path}\"")
+  end
+
   private_lane :maybe_set_build_number do
     build_number = ENV["BUILD_NUMBER"]
-    return if build_number.nil? || build_number.strip.empty?
+    next if build_number.nil? || build_number.strip.empty?
 
     build_number = build_number.strip
 
     plists = [
-      "App/Info.plist",
-      "App/NotificationServiceExtension/Info.plist"
+      File.join(ios_root, "App", "Info.plist"),
+      File.join(ios_root, "App", "NotificationServiceExtension", "Info.plist")
     ].select { |p| File.exist?(p) }
 
     UI.user_error!("No Info.plist files found to set BUILD_NUMBER") if plists.empty?
 
     plists.each do |plist_path|
-      increment_build_number_in_plist(
+      set_plist_build_number(
         plist_path: plist_path,
         build_number: build_number
+      )
+    end
+  end
+
+  private_lane :detect_short_version do
+    env_version = ENV["APP_VERSION"].to_s.strip
+    next env_version unless env_version.empty?
+
+    package_json_path = File.join(project_root, "package.json")
+    next nil unless File.exist?(package_json_path)
+
+    begin
+      require "json"
+      pkg = JSON.parse(File.read(package_json_path))
+      pkg["version"].to_s.strip
+    rescue StandardError
+      nil
+    end
+  end
+
+  private_lane :maybe_set_short_version do
+    short_version = detect_short_version
+    next if short_version.nil? || short_version.empty?
+
+    plists = [
+      File.join(ios_root, "App", "Info.plist"),
+      File.join(ios_root, "App", "NotificationServiceExtension", "Info.plist")
+    ].select { |p| File.exist?(p) }
+
+    UI.user_error!("No Info.plist files found to set APP_VERSION") if plists.empty?
+
+    plists.each do |plist_path|
+      set_plist_short_version(
+        plist_path: plist_path,
+        short_version: short_version
       )
     end
   end
@@ -27,12 +97,14 @@ platform :ios do
     issuer_id = ENV.fetch("APP_STORE_CONNECT_API_KEY_ISSUER_ID").strip
     in_house = (ENV["APP_STORE_CONNECT_API_KEY_IN_HOUSE"] || "false").to_s == "true"
 
-    key_path = ENV["APP_STORE_CONNECT_API_KEY_PATH"]
+    key_path = ENV["APP_STORE_CONNECT_API_KEY_PATH"].to_s.strip
+    key_path = nil if key_path.empty?
 
-    repo_url = ENV["APP_STORE_CONNECT_API_KEY_GIT_REPO_URL"]
+    repo_url = ENV["APP_STORE_CONNECT_API_KEY_GIT_REPO_URL"].to_s.strip
+    repo_url = nil if repo_url.empty?
     repo_branch = (ENV["APP_STORE_CONNECT_API_KEY_GIT_REPO_BRANCH"] || "main").strip
-    if (key_path.nil? || key_path.empty?) && repo_url && !repo_url.empty?
-      tmp_dir = File.join(Dir.pwd, ".fastlane_tmp", "appstore_api_key")
+    if key_path.nil? && repo_url
+      tmp_dir = File.join(Dir.tmpdir, "fastlane_appstore_api_key_#{Process.pid}")
       sh("rm -rf \"#{tmp_dir}\"")
       sh("git clone --depth 1 --branch \"#{repo_branch}\" \"#{repo_url}\" \"#{tmp_dir}\"")
 
@@ -64,16 +136,27 @@ platform :ios do
   lane :testflight do
     setup_ci
 
+    maybe_set_short_version
     maybe_set_build_number
 
     api_key = load_app_store_connect_api_key
+    ENV.delete("APP_STORE_CONNECT_API_KEY_PATH") if ENV["APP_STORE_CONNECT_API_KEY_PATH"].to_s.strip.empty?
+    ENV["MATCH_PASSWORD"] = ENV["MATCH_PASSWORD"].to_s.strip unless ENV["MATCH_PASSWORD"].nil?
+    force_legacy_encryption = (ENV["MATCH_FORCE_LEGACY_ENCRYPTION"] || "false").to_s == "true"
+    if !force_legacy_encryption && !openssl_supports_match_v2_encryption
+      UI.important("OpenSSL on this machine does not support Match v2 encryption; falling back to legacy encryption. Set MATCH_FORCE_LEGACY_ENCRYPTION=true to make this explicit.")
+      force_legacy_encryption = true
+    end
 
     match(
-      readonly: ENV.key?("CI"),
+      api_key: api_key,
+      readonly: match_readonly,
       git_url: ENV.fetch("MATCH_GIT_URL"),
+      git_branch: ENV.fetch("MATCH_GIT_BRANCH", "main"),
       type: ENV.fetch("MATCH_TYPE", "appstore"),
       app_identifier: ENV.fetch("MATCH_APP_IDENTIFIER").split(","),
-      team_id: ENV["FASTLANE_TEAM_ID"]
+      team_id: ENV["FASTLANE_TEAM_ID"],
+      force_legacy_encryption: force_legacy_encryption
     )
 
     cocoapods(clean_install: true) if File.exist?("Podfile")
@@ -81,13 +164,19 @@ platform :ios do
     export_options = {
       provisioningProfiles: lane_context[SharedValues::MATCH_PROVISIONING_PROFILE_MAPPING]
     }
+    team_id = ENV["FASTLANE_TEAM_ID"].to_s.strip
+    xcargs = []
+    xcargs << "DEVELOPMENT_TEAM=#{team_id}" unless team_id.empty?
 
     gym(
       workspace: ENV.fetch("GYM_WORKSPACE"),
       scheme: ENV.fetch("GYM_SCHEME"),
       configuration: ENV.fetch("GYM_CONFIGURATION", "Release"),
       export_method: ENV.fetch("GYM_EXPORT_METHOD", "app-store"),
+      export_team_id: (team_id.empty? ? nil : team_id),
+      skip_codesigning: (ENV["GYM_SKIP_CODESIGNING"] || "true") == "true",
       include_bitcode: (ENV["GYM_INCLUDE_BITCODE"] || "false") == "true",
+      xcargs: xcargs.join(" "),
       export_options: export_options,
       derived_data_path: ENV["CI_DERIVED_DATA_PATH"],
       output_directory: ENV.fetch("CI_OUTPUT_DIRECTORY", "./build"),
@@ -96,6 +185,7 @@ platform :ios do
 
     upload_to_testflight(
       api_key: api_key,
+      app_identifier: ENV.fetch("APP_IDENTIFIER").split(",").first.strip,
       skip_waiting_for_build_processing: true
     )
   end

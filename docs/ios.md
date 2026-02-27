@@ -3,12 +3,10 @@
 This section lists everything that must be done in the **app project** that consumes this plugin.
 
 Official guide: https://docs.reteno.com/reference/ios
-User behaviour reference: https://docs.reteno.com/reference/ios-user-behaviour
-User information reference: https://docs.reteno.com/reference/ios-user-information
 
 ## Minimum SDK Requirements
 
-- iOS: 14.0+
+- iOS: 15.0+
 - Xcode: 15.0+
 - Swift: 5.7+
 
@@ -17,6 +15,9 @@ User information reference: https://docs.reteno.com/reference/ios-user-informati
 In `config.xml` add/verify:
 
 ```xml
+<!-- Required: Reteno iOS SDK supports iOS 15.0+ -->
+<preference name="deployment-target" value="15.0" />
+
 <!-- Reteno SDK access key (required) -->
 <preference name="SDK_ACCESS_KEY" value="YOUR_RETENO_ACCESS_KEY" />
 
@@ -25,6 +26,8 @@ In `config.xml` add/verify:
 ```
 
 The plugin reads `SDK_ACCESS_KEY` during initialization.
+
+If `pod install` fails with "required a higher minimum deployment target", raise your iOS deployment target to `15.0` or higher and run install again.
 
 ## 2) Add Notification Service Extension (NSE)
 

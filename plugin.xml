@@ -100,7 +100,11 @@
     <preference name="UseSwiftLanguageVersion" value="5.0" />
   </config-file>
 
-  <framework src="Reteno" type="podspec" spec="$IOS_RETENO_FCM_VERSION" />
+  <podspec>
+    <pods>
+      <pod name="Reteno" spec="$IOS_RETENO_FCM_VERSION" />
+    </pods>
+  </podspec>
 
   <source-file src="src/ios/RetenoPlugin.swift" />
 </platform>

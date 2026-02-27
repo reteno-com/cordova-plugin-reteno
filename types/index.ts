@@ -366,3 +366,27 @@ export type RetenoInAppCustomDataPayload = Record<string, unknown>;
  * Listener function for in-app message custom data events.
  */
 export type RetenoInAppCustomDataListener = (payload: RetenoInAppCustomDataPayload) => void;
+
+/**
+ * Payload received when a push notification is dismissed (swiped away).
+ * Available in Reteno Android SDK 2.9.0+.
+ */
+export type RetenoPushDismissedPayload = Record<string, unknown>;
+
+/**
+ * Listener function for push notification dismissed (swipe) events.
+ * Available in Reteno Android SDK 2.9.0+.
+ */
+export type RetenoPushDismissedListener = (payload: RetenoPushDismissedPayload) => void;
+
+/**
+ * Payload received when a custom push notification is received.
+ * Available in Reteno Android SDK 2.9.0+.
+ */
+export type RetenoCustomPushReceivedPayload = Record<string, unknown>;
+
+/**
+ * Listener function for custom push notification received events.
+ * Available in Reteno Android SDK 2.9.0+.
+ */
+export type RetenoCustomPushReceivedListener = (payload: RetenoCustomPushReceivedPayload) => void;

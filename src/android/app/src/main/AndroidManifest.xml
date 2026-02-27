@@ -12,18 +12,12 @@
                 <action android:name="com.reteno.custom-push" />
             </intent-filter>
         </receiver>
-        <meta-data
-            android:name="com.reteno.Receiver.PushReceived"
-            android:value="com.reteno.plugin.RetenoPushReceiver" />
 
         <!-- Reteno notification clicked receiver: handles user taps on push notifications -->
         <receiver
             android:name="com.reteno.plugin.RetenoNotificationClickedReceiver"
             android:enabled="true"
             android:exported="true" />
-        <meta-data
-            android:name="com.reteno.Receiver.NotificationClicked"
-            android:value="com.reteno.plugin.RetenoNotificationClickedReceiver" />
     </application>
 
 </manifest>

@@ -1,11 +1,11 @@
 <?xml version='1.0' encoding='utf-8'?>
-<plugin id="cordova-plugin-reteno" version="0.0.1" xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
+<plugin id="cordova-plugin-reteno" version="0.0.1" xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools">
     <name>cordova-plugin-reteno</name>
     <engines>
         <engine name="cordova-android" version=">=12.0.0" />
     </engines>
     <!-- Android Reteno SDK (FCM) version override -->
-    <preference name="ANDROID_RETENO_FCM_VERSION" default="2.8.9" />
+    <preference name="ANDROID_RETENO_FCM_VERSION" default="2.9.0" />
     <!-- iOS Reteno SDK version override -->
     <preference name="IOS_RETENO_FCM_VERSION" default="2.6.1" />
     <!-- Firebase Messaging version used by Reteno FCM module -->
@@ -37,7 +37,9 @@
             android:exported="true" />
         <meta-data
             android:name="com.reteno.Receiver.PushReceived"
-            android:value="com.reteno.plugin.RetenoPushReceiver" />
+            android:value="com.reteno.plugin.RetenoPushReceiver"
+            xmlns:tools="http://schemas.android.com/tools"
+            tools:replace="android:value" />
 
         <!-- Reteno notification clicked receiver: handles user taps on push notifications -->
         <receiver
@@ -46,7 +48,9 @@
             android:exported="true" />
         <meta-data
             android:name="com.reteno.Receiver.NotificationClicked"
-            android:value="com.reteno.plugin.RetenoNotificationClickedReceiver" />
+            android:value="com.reteno.plugin.RetenoNotificationClickedReceiver"
+            xmlns:tools="http://schemas.android.com/tools"
+            tools:replace="android:value" />
 
         <!-- Reteno in-app message custom data receiver -->
         <receiver

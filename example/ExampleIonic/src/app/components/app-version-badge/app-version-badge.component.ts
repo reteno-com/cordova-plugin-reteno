@@ -7,6 +7,13 @@ import { App } from '@capacitor/app';
   standalone: true,
   imports: [IonicModule],
   template: '@if (label) {<ion-badge class="app-version" color="medium">{{ label }}</ion-badge>}',
+  styles: [`
+    .app-version {
+      font-size: 11px;
+      letter-spacing: 0.3px;
+      text-transform: none;
+    }
+  `],
 })
 export class AppVersionBadgeComponent implements OnInit {
   label = '';

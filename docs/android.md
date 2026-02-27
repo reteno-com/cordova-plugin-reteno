@@ -28,7 +28,7 @@ If you prefer to keep the access key in your Cordova app config (instead of pass
     <variable name="RETENO_DEBUG_MODE" value="true" />
 
     <!-- Optional: Reteno Android SDK (FCM) version override -->
-    <variable name="ANDROID_RETENO_FCM_VERSION" value="2.8.9" />
+    <variable name="ANDROID_RETENO_FCM_VERSION" value="2.9.0" />
   </plugin>
 </widget>
 ```
@@ -51,7 +51,7 @@ Notes:
    - During plugin installation:
 
      ```sh
-     cordova plugin add cordova-plugin-reteno --variable ANDROID_RETENO_FCM_VERSION=2.8.9
+     cordova plugin add cordova-plugin-reteno --variable ANDROID_RETENO_FCM_VERSION=2.9.0
      ```
 
    - Or from your Android project (for example in `platforms/android/build.gradle`):
@@ -98,6 +98,34 @@ If you need advanced Reteno configuration (custom `RetenoConfig`, custom device 
 
 5. Set up Firebase for Cloud Messaging (create Firebase project, add `google-services.json`, etc):
    [link](https://docs.reteno.com/reference/setting-up-your-firebase-application-for-firebase-cloud-messaging).
+
+## Push notification listeners (SDK 2.8.9+; new listener API in 2.9.0)
+
+The Android SDK 2.9.0 introduces new listener-based callbacks for push events. The plugin supports
+Android SDK **2.8.9+**; on 2.8.9 it falls back to legacy broadcast receivers, while 2.9.0+ uses
+listener APIs where available.
+
+- `setOnRetenoPushDismissedListener(listener)` — called when a push notification is dismissed (swiped away).
+- `setOnRetenoCustomPushReceivedListener(listener)` — called when a custom push notification is received.
+
+Each method accepts a listener that receives a payload object. Use the corresponding `remove...` method to unsubscribe:
+
+```js
+const onDismissed = (payload) => {
+  console.log('Push dismissed', payload);
+};
+
+const onCustomReceived = (payload) => {
+  console.log('Custom push received', payload);
+};
+
+retenosdk.setOnRetenoPushDismissedListener(onDismissed);
+retenosdk.setOnRetenoCustomPushReceivedListener(onCustomReceived);
+
+// later:
+retenosdk.removeOnRetenoPushDismissedListener(onDismissed);
+retenosdk.removeOnRetenoCustomPushReceivedListener(onCustomReceived);
+```
 
 ### Without Firebasex (Cordova)
 

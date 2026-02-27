@@ -12,7 +12,7 @@
     "run:android:emulator": "cordova run android --emulator",
     "publish:ios:testflight": "npm run build:ios:debug && bundle install && bundle exec fastlane ios testflight --env testflight",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "add:plugin": "cordova plugin add \"file:/Users/serhiiporaiko/projects/Yalantis/reteno-cordova/cordova-plugin-reteno-0.0.1.tgz\" --variable SDK_ACCESS_KEY=630A66AF-C1D3-4F2A-ACC1-0D51C38D2B05 --variable IOS_RETENO_FCM_VERSION=2.6.1 --variable ANDROID_RETENO_FCM_VERSION=2.8.9 --variable ANDROID_FIREBASE_MESSAGING_VERSION=23.1.0 --variable RETENO_DEBUG_MODE=true"
+    "add:plugin": "cordova plugin add \"file:/Users/serhiiporaiko/projects/Yalantis/reteno-cordova/cordova-plugin-reteno-0.0.1.tgz\" --variable SDK_ACCESS_KEY=630A66AF-C1D3-4F2A-ACC1-0D51C38D2B05 --variable IOS_RETENO_FCM_VERSION=2.6.1 --variable ANDROID_RETENO_FCM_VERSION=2.9.0 --variable ANDROID_FIREBASE_MESSAGING_VERSION=23.1.0 --variable RETENO_DEBUG_MODE=true"
   },
   "keywords": [
     "ecosystem:cordova"
@@ -35,7 +35,7 @@
       "cordova-plugin-reteno": {
         "SDK_ACCESS_KEY": "630A66AF-C1D3-4F2A-ACC1-0D51C38D2B05",
         "IOS_RETENO_FCM_VERSION": "2.6.1",
-        "ANDROID_RETENO_FCM_VERSION": "2.8.9",
+        "ANDROID_RETENO_FCM_VERSION": "2.9.0",
         "ANDROID_FIREBASE_MESSAGING_VERSION": "23.1.0",
         "RETENO_DEBUG_MODE": "true"
       },

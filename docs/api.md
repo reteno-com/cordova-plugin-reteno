@@ -5,6 +5,7 @@ Notes:
 - Recommended: call `retenosdk.init(...)` once on app startup before calling SDK-dependent methods like `logEvent`, `setUserAttributes`, `setAnonymousUserAttributes`, or `setDeviceToken`.
 - As a convenience, the JS wrapper will auto-call init when you call those methods, but explicit init gives you clearer error handling and predictable timing.
 - All methods that call native code return a `Promise`. Optional `success` / `error` callbacks are still supported for backward compatibility.
+- Android SDK support: **2.8.9+**. Listener-based push APIs are available in **2.9.0+** and fall back to legacy receivers in 2.8.9.
 
 | Method                                                             | Supported platform | Description                                                                                                                                       |
 | ------------------------------------------------------------------ | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -23,6 +24,10 @@ Notes:
 | [removeOnRetenoPushReceivedListener](../www/cordova-plugin-reteno.js) | iOS, Android       | Removes listener for push notification received events.                                                                                           |
 | [setOnRetenoNotificationClickedListener](../www/cordova-plugin-reteno.js) | iOS, Android       | Sets listener for notification click events.                                                                                                      |
 | [removeOnRetenoNotificationClickedListener](../www/cordova-plugin-reteno.js) | iOS, Android       | Removes listener for notification click events.                                                                                                   |
+| [setOnRetenoPushDismissedListener](../www/cordova-plugin-reteno.js) | Android (2.9.0+)   | Sets listener for push dismissed (swipe) events.                                                                                                   |
+| [removeOnRetenoPushDismissedListener](../www/cordova-plugin-reteno.js) | Android (2.9.0+)   | Removes listener for push dismissed (swipe) events.                                                                                                 |
+| [setOnRetenoCustomPushReceivedListener](../www/cordova-plugin-reteno.js) | Android (2.9.0+)   | Sets listener for custom push received events.                                                                                                     |
+| [removeOnRetenoCustomPushReceivedListener](../www/cordova-plugin-reteno.js) | Android (2.9.0+)   | Removes listener for custom push received events.                                                                                                   |
 | [setOnInAppMessageCustomDataReceivedListener](../www/cordova-plugin-reteno.js) | Android            | Sets listener for in-app message custom data events.                                                                                              |
 | [removeOnInAppMessageCustomDataReceivedListener](../www/cordova-plugin-reteno.js) | Android            | Removes listener for in-app message custom data events.                                                                                            |
 | [setOnInAppLifecycleCallback](../www/cordova-plugin-reteno.js)    | Android            | Subscribes to in-app message lifecycle events (beforeDisplay, onDisplay, beforeClose, afterClose, onError). Pass `null` to unsubscribe. [Types](../types/index.ts) |

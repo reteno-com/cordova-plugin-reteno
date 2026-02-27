@@ -3,7 +3,6 @@ import { JsonPipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { AppHeaderComponent } from '../shared/app-header/app-header.component';
-import { AppVersionBadgeComponent } from '../components/app-version-badge/app-version-badge.component';
 import { RetenoService } from '../services/reteno.service';
 
 type RecommendationView = {
@@ -16,7 +15,7 @@ type RecommendationView = {
   selector: 'app-recommendations',
   templateUrl: 'recommendations.page.html',
   styleUrls: ['recommendations.page.scss'],
-  imports: [IonicModule, ReactiveFormsModule, JsonPipe, AppHeaderComponent, AppVersionBadgeComponent],
+  imports: [IonicModule, ReactiveFormsModule, JsonPipe, AppHeaderComponent],
 })
 export class RecommendationsPage implements OnInit {
   status: string | null = null;

@@ -2,7 +2,6 @@ import { Component, NgZone, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { AppHeaderComponent } from '../shared/app-header/app-header.component';
-import { AppVersionBadgeComponent } from '../components/app-version-badge/app-version-badge.component';
 import { RetenoService } from '../services/reteno.service';
 
 type InboxMessageView = {
@@ -17,7 +16,7 @@ type InboxMessageView = {
   selector: 'app-app-inbox',
   templateUrl: 'app-inbox.page.html',
   styleUrls: ['app-inbox.page.scss'],
-  imports: [IonicModule, ReactiveFormsModule, AppHeaderComponent,AppVersionBadgeComponent],
+  imports: [IonicModule, ReactiveFormsModule, AppHeaderComponent],
 })
 export class AppInboxPage implements OnInit {
   status: string | null = null;

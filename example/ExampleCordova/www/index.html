@@ -37,7 +37,7 @@
         <title>Hello World</title>
     </head>
     <body>
-        <div class="app-version">v0.0.13</div>
+        <div class="app-version" id="appVersion"></div>
         <div class="app">
             <section class="page is-active" data-page="home" data-screen-name="Home">
                 <h1>Apache Cordova</h1>
@@ -365,6 +365,36 @@
                     <ul id="retenoNotificationClickedEventList" class="reteno-event-list" aria-label="Notification clicked events"></ul>
                     <ul id="retenoPushDismissedEventList" class="reteno-event-list" aria-label="Push dismissed events"></ul>
                     <ul id="retenoCustomPushReceivedEventList" class="reteno-event-list" aria-label="Custom push received events"></ul>
+                </div>
+
+                <div id="retenoIosNotificationHandlers" class="reteno-form" aria-label="Reteno iOS notification handlers">
+                    <h2>Reteno: iOS notification handlers</h2>
+
+                    <label class="toggle-row">
+                        <span class="toggle-label">setWillPresentNotificationOptions</span>
+                        <input id="retenoWillPresentToggle" class="toggle-input" type="checkbox">
+                        <span class="toggle-ui" aria-hidden="true"></span>
+                    </label>
+
+                    <label class="toggle-row">
+                        <span class="toggle-label">emit reteno-push-received</span>
+                        <input id="retenoWillPresentEmitToggle" class="toggle-input" type="checkbox">
+                        <span class="toggle-ui" aria-hidden="true"></span>
+                    </label>
+
+                    <label class="toggle-row">
+                        <span class="toggle-label">setDidReceiveNotificationResponseHandler</span>
+                        <input id="retenoDidReceiveToggle" class="toggle-input" type="checkbox">
+                        <span class="toggle-ui" aria-hidden="true"></span>
+                    </label>
+
+                    <label class="toggle-row">
+                        <span class="toggle-label">emit reteno-notification-clicked</span>
+                        <input id="retenoDidReceiveEmitToggle" class="toggle-input" type="checkbox">
+                        <span class="toggle-ui" aria-hidden="true"></span>
+                    </label>
+
+                    <pre id="retenoIosNotificationStatus" class="reteno-status" aria-live="polite"></pre>
                 </div>
             </section>
 

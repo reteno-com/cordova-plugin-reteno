@@ -10,13 +10,13 @@ Notes:
 | Method                                                             | Supported platform | Description                                                                                                                                       |
 | ------------------------------------------------------------------ | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [setUserAttributes](../www/cordova-plugin-reteno.js)               | iOS, Android       | [Types](../types/index.ts)                                                                                                                        |
-| [setAnonymousUserAttributes](../www/cordova-plugin-reteno.js)      | Android            | [Types](../types/index.ts)                                                                                                                        |
-| [setMultiAccountUserAttributes](../www/cordova-plugin-reteno.js)   | Android            | [Types](../types/index.ts)                                                                                                                        |
-| [setLifecycleTrackingOptions](../www/cordova-plugin-reteno.js)     | Android            | [Types](../types/index.ts)                                                                                                                        |
-| [setDeviceToken](../www/cordova-plugin-reteno.js)                  | Android            | Forwards FCM token to Reteno (use when another plugin owns FCM callbacks/token, e.g. Firebasex messaging enabled).                                |
+| [setAnonymousUserAttributes](../www/cordova-plugin-reteno.js)      | iOS, Android       | [Types](../types/index.ts)                                                                                                                        |
+| [setMultiAccountUserAttributes](../www/cordova-plugin-reteno.js)   | iOS, Android       | [Types](../types/index.ts)                                                                                                                        |
+| [setLifecycleTrackingOptions](../www/cordova-plugin-reteno.js)     | iOS, Android       | Android: applies immediately. iOS: supported only before initialization (stored and applied during `init(...)`). [Types](../types/index.ts)      |
+| [setDeviceToken](../www/cordova-plugin-reteno.js)                  | iOS, Android       | Forwards the device token to Reteno (use when another plugin owns push callbacks/token, e.g. Firebasex messaging enabled).                        |
 | [logEvent](../www/cordova-plugin-reteno.js)                        | iOS, Android       | [Types](../types/index.ts)                                                                                                                        |
-| [logScreenView](../www/cordova-plugin-reteno.js)                   | Android            | Logs a screen view for manual tracking.                                                                                                           |
-| [forcePushData](../www/cordova-plugin-reteno.js)                   | Android            | Forces Reteno to sync push data for the current device.                                                                                           |
+| [logScreenView](../www/cordova-plugin-reteno.js)                   | iOS, Android       | Logs a screen view for manual tracking.                                                                                                           |
+| [forcePushData](../www/cordova-plugin-reteno.js)                   | iOS, Android       | Forces Reteno to sync queued data. On iOS the plugin performs a technical `logEvent(..., forcePush: true)` call under the hood.                 |
 | [pauseInAppMessages](../www/cordova-plugin-reteno.js)             | Android            | Pauses or resumes in-app messages at runtime. Pass `true` to pause, `false` to resume.                                                            |
 | [setInAppMessagesPauseBehaviour](../www/cordova-plugin-reteno.js) | Android            | Sets how paused in-app messages are handled: `SKIP_IN_APPS` or `POSTPONE_IN_APPS`. [Types](../types/index.ts)                                     |
 | [getInitialNotification](../www/cordova-plugin-reteno.js)          | iOS, Android       | Returns push notification that triggered creating app instance                                                                                    |
@@ -31,8 +31,10 @@ Notes:
 | [setOnInAppMessageCustomDataReceivedListener](../www/cordova-plugin-reteno.js) | Android            | Sets listener for in-app message custom data events.                                                                                              |
 | [removeOnInAppMessageCustomDataReceivedListener](../www/cordova-plugin-reteno.js) | Android            | Removes listener for in-app message custom data events.                                                                                            |
 | [setOnInAppLifecycleCallback](../www/cordova-plugin-reteno.js)    | Android            | Subscribes to in-app message lifecycle events (beforeDisplay, onDisplay, beforeClose, afterClose, onError). Pass `null` to unsubscribe. [Types](../types/index.ts) |
-| [init](../www/cordova-plugin-reteno.js)                            | Android            | Initializes Reteno SDK. Accepts optional `RetenoInitializeOptions` with `pauseInAppMessages`, `lifecycleTrackingOptions` and `pausePushInAppMessages`. [Types](../types/index.ts) |
-| [requestNotificationPermission](../www/cordova-plugin-reteno.js)   | Android            | Requests `POST_NOTIFICATIONS` permission (Android 13+). Returns `0` or `1` (`RequestNotificationPermissionResult`) in [types](../types/index.ts). |
+| [init](../www/cordova-plugin-reteno.js)                            | iOS, Android       | Initializes Reteno SDK. Accepts optional `RetenoInitializeOptions` with `pauseInAppMessages`, `lifecycleTrackingOptions` and `pausePushInAppMessages`. [Types](../types/index.ts) |
+| [requestNotificationPermission](../www/cordova-plugin-reteno.js)   | iOS, Android       | Requests push permission (iOS) or `POST_NOTIFICATIONS` (Android 13+). Returns `0` or `1` on Android (`RequestNotificationPermissionResult`) in [types](../types/index.ts). |
+| [setWillPresentNotificationOptions](../www/cordova-plugin-reteno.js) | iOS               | Sets presentation options for foreground notifications. Optionally emits `reteno-push-received`. [Types](../types/index.ts)                        |
+| [setDidReceiveNotificationResponseHandler](../www/cordova-plugin-reteno.js) | iOS          | Enables a response handler for notification taps. Optionally emits `reteno-notification-clicked`. [Types](../types/index.ts)                       |
 | [updateDefaultNotificationChannel](../www/cordova-plugin-reteno.js) | Android            | Updates the default notification channel name and description for existing users. [Types](../types/index.ts)                                      |
 | [getAppInboxMessages](../www/cordova-plugin-reteno.js)             | Android            | Fetches App Inbox messages with pagination. [Types](../types/index.ts)                                                                             |
 | [getAppInboxMessagesCount](../www/cordova-plugin-reteno.js)        | Android            | Fetches count of App Inbox messages.                                                                                                               |
@@ -181,6 +183,8 @@ retenosdk.setMultiAccountUserAttributes(
 ```js
 // Enable/disable specific lifecycle tracking features.
 // Unspecified fields default to true.
+// Android: applies immediately.
+// iOS: this works only BEFORE SDK initialization (before calling init()).
 retenosdk.setLifecycleTrackingOptions(
   {
     sessionEventsEnabled: true,
@@ -196,6 +200,8 @@ retenosdk.setLifecycleTrackingOptions('ALL');
 retenosdk.setLifecycleTrackingOptions('NONE');
 ```
 
+If `init()` has already started/completed on iOS, `setLifecycleTrackingOptions(...)` returns an error.
+
 ### logEvent payload example
 
 Payload type: `LogEventPayload` in [types](../types/index.ts).
@@ -204,7 +210,7 @@ Payload type: `LogEventPayload` in [types](../types/index.ts).
 retenosdk.logEvent(
   {
     eventName: 'purchase',
-    // Optional ISO 8601 string. If omitted, Android uses current time (API 26+).
+    // Optional ISO 8601 string. If omitted, current time is used.
     date: new Date().toISOString(),
     parameters: [
       { name: 'orderId', value: 'A-123' },
@@ -234,6 +240,8 @@ retenosdk
   .then(() => console.log('forcePushData: OK'))
   .catch((err) => console.error('forcePushData: ERROR', err));
 ```
+
+On iOS, `forcePushData()` is implemented through a technical `logEvent` call with `forcePush: true`.
 
 ### pauseInAppMessages example
 

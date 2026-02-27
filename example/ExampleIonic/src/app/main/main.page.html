@@ -1,4 +1,11 @@
-<app-header title="Reteno Demo" [showBack]="false"></app-header>
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-title>Reteno Demo</ion-title>
+    <ion-buttons slot="end">
+      <app-version-badge></app-version-badge>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
 
 <ion-content [fullscreen]="true">
   @if (!initialized) {

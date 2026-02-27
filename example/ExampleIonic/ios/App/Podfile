@@ -16,13 +16,16 @@ def capacitor_pods
   pod 'CapacitorKeyboard', :path => '../../node_modules/@capacitor/keyboard'
   pod 'CapacitorStatusBar', :path => '../../node_modules/@capacitor/status-bar'
   pod 'CordovaPlugins', :path => '../capacitor-cordova-ios-plugins'
-  pod 'CordovaPluginsStatic', :path => '../capacitor-cordova-ios-plugins'
-  pod 'CordovaPluginsResources', :path => '../capacitor-cordova-ios-plugins'
 end
 
 target 'App' do
   capacitor_pods
   # Add your Pods here
+
+  target 'NotificationServiceExtension' do
+    inherit! :search_paths
+    pod 'Reteno', '2.6.1'
+  end
 end
 
 post_install do |installer|

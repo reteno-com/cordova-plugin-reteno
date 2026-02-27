@@ -3,13 +3,14 @@ import { Component, inject, OnInit } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { AppHeaderComponent } from '../shared/app-header/app-header.component';
+import { AppVersionBadgeComponent } from '../components/app-version-badge/app-version-badge.component';
 import { RetenoService } from '../services/reteno.service';
 
 @Component({
     selector: 'app-home',
     templateUrl: 'home.page.html',
     styleUrls: ['home.page.scss'],
-    imports: [IonicModule, ReactiveFormsModule, AppHeaderComponent]
+    imports: [IonicModule, ReactiveFormsModule, AppHeaderComponent, AppVersionBadgeComponent]
 })
 export class HomePage implements OnInit {
   status: string | null = null;
@@ -138,11 +139,12 @@ export class HomePage implements OnInit {
     if (isMultiAccount) {
       const previousUserId = this.lastMultiAccountUserId;
       const nextUserId = externalUserId;
+      const user = Object.keys(userAttributes).length > 0 ? { userAttributes } : {};
       this.sendToReteno(
         'setMultiAccountUserAttributes',
         {
           externalUserId,
-          user: { userAttributes },
+          user,
         },
         { previousUserId, nextUserId }
       );

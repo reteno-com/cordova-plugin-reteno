@@ -59,6 +59,16 @@ declare global {
         success?: (result: unknown) => void,
         error?: (err: unknown) => void
       ) => Promise<unknown>;
+      setWillPresentNotificationOptions?: (
+        payload: { options?: string[]; presentationOptions?: string[]; emitEvent?: boolean } | string[] | null,
+        success?: () => void,
+        error?: (err: unknown) => void
+      ) => Promise<void>;
+      setDidReceiveNotificationResponseHandler?: (
+        payload: { enabled?: boolean; emitEvent?: boolean } | boolean | null,
+        success?: () => void,
+        error?: (err: unknown) => void
+      ) => Promise<void>;
       updateDefaultNotificationChannel?: (
         config: { name: string; description: string },
         success?: () => void,
@@ -277,6 +287,22 @@ export class RetenoService {
       return Promise.reject(new Error('retenosdk.requestNotificationPermission is not available'));
     }
     return sdk.requestNotificationPermission();
+  }
+
+  setWillPresentNotificationOptions(payload: { options?: string[]; emitEvent?: boolean } | string[] | null): Promise<void> {
+    const sdk = window.retenosdk;
+    if (!sdk?.setWillPresentNotificationOptions) {
+      return Promise.reject(new Error('retenosdk.setWillPresentNotificationOptions is not available'));
+    }
+    return sdk.setWillPresentNotificationOptions(payload);
+  }
+
+  setDidReceiveNotificationResponseHandler(payload: { enabled?: boolean; emitEvent?: boolean } | boolean | null): Promise<void> {
+    const sdk = window.retenosdk;
+    if (!sdk?.setDidReceiveNotificationResponseHandler) {
+      return Promise.reject(new Error('retenosdk.setDidReceiveNotificationResponseHandler is not available'));
+    }
+    return sdk.setDidReceiveNotificationResponseHandler(payload);
   }
 
   setDeviceToken(token: string): Promise<void> {

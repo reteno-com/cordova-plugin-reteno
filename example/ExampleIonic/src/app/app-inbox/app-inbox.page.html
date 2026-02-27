@@ -1,4 +1,14 @@
-<app-header title="Reteno – App inbox"></app-header>
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/main"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Reteno – App inbox</ion-title>
+    <ion-buttons slot="end">
+      <app-version-badge></app-version-badge>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
 
 <ion-content [fullscreen]="true">
   <form [formGroup]="form">

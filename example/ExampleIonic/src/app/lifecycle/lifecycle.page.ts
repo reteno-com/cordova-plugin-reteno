@@ -1,20 +1,22 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { IonicModule } from '@ionic/angular';
 import { AppHeaderComponent } from '../shared/app-header/app-header.component';
+import { IonicModule, Platform } from '@ionic/angular';
+import { AppVersionBadgeComponent } from '../components/app-version-badge/app-version-badge.component';
 import { RetenoService } from '../services/reteno.service';
 
 @Component({
   selector: 'app-lifecycle',
   templateUrl: 'lifecycle.page.html',
   styleUrls: ['lifecycle.page.scss'],
-  imports: [IonicModule, ReactiveFormsModule, AppHeaderComponent],
+  imports: [IonicModule, ReactiveFormsModule, AppHeaderComponent, AppVersionBadgeComponent],
 })
 export class LifecyclePage implements OnInit {
   status: string | null = null;
 
   private readonly formBuilder = inject(FormBuilder);
   private readonly reteno = inject(RetenoService);
+  private readonly platform = inject(Platform);
 
   form = this.formBuilder.group({
     appLifecycleEnabled: this.formBuilder.control<boolean>(true),
@@ -27,6 +29,11 @@ export class LifecyclePage implements OnInit {
   // Screen view is tracked globally in AppComponent.
 
   save() {
+    if (this.platform.is('ios')) {
+      this.status = 'iOS: configure lifecycle tracking only in init options.';
+      return;
+    }
+
     const v = this.form.getRawValue();
     const options = {
       appLifecycleEnabled: !!v.appLifecycleEnabled,
@@ -48,6 +55,11 @@ export class LifecyclePage implements OnInit {
   }
 
   setAll() {
+    if (this.platform.is('ios')) {
+      this.status = 'iOS: configure lifecycle tracking only in init options.';
+      return;
+    }
+
     this.status = 'Saving…';
     this.reteno
       .setLifecycleTrackingOptions('ALL')
@@ -67,6 +79,11 @@ export class LifecyclePage implements OnInit {
   }
 
   setNone() {
+    if (this.platform.is('ios')) {
+      this.status = 'iOS: configure lifecycle tracking only in init options.';
+      return;
+    }
+
     this.status = 'Saving…';
     this.reteno
       .setLifecycleTrackingOptions('NONE')

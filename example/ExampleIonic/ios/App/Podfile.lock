@@ -1,0 +1,60 @@
+PODS:
+  - Capacitor (8.0.0):
+    - CapacitorCordova
+  - CapacitorApp (8.0.0):
+    - Capacitor
+  - CapacitorCordova (8.0.0)
+  - CapacitorHaptics (8.0.0):
+    - Capacitor
+  - CapacitorKeyboard (8.0.0):
+    - Capacitor
+  - CapacitorStatusBar (8.0.0):
+    - Capacitor
+  - CordovaPlugins (8.0.0):
+    - CapacitorCordova
+    - Reteno (= 2.6.1)
+  - Reteno (2.6.1)
+
+DEPENDENCIES:
+  - "Capacitor (from `../../node_modules/@capacitor/ios`)"
+  - "CapacitorApp (from `../../node_modules/@capacitor/app`)"
+  - "CapacitorCordova (from `../../node_modules/@capacitor/ios`)"
+  - "CapacitorHaptics (from `../../node_modules/@capacitor/haptics`)"
+  - "CapacitorKeyboard (from `../../node_modules/@capacitor/keyboard`)"
+  - "CapacitorStatusBar (from `../../node_modules/@capacitor/status-bar`)"
+  - CordovaPlugins (from `../capacitor-cordova-ios-plugins`)
+  - Reteno (= 2.6.1)
+
+SPEC REPOS:
+  trunk:
+    - Reteno
+
+EXTERNAL SOURCES:
+  Capacitor:
+    :path: "../../node_modules/@capacitor/ios"
+  CapacitorApp:
+    :path: "../../node_modules/@capacitor/app"
+  CapacitorCordova:
+    :path: "../../node_modules/@capacitor/ios"
+  CapacitorHaptics:
+    :path: "../../node_modules/@capacitor/haptics"
+  CapacitorKeyboard:
+    :path: "../../node_modules/@capacitor/keyboard"
+  CapacitorStatusBar:
+    :path: "../../node_modules/@capacitor/status-bar"
+  CordovaPlugins:
+    :path: "../capacitor-cordova-ios-plugins"
+
+SPEC CHECKSUMS:
+  Capacitor: 341ff7cf652ec695d1a8ebf604db448ac7b6d635
+  CapacitorApp: 3963a84197280757b84f126afd1520a85ae3b092
+  CapacitorCordova: 5dc3912d25ef770a3fe0f431bb65c9fbfa2e92f9
+  CapacitorHaptics: 2079d9fa04c5a71e18663b4722323c304c58245c
+  CapacitorKeyboard: d7868c079a4d5277a3deca27a10a488fcbbb8b69
+  CapacitorStatusBar: 312e2e67928dfe9514c4a8916a1fd610552f5f35
+  CordovaPlugins: be7d36d1293aea29274e234d29f952e625e0fb73
+  Reteno: aff92cca380017e7cb0f5fd17d9d44a4873f58a6
+
+PODFILE CHECKSUM: cab80c1bd9f2605f6e0bafa3a84e9ddad9917afc
+
+COCOAPODS: 1.16.2

@@ -1,4 +1,14 @@
-<app-header title="Reteno – Notifications"></app-header>
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/main"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Reteno – Notifications</ion-title>
+    <ion-buttons slot="end">
+      <app-version-badge></app-version-badge>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
 
 <ion-content [fullscreen]="true">
   <form [formGroup]="form">
@@ -64,6 +74,43 @@
     </ion-toggle>
   </ion-item>
 </ion-list>
+
+@if (isIos) {
+  <ion-list>
+    <ion-item>
+      <ion-toggle
+        [checked]="isWillPresentEnabled"
+        (ionChange)="toggleWillPresent($event.detail.checked)"
+      >
+        setWillPresentNotificationOptions
+      </ion-toggle>
+    </ion-item>
+    <ion-item>
+      <ion-toggle
+        [checked]="isWillPresentEmitEnabled"
+        (ionChange)="toggleWillPresentEmit($event.detail.checked)"
+      >
+        emit reteno-push-received
+      </ion-toggle>
+    </ion-item>
+    <ion-item>
+      <ion-toggle
+        [checked]="isDidReceiveEnabled"
+        (ionChange)="toggleDidReceive($event.detail.checked)"
+      >
+        setDidReceiveNotificationResponseHandler
+      </ion-toggle>
+    </ion-item>
+    <ion-item>
+      <ion-toggle
+        [checked]="isDidReceiveEmitEnabled"
+        (ionChange)="toggleDidReceiveEmit($event.detail.checked)"
+      >
+        emit reteno-notification-clicked
+      </ion-toggle>
+    </ion-item>
+  </ion-list>
+}
 
 @if (pushListenerStatus) {
   <ion-text class="status">
@@ -132,6 +179,12 @@
 @if (status) {
   <ion-text class="status">
     <p>{{ status }}</p>
+  </ion-text>
+}
+
+@if (iosNotificationStatus && isIos) {
+  <ion-text class="status">
+    <p>{{ iosNotificationStatus }}</p>
   </ion-text>
 }
 </ion-content>

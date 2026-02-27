@@ -1,19 +1,21 @@
 import { Component, NgZone, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { IonicModule } from '@ionic/angular';
 import { AppHeaderComponent } from '../shared/app-header/app-header.component';
+import { IonicModule, Platform } from '@ionic/angular';
+import { AppVersionBadgeComponent } from '../components/app-version-badge/app-version-badge.component';
 import { RetenoService } from '../services/reteno.service';
 
 @Component({
   selector: 'app-notifications',
   templateUrl: 'notifications.page.html',
   styleUrls: ['notifications.page.scss'],
-  imports: [IonicModule, ReactiveFormsModule, AppHeaderComponent],
+  imports: [IonicModule, ReactiveFormsModule, AppHeaderComponent, AppVersionBadgeComponent],
 })
 export class NotificationsPage implements OnInit {
   status: string | null = null;
   pushListenerStatus: string | null = null;
   clickListenerStatus: string | null = null;
+  iosNotificationStatus: string | null = null;
   pushReceivedEvents: { key: string; text: string }[] = [];
   notificationClickedEvents: { key: string; text: string }[] = [];
   pushDismissedEvents: { key: string; text: string }[] = [];
@@ -24,6 +26,11 @@ export class NotificationsPage implements OnInit {
   isCustomPushReceivedListenerEnabled = false;
   pushDismissedListenerStatus: string | null = null;
   customPushReceivedListenerStatus: string | null = null;
+  isWillPresentEnabled = false;
+  isWillPresentEmitEnabled = false;
+  isDidReceiveEnabled = false;
+  isDidReceiveEmitEnabled = false;
+  isIos = false;
 
   private pushListenerHandler: ((event: Event) => void) | null = null;
   private clickListenerHandler: ((event: Event) => void) | null = null;
@@ -33,6 +40,7 @@ export class NotificationsPage implements OnInit {
   private readonly formBuilder = inject(FormBuilder);
   private readonly reteno = inject(RetenoService);
   private readonly zone = inject(NgZone);
+  private readonly platform = inject(Platform);
 
   form = this.formBuilder.group({
     name: this.formBuilder.control<string>('Updates', {
@@ -45,7 +53,9 @@ export class NotificationsPage implements OnInit {
     }),
   });
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    this.isIos = this.platform.is('ios');
+  }
 
   // Screen view is tracked globally in AppComponent.
 
@@ -155,6 +165,61 @@ export class NotificationsPage implements OnInit {
       this.isCustomPushReceivedListenerEnabled = false;
       this.customPushReceivedListenerStatus = 'Custom push received listener removed.';
     }
+  }
+  toggleWillPresent(enabled: boolean) {
+    this.isWillPresentEnabled = enabled;
+    this.applyWillPresent();
+  }
+
+  toggleWillPresentEmit(enabled: boolean) {
+    this.isWillPresentEmitEnabled = enabled;
+    this.applyWillPresent();
+  }
+
+  toggleDidReceive(enabled: boolean) {
+    this.isDidReceiveEnabled = enabled;
+    this.applyDidReceive();
+  }
+
+  toggleDidReceiveEmit(enabled: boolean) {
+    this.isDidReceiveEmitEnabled = enabled;
+    this.applyDidReceive();
+  }
+
+  private applyWillPresent() {
+    const payload = this.isWillPresentEnabled
+      ? { options: ['badge', 'sound', 'banner'], emitEvent: this.isWillPresentEmitEnabled }
+      : null;
+    this.iosNotificationStatus = 'setWillPresentNotificationOptions: applying...';
+    this.reteno
+      .setWillPresentNotificationOptions(payload)
+      .then(() => {
+        this.iosNotificationStatus = this.isWillPresentEnabled
+          ? 'setWillPresentNotificationOptions: enabled'
+          : 'setWillPresentNotificationOptions: removed';
+      })
+      .catch((err) => {
+        this.iosNotificationStatus = 'setWillPresentNotificationOptions: ERROR (see console)';
+        // eslint-disable-next-line no-console
+        console.error('setWillPresentNotificationOptions: ERROR', err);
+      });
+  }
+
+  private applyDidReceive() {
+    const payload = { enabled: this.isDidReceiveEnabled, emitEvent: this.isDidReceiveEmitEnabled };
+    this.iosNotificationStatus = 'setDidReceiveNotificationResponseHandler: applying...';
+    this.reteno
+      .setDidReceiveNotificationResponseHandler(payload)
+      .then(() => {
+        this.iosNotificationStatus = this.isDidReceiveEnabled
+          ? 'setDidReceiveNotificationResponseHandler: enabled'
+          : 'setDidReceiveNotificationResponseHandler: removed';
+      })
+      .catch((err) => {
+        this.iosNotificationStatus = 'setDidReceiveNotificationResponseHandler: ERROR (see console)';
+        // eslint-disable-next-line no-console
+        console.error('setDidReceiveNotificationResponseHandler: ERROR', err);
+      });
   }
 
   private buildEventMessage(label: string, payload: unknown): string {

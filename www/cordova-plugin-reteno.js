@@ -7,10 +7,15 @@ var PLUGIN_NAME = 'RetenoPlugin';
 var __retenoState = {
   initialized: false,
   initPromise: null,
+  pendingInitOptions: {},
 };
 
 function __isFn(f) {
   return typeof f === 'function';
+}
+
+function __isIosPlatform() {
+  return typeof cordova !== 'undefined' && cordova && cordova.platformId === 'ios';
 }
 
 function __promiseExec(action, args) {
@@ -42,11 +47,13 @@ function __ensureInit(options) {
     return __retenoState.initPromise;
   }
 
-  var opts = options || {};
+  var pendingOptions = __retenoState.pendingInitOptions || {};
+  var opts = Object.assign({}, pendingOptions, options || {});
   __retenoState.initPromise = __promiseExec('initialize', [opts])
     .then(function (res) {
       __retenoState.initialized = true;
       __retenoState.initPromise = null;
+      __retenoState.pendingInitOptions = {};
       return res;
     })
     .catch(function (err) {
@@ -334,6 +341,32 @@ function __callWithAutoInit(action, args, success, error) {
       if (!options) {
         return Promise.reject(new Error('Missing argument: options'));
       }
+
+      if (__isIosPlatform()) {
+        var p;
+        if (__retenoState.initialized || __retenoState.initPromise) {
+          p = Promise.reject(
+            new Error('iOS supports lifecycleTrackingOptions only during init(...) before SDK initialization.')
+          );
+        } else {
+          __retenoState.pendingInitOptions = Object.assign({}, __retenoState.pendingInitOptions, {
+            lifecycleTrackingOptions: options,
+          });
+          p = Promise.resolve(1);
+        }
+
+        if (__isFn(success) || __isFn(error)) {
+          p.then(function (res) {
+            if (__isFn(success)) success(res);
+            return res;
+          }).catch(function (err) {
+            if (__isFn(error)) error(err);
+            throw err;
+          });
+        }
+        return p;
+      }
+
       return __callWithAutoInit('setLifecycleTrackingOptions', [options], success, error);
     },
 
@@ -348,6 +381,20 @@ function __callWithAutoInit(action, args, success, error) {
     },
 
     forcePushData: function (success, error) {
+      if (__isIosPlatform()) {
+        return __callWithAutoInit(
+          'logEvent',
+          [
+            {
+              eventName: '__cordova_force_push_data__',
+              parameters: [],
+              forcePush: true,
+            },
+          ],
+          success,
+          error
+        );
+      }
       return __callWithAutoInit('forcePushData', [], success, error);
     },
 
@@ -373,6 +420,25 @@ function __callWithAutoInit(action, args, success, error) {
       // If Reteno isn't initialized yet, permission can still be requested,
       // but Reteno's internal status update will fail until init().
       return __callWithExec('requestNotificationPermission', [], success, error);
+    },
+
+    /*
+        options: string[] | { options?: string[], presentationOptions?: string[], emitEvent?: boolean }
+        Passing null removes the handler.
+        Supported options: "badge", "sound", "alert", "banner", "list"
+        If emitEvent is true, the plugin will emit "reteno-push-received".
+        */
+    setWillPresentNotificationOptions: function (arg0, success, error) {
+      return __callWithExec('setWillPresentNotificationOptions', [arg0], success, error);
+    },
+
+    /*
+        payload: boolean | { enabled?: boolean, emitEvent?: boolean }
+        If emitEvent is true, the plugin will emit "reteno-notification-clicked".
+        Passing false or null removes the handler.
+        */
+    setDidReceiveNotificationResponseHandler: function (arg0, success, error) {
+      return __callWithExec('setDidReceiveNotificationResponseHandler', [arg0], success, error);
     },
 
     /*

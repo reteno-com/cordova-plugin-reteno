@@ -27,6 +27,52 @@ function onDeviceReady() {
     console.log('Running cordova-' + cordova.platformId + '@' + cordova.version);
     document.getElementById('deviceready').classList.add('ready');
 
+    // Show platform-specific app version/build number (e.g. 1.0.0(410)).
+    (function initAppVersionLabel() {
+        var versionEl = document.getElementById('appVersion');
+        if (!versionEl || !window.cordova || !cordova.getAppVersion) {
+            return;
+        }
+
+        var getVersionNumber = cordova.getAppVersion.getVersionNumber;
+        var getVersionCode = cordova.getAppVersion.getVersionCode;
+        if (typeof getVersionNumber !== 'function' || typeof getVersionCode !== 'function') {
+            return;
+        }
+
+        function wrapGetter(fn) {
+            return new Promise(function (resolve, reject) {
+                try {
+                    // Callback signature: fn(success, error)
+                    if (fn.length >= 1) {
+                        fn(resolve, reject);
+                        return;
+                    }
+                    // Promise signature: fn().then(...)
+                    var res = fn();
+                    if (res && typeof res.then === 'function') {
+                        res.then(resolve).catch(reject);
+                        return;
+                    }
+                    resolve(res);
+                } catch (e) {
+                    reject(e);
+                }
+            });
+        }
+
+        Promise.all([wrapGetter(getVersionNumber), wrapGetter(getVersionCode)])
+            .then(function (parts) {
+                var version = String(parts[0] || '').trim();
+                var build = String(parts[1] || '').trim();
+                if (!version) {
+                    return;
+                }
+                versionEl.textContent = build ? (version + '(' + build + ')') : version;
+            })
+            .catch(function () {});
+    })();
+
     // Request push permission right after startup (Android 13+)
     if (window.retenosdk && typeof window.retenosdk.requestNotificationPermission === 'function') {
         var permissionPromise = window.retenosdk.requestNotificationPermission();
@@ -136,6 +182,16 @@ function onDeviceReady() {
     var lifecycleSessionEl = document.getElementById('retenoLifecycleSession');
     var notificationNameEl = document.getElementById('retenoNotificationName');
     var notificationDescriptionEl = document.getElementById('retenoNotificationDescription');
+    var iosNotificationHandlersEl = document.getElementById('retenoIosNotificationHandlers');
+
+    if (iosNotificationHandlersEl && cordova && cordova.platformId !== 'ios') {
+        iosNotificationHandlersEl.style.display = 'none';
+    }
+    var willPresentToggle = document.getElementById('retenoWillPresentToggle');
+    var willPresentEmitToggle = document.getElementById('retenoWillPresentEmitToggle');
+    var didReceiveToggle = document.getElementById('retenoDidReceiveToggle');
+    var didReceiveEmitToggle = document.getElementById('retenoDidReceiveEmitToggle');
+    var iosNotificationStatusEl = document.getElementById('retenoIosNotificationStatus');
 
     var externalUserGroupEl = document.querySelector('[data-field-group="external-user-id"]');
     var emailGroupEl = document.querySelector('[data-field-group="email"]');
@@ -212,6 +268,12 @@ function onDeviceReady() {
     function setNotificationStatus(text) {
         if (notificationStatusEl) {
             notificationStatusEl.textContent = text;
+        }
+    }
+
+    function setIosNotificationStatus(text) {
+        if (iosNotificationStatusEl) {
+            iosNotificationStatusEl.textContent = text;
         }
     }
 
@@ -608,6 +670,50 @@ function onDeviceReady() {
     showPage('home');
     updateUserFormMode();
 
+    function applyWillPresentOptions() {
+        var sdk = getRetenoSdk();
+        if (!sdk || typeof sdk.setWillPresentNotificationOptions !== 'function') {
+            setIosNotificationStatus('setWillPresentNotificationOptions: not available.');
+            return;
+        }
+        if (!willPresentToggle || !willPresentToggle.checked) {
+            sdk.setWillPresentNotificationOptions(null);
+            setIosNotificationStatus('setWillPresentNotificationOptions: removed.');
+            return;
+        }
+        var emitEvent = !!(willPresentEmitToggle && willPresentEmitToggle.checked);
+        sdk.setWillPresentNotificationOptions({
+            options: ['badge', 'sound', 'banner'],
+            emitEvent: emitEvent
+        }).then(function () {
+            setIosNotificationStatus('setWillPresentNotificationOptions: OK.');
+        }).catch(function (err) {
+            setIosNotificationStatus('setWillPresentNotificationOptions: ERROR.');
+            console.warn('setWillPresentNotificationOptions error', err);
+        });
+    }
+
+    function applyDidReceiveHandler() {
+        var sdk = getRetenoSdk();
+        if (!sdk || typeof sdk.setDidReceiveNotificationResponseHandler !== 'function') {
+            setIosNotificationStatus('setDidReceiveNotificationResponseHandler: not available.');
+            return;
+        }
+        var enabled = !!(didReceiveToggle && didReceiveToggle.checked);
+        var emitEvent = !!(didReceiveEmitToggle && didReceiveEmitToggle.checked);
+        sdk.setDidReceiveNotificationResponseHandler({
+            enabled: enabled,
+            emitEvent: emitEvent
+        }).then(function () {
+            setIosNotificationStatus(
+                enabled ? 'setDidReceiveNotificationResponseHandler: enabled.' : 'setDidReceiveNotificationResponseHandler: removed.'
+            );
+        }).catch(function (err) {
+            setIosNotificationStatus('setDidReceiveNotificationResponseHandler: ERROR.');
+            console.warn('setDidReceiveNotificationResponseHandler error', err);
+        });
+    }
+
     if (btn) {
         btn.addEventListener('click', function () {
             withInit(function () {
@@ -680,10 +786,13 @@ function onDeviceReady() {
                 } else if (isMultiAccount) {
                     var previousUserId = lastMultiAccountUserId;
                     var nextUserId = externalUserId;
+                    var multiAccountUser = Object.keys(userAttributes).length > 0
+                        ? { userAttributes: userAttributes }
+                        : {};
                     setStatus('Sending setMultiAccountUserAttributes...');
                     sdk.setMultiAccountUserAttributes({
                         externalUserId: externalUserId,
-                        user: { userAttributes: userAttributes },
+                        user: multiAccountUser,
                     })
                         .then(function () {
                             lastMultiAccountUserId = nextUserId;
@@ -725,6 +834,39 @@ function onDeviceReady() {
                 }
             }, function (err) {
                 setStatus('Reteno init error: ' + (err && err.message ? err.message : String(err)));
+            });
+        });
+    }
+
+    if (willPresentToggle) {
+        willPresentToggle.addEventListener('change', function () {
+            withInit(function () {
+                applyWillPresentOptions();
+                return Promise.resolve();
+            });
+        });
+    }
+    if (willPresentEmitToggle) {
+        willPresentEmitToggle.addEventListener('change', function () {
+            withInit(function () {
+                applyWillPresentOptions();
+                return Promise.resolve();
+            });
+        });
+    }
+    if (didReceiveToggle) {
+        didReceiveToggle.addEventListener('change', function () {
+            withInit(function () {
+                applyDidReceiveHandler();
+                return Promise.resolve();
+            });
+        });
+    }
+    if (didReceiveEmitToggle) {
+        didReceiveEmitToggle.addEventListener('change', function () {
+            withInit(function () {
+                applyDidReceiveHandler();
+                return Promise.resolve();
             });
         });
     }
@@ -821,6 +963,11 @@ function onDeviceReady() {
 
     if (lifecycleSaveBtn) {
         lifecycleSaveBtn.addEventListener('click', function () {
+            if (cordova && cordova.platformId === 'ios') {
+                setLifecycleStatus('iOS: configure lifecycle tracking only in init options.');
+                return;
+            }
+
             withInit(function () {
                 var sdk = getRetenoSdk();
                 if (!sdk || typeof sdk.setLifecycleTrackingOptions !== 'function') {
@@ -853,6 +1000,11 @@ function onDeviceReady() {
 
     if (lifecycleAllBtn) {
         lifecycleAllBtn.addEventListener('click', function () {
+            if (cordova && cordova.platformId === 'ios') {
+                setLifecycleStatus('iOS: configure lifecycle tracking only in init options.');
+                return;
+            }
+
             withInit(function () {
                 var sdk = getRetenoSdk();
                 if (!sdk || typeof sdk.setLifecycleTrackingOptions !== 'function') {
@@ -882,6 +1034,11 @@ function onDeviceReady() {
 
     if (lifecycleNoneBtn) {
         lifecycleNoneBtn.addEventListener('click', function () {
+            if (cordova && cordova.platformId === 'ios') {
+                setLifecycleStatus('iOS: configure lifecycle tracking only in init options.');
+                return;
+            }
+
             withInit(function () {
                 var sdk = getRetenoSdk();
                 if (!sdk || typeof sdk.setLifecycleTrackingOptions !== 'function') {

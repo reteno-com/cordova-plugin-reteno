@@ -5,7 +5,7 @@
     </ion-buttons>
     <ion-title>Reteno – Notifications</ion-title>
     <ion-buttons slot="end">
-      <ion-badge class="app-version" color="medium">v0.0.12</ion-badge>
+      <app-version-badge></app-version-badge>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
@@ -57,6 +57,43 @@
   </ion-item>
 </ion-list>
 
+@if (isIos) {
+  <ion-list>
+    <ion-item>
+      <ion-toggle
+        [checked]="isWillPresentEnabled"
+        (ionChange)="toggleWillPresent($event.detail.checked)"
+      >
+        setWillPresentNotificationOptions
+      </ion-toggle>
+    </ion-item>
+    <ion-item>
+      <ion-toggle
+        [checked]="isWillPresentEmitEnabled"
+        (ionChange)="toggleWillPresentEmit($event.detail.checked)"
+      >
+        emit reteno-push-received
+      </ion-toggle>
+    </ion-item>
+    <ion-item>
+      <ion-toggle
+        [checked]="isDidReceiveEnabled"
+        (ionChange)="toggleDidReceive($event.detail.checked)"
+      >
+        setDidReceiveNotificationResponseHandler
+      </ion-toggle>
+    </ion-item>
+    <ion-item>
+      <ion-toggle
+        [checked]="isDidReceiveEmitEnabled"
+        (ionChange)="toggleDidReceiveEmit($event.detail.checked)"
+      >
+        emit reteno-notification-clicked
+      </ion-toggle>
+    </ion-item>
+  </ion-list>
+}
+
 @if (pushListenerStatus) {
   <ion-text class="status">
     <p>{{ pushListenerStatus }}</p>
@@ -92,6 +129,12 @@
 @if (status) {
   <ion-text class="status">
     <p>{{ status }}</p>
+  </ion-text>
+}
+
+@if (iosNotificationStatus && isIos) {
+  <ion-text class="status">
+    <p>{{ iosNotificationStatus }}</p>
   </ion-text>
 }
 </ion-content>

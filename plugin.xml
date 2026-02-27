@@ -6,6 +6,8 @@
     </engines>
     <!-- Android Reteno SDK (FCM) version override -->
     <preference name="ANDROID_RETENO_FCM_VERSION" default="2.8.9" />
+    <!-- iOS Reteno SDK version override -->
+    <preference name="IOS_RETENO_FCM_VERSION" default="2.6.1" />
     <!-- Firebase Messaging version used by Reteno FCM module -->
     <preference name="ANDROID_FIREBASE_MESSAGING_VERSION" default="23.1.0" />
     <preference name="SDK_ACCESS_KEY" default="MISSING" />
@@ -88,5 +90,22 @@
   <source-file 
       src="src/android/app/src/main/java/com/reteno/plugin/RetenoUtil.java" 
       target-dir="src/com/reteno/plugin" />
+</platform>
+
+<platform name="ios">
+  <config-file target="config.xml" parent="/*">
+    <feature name="RetenoPlugin">
+      <param name="ios-package" value="RetenoPlugin" />
+    </feature>
+    <preference name="UseSwiftLanguageVersion" value="5.0" />
+  </config-file>
+
+  <podspec>
+    <pods>
+      <pod name="Reteno" spec="$IOS_RETENO_FCM_VERSION" />
+    </pods>
+  </podspec>
+
+  <source-file src="src/ios/RetenoPlugin.swift" />
 </platform>
 </plugin>

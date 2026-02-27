@@ -1,13 +1,14 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { IonicModule } from '@ionic/angular';
 import { RouterModule } from '@angular/router';
+import { AppVersionBadgeComponent } from '../components/app-version-badge/app-version-badge.component';
 import { RetenoService } from '../services/reteno.service';
 
 @Component({
   selector: 'app-main',
   templateUrl: 'main.page.html',
   styleUrls: ['main.page.scss'],
-  imports: [IonicModule, RouterModule],
+  imports: [IonicModule, RouterModule, AppVersionBadgeComponent],
 })
 export class MainPage implements OnInit {
   private readonly reteno = inject(RetenoService);

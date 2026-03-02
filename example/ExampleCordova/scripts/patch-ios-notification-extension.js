@@ -270,7 +270,7 @@ function main() {
   <key>CFBundleShortVersionString</key>
   <string>1.0.0</string>
   <key>CFBundleVersion</key>
-  <string>411</string>
+  <string>413</string>
   <key>NSExtension</key>
   <dict>
     <key>NSExtensionPointIdentifier</key>

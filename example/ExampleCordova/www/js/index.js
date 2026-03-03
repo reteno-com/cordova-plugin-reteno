@@ -1224,7 +1224,7 @@ function onDeviceReady() {
                 withInit(function () {
                     var sdk = getRetenoSdk();
                     if (!sdk || typeof sdk.setOnRetenoPushDismissedListener !== 'function') {
-                        setPushDismissedEvent('setOnRetenoPushDismissedListener: not available (requires SDK 2.9.0+).');
+                        setPushDismissedEvent('setOnRetenoPushDismissedListener: not available (requires SDK 2.9.1+).');
                         pushDismissedListenerToggle.checked = false;
                         return;
                     }
@@ -1264,7 +1264,7 @@ function onDeviceReady() {
                 withInit(function () {
                     var sdk = getRetenoSdk();
                     if (!sdk || typeof sdk.setOnRetenoCustomPushReceivedListener !== 'function') {
-                        setCustomPushReceivedEvent('setOnRetenoCustomPushReceivedListener: not available (requires SDK 2.9.0+).');
+                        setCustomPushReceivedEvent('setOnRetenoCustomPushReceivedListener: not available (requires SDK 2.9.1+).');
                         customPushReceivedListenerToggle.checked = false;
                         return;
                     }

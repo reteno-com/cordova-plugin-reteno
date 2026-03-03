@@ -57,7 +57,7 @@ if (project.hasProperty('ANDROID_RETENO_FCM_VERSION')) {
     retenoFcmVersion = rootProject.ext.retenoFcmVersion
   } else {
     // Keep pinned by default for reproducible builds.
-    retenoFcmVersion = '2.9.0'
+    retenoFcmVersion = '2.9.1'
   }
 }
 

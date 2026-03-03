@@ -5,7 +5,7 @@
         <engine name="cordova-android" version=">=12.0.0" />
     </engines>
     <!-- Android Reteno SDK (FCM) version override -->
-    <preference name="ANDROID_RETENO_FCM_VERSION" default="2.9.0" />
+    <preference name="ANDROID_RETENO_FCM_VERSION" default="2.9.1" />
     <!-- iOS Reteno SDK version override -->
     <preference name="IOS_RETENO_FCM_VERSION" default="2.6.1" />
     <!-- Firebase Messaging version used by Reteno FCM module -->
@@ -26,38 +26,6 @@
 
     <config-file target="AndroidManifest.xml" parent="/manifest/application">
         <meta-data android:name="com.reteno.SDK_ACCESS_KEY" android:value="$SDK_ACCESS_KEY" />
-        <!-- Reteno push events: forward PushReceived to plugin receiver -->
-        <receiver
-            android:name="com.reteno.plugin.RetenoPushReceiver"
-            android:enabled="true"
-            android:exported="true" />
-        <meta-data
-            android:name="com.reteno.Receiver.PushReceived"
-            android:value="com.reteno.plugin.RetenoPushReceiver"
-            xmlns:tools="http://schemas.android.com/tools"
-            tools:replace="android:value" />
-
-        <!-- Reteno notification clicked receiver: handles user taps on push notifications -->
-        <receiver
-            android:name="com.reteno.plugin.RetenoNotificationClickedReceiver"
-            android:enabled="true"
-            android:exported="true" />
-        <meta-data
-            android:name="com.reteno.Receiver.NotificationClicked"
-            android:value="com.reteno.plugin.RetenoNotificationClickedReceiver"
-            xmlns:tools="http://schemas.android.com/tools"
-            tools:replace="android:value" />
-
-        <!-- Reteno in-app message custom data receiver -->
-        <receiver
-            android:name="com.reteno.plugin.RetenoInAppDataReceiver"
-            android:enabled="true"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="com.reteno.custom-inapp-data" />
-            </intent-filter>
-        </receiver>
-
     </config-file>
 
   <config-file target="config.xml" parent="/*">
@@ -74,15 +42,6 @@
       target-dir="src/com/reteno/plugin" />
   <source-file 
       src="src/android/app/src/main/java/com/reteno/plugin/RetenoEvent.java" 
-      target-dir="src/com/reteno/plugin" />
-  <source-file
-      src="src/android/app/src/main/java/com/reteno/plugin/RetenoPushReceiver.java"
-      target-dir="src/com/reteno/plugin" />
-  <source-file
-      src="src/android/app/src/main/java/com/reteno/plugin/RetenoNotificationClickedReceiver.java"
-      target-dir="src/com/reteno/plugin" />
-  <source-file
-      src="src/android/app/src/main/java/com/reteno/plugin/RetenoInAppDataReceiver.java"
       target-dir="src/com/reteno/plugin" />
   <source-file
       src="src/android/app/src/main/java/com/reteno/plugin/RetenoUserAttributes.java"

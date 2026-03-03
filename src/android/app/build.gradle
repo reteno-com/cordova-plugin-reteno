@@ -6,7 +6,7 @@ if (project.hasProperty('ANDROID_RETENO_FCM_VERSION')) {
 } else if (rootProject.ext.has('retenoFcmVersion')) {
     retenoFcmVersion = rootProject.ext.retenoFcmVersion
 } else {
-    retenoFcmVersion = '2.8.9'
+    retenoFcmVersion = '2.9.1'
 }
 
 android {

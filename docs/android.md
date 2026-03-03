@@ -19,7 +19,7 @@ If you prefer to keep the access key in your Cordova app config (instead of pass
     <variable name="SDK_ACCESS_KEY" value="YOUR_KEY" />
 
     <!-- Optional: Reteno Android SDK (FCM) version override -->
-    <variable name="ANDROID_RETENO_FCM_VERSION" value="2.9.0" />
+    <variable name="ANDROID_RETENO_FCM_VERSION" value="2.9.1" />
   </plugin>
 </widget>
 ```
@@ -38,7 +38,7 @@ Notes:
    - During plugin installation:
 
      ```sh
-     cordova plugin add cordova-plugin-reteno --variable ANDROID_RETENO_FCM_VERSION=2.9.0
+     cordova plugin add cordova-plugin-reteno --variable ANDROID_RETENO_FCM_VERSION=2.9.1
      ```
 
    - Or from your Android project (for example in `platforms/android/build.gradle`):
@@ -47,7 +47,7 @@ Notes:
    // Example: always take the latest 2.x (dynamic versions can reduce reproducibility)
    ext.retenoFcmVersion = '2.+'
    // or pin an exact version:
-   // ext.retenoFcmVersion = '2.8.9'
+   // ext.retenoFcmVersion = '2.9.1'
    ```
 
 3. Android 13+ (and `targetSdkVersion >= 33`) requires notification runtime permission. The plugin injects the manifest permission (`POST_NOTIFICATIONS`), but you still must request it at runtime in your app.
@@ -86,11 +86,9 @@ If you need advanced Reteno configuration (custom `RetenoConfig`, custom device 
 5. Set up Firebase for Cloud Messaging (create Firebase project, add `google-services.json`, etc):
    [link](https://docs.reteno.com/reference/setting-up-your-firebase-application-for-firebase-cloud-messaging).
 
-## Push notification listeners (SDK 2.8.9+; new listener API in 2.9.0)
+## Push notification listeners (SDK 2.9.1+)
 
-The Android SDK 2.9.0 introduces new listener-based callbacks for push events. The plugin supports
-Android SDK **2.8.9+**; on 2.8.9 it falls back to legacy broadcast receivers, while 2.9.0+ uses
-listener APIs where available.
+The plugin uses the SDK 2.9.1 listener-based API (`EventListener` / `Procedure`) for all push events.
 
 - `setOnRetenoPushDismissedListener(listener)` — called when a push notification is dismissed (swiped away).
 - `setOnRetenoCustomPushReceivedListener(listener)` — called when a custom push notification is received.

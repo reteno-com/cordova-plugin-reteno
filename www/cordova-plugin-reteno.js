@@ -291,7 +291,7 @@ function __callWithAutoInit(action, args, success, error) {
       document.removeEventListener('reteno-in-app-custom-data', listener);
     },
 
-    // SDK 2.9.0+: push notification dismissed (swiped away)
+    // SDK 2.9.1+: push notification dismissed (swiped away)
     setOnRetenoPushDismissedListener: function (arg0, arg1) {
       var listener = typeof arg0 === 'function' ? arg0 : arg1;
       if (typeof listener !== 'function') return;
@@ -303,7 +303,7 @@ function __callWithAutoInit(action, args, success, error) {
       document.removeEventListener('reteno-push-dismissed', listener);
     },
 
-    // SDK 2.9.0+: custom push notification received
+    // SDK 2.9.1+: custom push notification received
     setOnRetenoCustomPushReceivedListener: function (arg0, arg1) {
       var listener = typeof arg0 === 'function' ? arg0 : arg1;
       if (typeof listener !== 'function') return;

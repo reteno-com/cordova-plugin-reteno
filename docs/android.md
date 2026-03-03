@@ -169,6 +169,20 @@ See Reteno docs:
 
 ### Deeplinks in push payloads
 
-Reteno push notifications can include deeplinks. To handle them in a Cordova/Ionic app,
-install a deeplink plugin (for example, one that supports custom URL schemes or Android App Links)
-and wire it to open the link from the push payload.
+Reteno push notifications on Android can include deeplinks.
+
+In a native Android app, you can usually route those links with your own `Intent` handling, Android App Links, or custom URL schemes.
+
+For Cordova/Ionic/Capacitor apps, deeplink routing usually requires a separate app-level solution. This plugin does not provide a full deeplink router by itself, so if you need custom navigation from push links, use a dedicated deeplink integration, for example:
+
+- Branch.io
+- a custom URL scheme plugin
+- an Android App Links / Universal Links plugin
+
+Typical setup for hybrid apps:
+
+1. Configure your app to support the required link type (custom scheme or Android App Links).
+2. Install and configure your deeplink provider/router (for example, Branch.io) in the app project.
+3. Route the tapped push link into that provider/router so the app opens the correct webview route or native screen.
+
+In practice, Reteno can deliver the link in the push payload, but opening the correct destination inside a hybrid app is still handled by your deeplink integration layer.

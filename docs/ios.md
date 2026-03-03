@@ -135,6 +135,27 @@ await retenosdk.setDidReceiveNotificationResponseHandler({
 
 If `emitEvent` is `true`, the plugin will emit `reteno-notification-clicked` with the payload.
 
+### Deeplinks in push payloads
+
+Reteno push notifications on iOS can include a link. By default, the native Reteno iOS SDK opens that link via the system URL opener.
+
+In a fully native iOS app, you can override this behavior with `Reteno.addLinkHandler(...)` and route links yourself:
+https://docs.reteno.com/reference/ios-links-handler
+
+For Cordova/Ionic/Capacitor apps, deeplink routing usually requires a separate app-level solution. This plugin does not expose `Reteno.addLinkHandler(...)` directly to JavaScript, so if you need custom routing for push links, use a dedicated deeplink/universal link integration in your hybrid app, for example:
+
+- Branch.io
+- a custom URL scheme plugin
+- a Universal Links / App Links plugin
+
+Typical setup for hybrid apps:
+
+1. Configure your app to support the required link type (custom URL scheme or Universal Links / Associated Domains).
+2. Install and configure your deeplink provider/router (for example, Branch.io) in the app project.
+3. Route the tapped push link into that provider/router instead of relying only on the default native open behavior.
+
+If you use Universal Links on iOS, you must also configure the Apple-side association for your domain. In practice, Reteno can deliver the link in the push payload, but opening the correct screen inside a hybrid app is still handled by your deeplink integration layer.
+
 ## 9) User Information and User Behaviour methods
 
 The plugin supports the main iOS methods described in Reteno docs:

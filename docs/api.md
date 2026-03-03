@@ -6,6 +6,7 @@ Notes:
 - As a convenience, the JS wrapper will auto-call init when you call those methods, but explicit init gives you clearer error handling and predictable timing.
 - All methods that call native code return a `Promise`. Optional `success` / `error` callbacks are still supported for backward compatibility.
 - Android SDK support: **2.8.9+**. Listener-based push APIs are available in **2.9.0+** and fall back to legacy receivers in 2.8.9.
+- Push deeplinks: Reteno can deliver links in push payloads, but routing them to the correct screen in a hybrid app usually requires a separate deeplink solution (for example, Branch.io, custom URL schemes, or Universal/App Links handling in the host app).
 
 | Method                                                             | Supported platform | Description                                                                                                                                       |
 | ------------------------------------------------------------------ | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |

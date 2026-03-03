@@ -315,6 +315,33 @@ function __callWithAutoInit(action, args, success, error) {
       document.removeEventListener('reteno-custom-push-received', listener);
     },
 
+    // Push notification action button clicked (iOS & Android)
+    setOnRetenoPushButtonClickedListener: function (arg0, arg1) {
+      var listener = typeof arg0 === 'function' ? arg0 : arg1;
+      if (typeof listener !== 'function') return;
+      document.addEventListener('reteno-push-button-clicked', listener);
+    },
+
+    removeOnRetenoPushButtonClickedListener: function (listener) {
+      if (typeof listener !== 'function') return;
+      document.removeEventListener('reteno-push-button-clicked', listener);
+    },
+
+    /*
+        payload: boolean | { enabled?: boolean, emitEvent?: boolean }
+        iOS: the native handler is installed when both `enabled` (default: true)
+        and `emitEvent` are true. So both { enabled: true, emitEvent: true }
+        and { emitEvent: true } install the handler.
+        Any call where enabled is false OR emitEvent is not true clears
+        the native handler (sets it to nil):
+          false, null, true, { enabled: true }, { enabled: false, emitEvent: true }
+        Android: no-op — action button clicks are automatically detected
+        from the notification-clicked bundle.
+        */
+    setNotificationActionHandler: function (arg0, success, error) {
+      return __callWithExec('setNotificationActionHandler', [arg0], success, error);
+    },
+
     setOnInAppLifecycleCallback: function (arg0, arg1) {
       var listener = typeof arg0 === 'function' ? arg0 : arg1;
       if (listener === null) {

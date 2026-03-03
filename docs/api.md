@@ -29,6 +29,9 @@ Notes:
 | [removeOnRetenoPushDismissedListener](../www/cordova-plugin-reteno.js) | Android (2.9.0+)   | Removes listener for push dismissed (swipe) events.                                                                                                 |
 | [setOnRetenoCustomPushReceivedListener](../www/cordova-plugin-reteno.js) | Android (2.9.0+)   | Sets listener for custom push received events.                                                                                                     |
 | [removeOnRetenoCustomPushReceivedListener](../www/cordova-plugin-reteno.js) | Android (2.9.0+)   | Removes listener for custom push received events.                                                                                                   |
+| [setOnRetenoPushButtonClickedListener](../www/cordova-plugin-reteno.js) | iOS, Android       | Sets listener for push notification action button click events. Emits `reteno-push-button-clicked`. [Types](../types/index.ts)                     |
+| [removeOnRetenoPushButtonClickedListener](../www/cordova-plugin-reteno.js) | iOS, Android       | Removes listener for push notification action button click events.                                                                                  |
+| [setNotificationActionHandler](../www/cordova-plugin-reteno.js)    | iOS, Android       | On iOS, installs the native action button handler when both `enabled` (default: `true`) and `emitEvent` are true — e.g. `{ emitEvent: true }` or `{ enabled: true, emitEvent: true }`. Any other value (e.g. `false`, `null`, `true`, `{ enabled: true }`) clears the handler. On Android, this is a no-op (button clicks are detected automatically). [Types](../types/index.ts) |
 | [setOnInAppMessageCustomDataReceivedListener](../www/cordova-plugin-reteno.js) | Android            | Sets listener for in-app message custom data events.                                                                                              |
 | [removeOnInAppMessageCustomDataReceivedListener](../www/cordova-plugin-reteno.js) | Android            | Removes listener for in-app message custom data events.                                                                                            |
 | [setOnInAppLifecycleCallback](../www/cordova-plugin-reteno.js)    | Android            | Subscribes to in-app message lifecycle events (beforeDisplay, onDisplay, beforeClose, afterClose, onError). Pass `null` to unsubscribe. [Types](../types/index.ts) |
@@ -374,6 +377,40 @@ retenosdk.setOnRetenoNotificationClickedListener(onNotificationClicked);
 
 // Later, to unsubscribe:
 retenosdk.removeOnRetenoNotificationClickedListener(onNotificationClicked);
+```
+
+### setOnRetenoPushButtonClickedListener example
+
+Subscribe to push notification action button click events. When a user long-presses a push notification and taps one of the action buttons, this listener fires with `actionId`, `link`, `customData`, and `userInfo`.
+
+- **iOS**: supports up to 4 buttons per notification. You must enable the native handler via `setNotificationActionHandler({ emitEvent: true })` (or the explicit `{ enabled: true, emitEvent: true }`).
+- **Android**: supports up to 3 buttons per notification. Action button clicks are automatically detected from the notification-clicked bundle — `setNotificationActionHandler` is a no-op on Android.
+
+Payload type: `RetenoPushButtonClickedPayload` in [types](../types/index.ts).
+
+```js
+// 1. Enable notification action handler with event emission (enabled defaults to true)
+retenosdk.setNotificationActionHandler({ emitEvent: true })
+  .then(() => console.log('setNotificationActionHandler: enabled'))
+  .catch((err) => console.error('setNotificationActionHandler: ERROR', err));
+
+// 2. Subscribe to action button click events
+function onPushButtonClicked(event) {
+  var detail = event && event.detail !== undefined ? event.detail : event;
+  console.log('reteno-push-button-clicked:', detail);
+  // detail.actionId - the unique button identifier
+  // detail.link - URL/deeplink associated with the button
+  // detail.customData - additional data from the button (object or raw string on Android)
+  // detail.userInfo - original notification payload
+}
+
+retenosdk.setOnRetenoPushButtonClickedListener(onPushButtonClicked);
+
+// Later, to unsubscribe:
+retenosdk.removeOnRetenoPushButtonClickedListener(onPushButtonClicked);
+
+// To disable the handler entirely:
+retenosdk.setNotificationActionHandler(false);
 ```
 
 ### updateDefaultNotificationChannel example

@@ -131,6 +131,52 @@ public class RetenoPlugin extends CordovaPlugin {
     }
   }
 
+  /**
+   * If the bundle contains action button data (es_action_button == true),
+   * emit a "reteno-push-button-clicked" event with structured payload
+   * matching the iOS format: { actionId, link, customData, userInfo }.
+   */
+  public static void emitPushButtonClickedIfActionButton(Bundle bundle) {
+    if (bundle == null) {
+      return;
+    }
+    if (!bundle.getBoolean("es_action_button", false)) {
+      return;
+    }
+
+    try {
+      JSONObject payload = new JSONObject();
+
+      String actionId = bundle.getString("es_btn_action_id");
+      if (actionId != null) {
+        payload.put("actionId", actionId);
+      }
+
+      String link = bundle.getString("es_btn_action_link_unwrapped");
+      if (link == null) {
+        link = bundle.getString("es_btn_action_link_wrapped");
+      }
+      if (link != null) {
+        payload.put("link", link);
+      }
+
+      String customDataStr = bundle.getString("es_btn_action_custom_data");
+      if (customDataStr != null && !customDataStr.isEmpty()) {
+        try {
+          payload.put("customData", new JSONObject(customDataStr));
+        } catch (JSONException e) {
+          payload.put("customData", customDataStr);
+        }
+      }
+
+      payload.put("userInfo", RetenoUtil.bundleToJson(bundle));
+
+      emitJsEvent("reteno-push-button-clicked", payload);
+    } catch (Exception ignored) {
+      // Best-effort serialization.
+    }
+  }
+
   public static boolean shouldUseListenerPushReceived() {
     return useListenerPushReceived;
   }
@@ -483,6 +529,14 @@ public class RetenoPlugin extends CordovaPlugin {
       return true;
     }
 
+    // On Android, action button clicks are automatically detected from the
+    // notification-clicked bundle (es_action_button flag). No separate native
+    // setup is required, so we simply acknowledge the call.
+    if ("setNotificationActionHandler".equals(action)) {
+      callbackContext.success(1);
+      return true;
+    }
+
     return false;
   }
 
@@ -592,8 +646,9 @@ public class RetenoPlugin extends CordovaPlugin {
     }
 
     // Notification clicked (new listener approach in 2.9.0)
+    // Also emits "reteno-push-button-clicked" when the click is from an action button.
     try {
-      notificationClickedListener = createProcedureListener("reteno-notification-clicked");
+      notificationClickedListener = createNotificationClickedListener();
       if (notificationClickedListener != null) {
         addNotificationListener("getClick", notificationClickedListener);
         useListenerNotificationClicked = true;
@@ -698,6 +753,35 @@ public class RetenoPlugin extends CordovaPlugin {
             Object payload = args[0];
             if (payload instanceof Bundle) {
               emitJsEvent(eventName, RetenoUtil.bundleToJson((Bundle) payload));
+            }
+          }
+          return null;
+        }
+      }
+    );
+  }
+
+  /**
+   * Creates a Procedure listener for notification-clicked events that also
+   * detects action button clicks and emits "reteno-push-button-clicked".
+   */
+  private Object createNotificationClickedListener() {
+    Class<?> procedureClass = resolveProcedureClass();
+    if (procedureClass == null) {
+      return null;
+    }
+    return Proxy.newProxyInstance(
+      procedureClass.getClassLoader(),
+      new Class<?>[] { procedureClass },
+      new InvocationHandler() {
+        @Override
+        public Object invoke(Object proxy, Method method, Object[] args) {
+          if ("execute".equals(method.getName()) && args != null && args.length > 0) {
+            Object payload = args[0];
+            if (payload instanceof Bundle) {
+              Bundle bundle = (Bundle) payload;
+              emitJsEvent("reteno-notification-clicked", RetenoUtil.bundleToJson(bundle));
+              emitPushButtonClickedIfActionButton(bundle);
             }
           }
           return null;

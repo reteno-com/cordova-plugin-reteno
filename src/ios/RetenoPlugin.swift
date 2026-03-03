@@ -353,6 +353,49 @@ class RetenoPlugin: CDVPlugin {
     commandDelegate.send(result, callbackId: command.callbackId)
   }
 
+  @objc(setNotificationActionHandler:)
+  func setNotificationActionHandler(_ command: CDVInvokedUrlCommand) {
+    let arg0 = command.arguments.first
+
+    var enabled = true
+    var emitEvent = false
+
+    if let boolValue = arg0 as? Bool {
+      enabled = boolValue
+    } else if let dict = arg0 as? [String: Any] {
+      if let enabledValue = dict["enabled"] as? Bool {
+        enabled = enabledValue
+      }
+      emitEvent = (dict["emitEvent"] as? Bool) ?? false
+    } else if arg0 == nil || arg0 is NSNull {
+      enabled = false
+    }
+
+    if !enabled || !emitEvent {
+      Reteno.userNotificationService.notificationActionHandler = nil
+      let result = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: 1)
+      commandDelegate.send(result, callbackId: command.callbackId)
+      return
+    }
+
+    Reteno.userNotificationService.notificationActionHandler = { userInfo, action in
+      var payload: [AnyHashable: Any] = [:]
+      payload["actionId"] = action.actionId
+      payload["link"] = action.link
+      if let customData = action.customData {
+        payload["customData"] = customData
+      }
+      payload["userInfo"] = userInfo
+      RetenoPlugin.emitJsEvent(
+        "reteno-push-button-clicked",
+        payload: payload
+      )
+    }
+
+    let result = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: 1)
+    commandDelegate.send(result, callbackId: command.callbackId)
+  }
+
   // MARK: - App Inbox
 
   @objc(getAppInboxMessages:)

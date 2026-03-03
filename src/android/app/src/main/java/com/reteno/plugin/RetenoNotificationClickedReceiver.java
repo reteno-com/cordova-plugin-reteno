@@ -26,6 +26,8 @@ public class RetenoNotificationClickedReceiver extends BroadcastReceiver {
       return;
     }
 
-    RetenoPlugin.emitJsEvent("reteno-notification-clicked", RetenoUtil.bundleToJson(intent.getExtras()));
+    android.os.Bundle extras = intent.getExtras();
+    RetenoPlugin.emitJsEvent("reteno-notification-clicked", RetenoUtil.bundleToJson(extras));
+    RetenoPlugin.emitPushButtonClickedIfActionButton(extras);
   }
 }

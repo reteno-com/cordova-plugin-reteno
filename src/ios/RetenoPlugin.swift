@@ -457,7 +457,7 @@ class RetenoPlugin: CDVPlugin {
     let firstName = stringValue(payload["firstName"])
     let lastName = stringValue(payload["lastName"])
     let languageCode = stringValue(payload["languageCode"])
-    let timeZone = stringValue(payload["timeZone"]) ?? TimeZone.current.identifier
+    let timeZone = stringValue(payload["timeZone"])
     let address = buildAddress(from: payload["address"])
     let fields = buildCustomFields(from: payload["fields"])
 
@@ -477,7 +477,7 @@ class RetenoPlugin: CDVPlugin {
     let firstName = stringValue(payload["firstName"])
     let lastName = stringValue(payload["lastName"])
     let languageCode = stringValue(payload["languageCode"])
-    let timeZone = stringValue(payload["timeZone"]) ?? TimeZone.current.identifier
+    let timeZone = stringValue(payload["timeZone"])
     let address = buildAddress(from: payload["address"])
     let fields = buildCustomFields(from: payload["fields"])
 

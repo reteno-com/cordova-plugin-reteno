@@ -401,23 +401,14 @@ class RetenoPlugin: CDVPlugin {
 
   @objc(getAppInboxMessagesCount:)
   func getAppInboxMessagesCount(_ command: CDVInvokedUrlCommand) {
-    // iOS SDK only has onUnreadMessagesCountChanged (no direct getter).
-    // Set it once, return the first value, then restore subscription if active.
-    let hadSubscription = inboxCountCallbackId != nil
-
-    Reteno.inbox().onUnreadMessagesCountChanged = { [weak self] count in
+    Reteno.inbox().getUnreadMessagesCount { [weak self] result in
       guard let self = self else { return }
-
-      // Return the count to the one-shot caller
-      let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: count)
-      self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
-
-      // Restore the ongoing subscription handler if one was active,
-      // otherwise clear the callback.
-      if hadSubscription {
-        self.setupInboxCountSubscription()
-      } else {
-        Reteno.inbox().onUnreadMessagesCountChanged = nil
+      switch result {
+      case .success(let count):
+        let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: count)
+        self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
+      case .failure(let error):
+        self.sendError("getAppInboxMessagesCount: \(error.localizedDescription)", to: command)
       }
     }
   }
@@ -506,36 +497,21 @@ class RetenoPlugin: CDVPlugin {
   private func inboxMessageToDict(_ message: Reteno.AppInboxMessage) -> [String: Any] {
     var dict: [String: Any] = [
       "id": message.id,
-      "title": message.title ?? "",
-      "createdDate": message.createdDate != nil ? RetenoPlugin.isoFormatterWithMs.string(from: message.createdDate!) : "",
+      "title": message.title,
+      "createdDate": message.createdDate.map { RetenoPlugin.isoFormatterWithMs.string(from: $0) } ?? "",
       "isNewMessage": message.isNew,
       "content": message.content ?? NSNull(),
       "imageUrl": message.imageURL?.absoluteString ?? NSNull(),
       "linkUrl": message.linkURL?.absoluteString ?? NSNull(),
+      "category": message.category ?? NSNull(),
     ]
 
     // Map isNew to status for cross-platform consistency with Android
     dict["status"] = message.isNew ? "UNOPENED" : "OPENED"
 
-    // category — may not exist in all SDK versions
-    let mirror = Mirror(reflecting: message)
-    if let categoryChild = mirror.children.first(where: { $0.label == "category" }) {
-      if let categoryValue = categoryChild.value as? String {
-        dict["category"] = categoryValue
-      } else {
-        dict["category"] = NSNull()
-      }
-    } else {
-      dict["category"] = NSNull()
-    }
-
-    // customData — may not exist in all SDK versions
-    if let customDataChild = mirror.children.first(where: { $0.label == "customData" }) {
-      if let customData = customDataChild.value as? [String: String] {
-        dict["customData"] = customData
-      } else {
-        dict["customData"] = NSNull()
-      }
+    // customData: [String: Any]? — serialize to JSON-safe dictionary
+    if let customData = message.customData {
+      dict["customData"] = RetenoPlugin.normalizeForJson(customData)
     } else {
       dict["customData"] = NSNull()
     }
@@ -556,7 +532,7 @@ class RetenoPlugin: CDVPlugin {
     }
 
     let productIds: [String] = stringArrayValue(payload["productIds"])
-    let categoryId: String = stringValue(payload["categoryId"]) ?? ""
+    let categoryId: String? = stringValue(payload["categoryId"])
 
     let fields: [String]? = {
       if payload["fields"] == nil || payload["fields"] is NSNull { return nil }
@@ -778,7 +754,7 @@ class RetenoPlugin: CDVPlugin {
     guard let price = parseDoubleLenient(dict["price"]) else {
       throw EcomParseError("Missing argument: price")
     }
-    guard let isInStock = parseIntLenient(dict["isInStock"]) else {
+    guard let isInStock = parseBoolLenient(dict["isInStock"]) else {
       throw EcomParseError("Missing argument: isInStock")
     }
     let attributes = parseEcomAttributes(dict["attributes"])
@@ -872,6 +848,7 @@ class RetenoPlugin: CDVPlugin {
     let paymentMethod = stringValue(dict["paymentMethod"])
     let deliveryAddress = stringValue(dict["deliveryAddress"])
     let items = parseEcomOrderItems(dict["items"])
+    let attributes = parseEcomOrderAttributes(dict["attributes"])
 
     return Ecommerce.Order(
       externalOrderId: externalOrderId,
@@ -893,7 +870,8 @@ class RetenoPlugin: CDVPlugin {
       deliveryMethod: deliveryMethod,
       paymentMethod: paymentMethod,
       deliveryAddress: deliveryAddress,
-      items: items
+      items: items,
+      attributes: attributes
     )
   }
 
@@ -955,6 +933,20 @@ class RetenoPlugin: CDVPlugin {
         result[name] = values
       } else if let singleValue = stringValue(item["value"]) {
         result[name] = [singleValue]
+      }
+    }
+    return result.isEmpty ? nil : result
+  }
+
+  /// Parses Order-level attributes: `[String: [String: Any]]?`
+  /// Accepts either a JS object like `{"key1": {"a": 1}, "key2": {"b": "x"}}` directly,
+  /// or nil/NSNull.
+  private func parseEcomOrderAttributes(_ value: Any?) -> [String: [String: Any]]? {
+    guard let dict = value as? [String: Any], !dict.isEmpty else { return nil }
+    var result: [String: [String: Any]] = [:]
+    for (key, val) in dict {
+      if let innerDict = val as? [String: Any] {
+        result[key] = innerDict
       }
     }
     return result.isEmpty ? nil : result

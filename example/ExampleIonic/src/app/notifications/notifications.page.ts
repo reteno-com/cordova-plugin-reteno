@@ -19,12 +19,15 @@ export class NotificationsPage implements OnInit {
   notificationClickedEvents: { key: string; text: string }[] = [];
   pushDismissedEvents: { key: string; text: string }[] = [];
   customPushReceivedEvents: { key: string; text: string }[] = [];
+  pushButtonClickedEvents: { key: string; text: string }[] = [];
   isPushListenerEnabled = false;
   isNotificationClickListenerEnabled = false;
   isPushDismissedListenerEnabled = false;
   isCustomPushReceivedListenerEnabled = false;
+  isPushButtonClickedListenerEnabled = false;
   pushDismissedListenerStatus: string | null = null;
   customPushReceivedListenerStatus: string | null = null;
+  pushButtonClickedListenerStatus: string | null = null;
   isWillPresentEnabled = false;
   isWillPresentEmitEnabled = false;
   isDidReceiveEnabled = false;
@@ -35,6 +38,7 @@ export class NotificationsPage implements OnInit {
   private clickListenerHandler: ((event: Event) => void) | null = null;
   private pushDismissedListenerHandler: ((event: Event) => void) | null = null;
   private customPushReceivedListenerHandler: ((event: Event) => void) | null = null;
+  private pushButtonClickedListenerHandler: ((event: Event) => void) | null = null;
 
   private readonly formBuilder = inject(FormBuilder);
   private readonly reteno = inject(RetenoService);
@@ -163,6 +167,37 @@ export class NotificationsPage implements OnInit {
       this.customPushReceivedListenerHandler = null;
       this.isCustomPushReceivedListenerEnabled = false;
       this.customPushReceivedListenerStatus = 'Custom push received listener removed.';
+    }
+  }
+
+  togglePushButtonClickedListener(enabled: boolean) {
+    if (enabled && !this.pushButtonClickedListenerHandler) {
+      this.pushButtonClickedListenerStatus = 'Listening for push button clicked events...';
+      // Enable native action handler with event emission
+      this.reteno.setNotificationActionHandler({ enabled: true, emitEvent: true }).catch((err) => {
+        // eslint-disable-next-line no-console
+        console.error('setNotificationActionHandler: ERROR', err);
+      });
+      this.pushButtonClickedListenerHandler = this.reteno.setOnRetenoPushButtonClickedListener((payload) => {
+        this.zone.run(() => {
+          const message = this.buildEventMessage('Push button clicked', payload);
+          this.addEvent(this.pushButtonClickedEvents, 'Push button clicked', payload, message);
+        });
+      });
+      this.isPushButtonClickedListenerEnabled = true;
+      return;
+    }
+
+    if (!enabled && this.pushButtonClickedListenerHandler) {
+      this.reteno.removeOnRetenoPushButtonClickedListener(this.pushButtonClickedListenerHandler);
+      this.pushButtonClickedListenerHandler = null;
+      this.isPushButtonClickedListenerEnabled = false;
+      this.pushButtonClickedListenerStatus = 'Push button clicked listener removed.';
+      // Disable native action handler
+      this.reteno.setNotificationActionHandler(false).catch((err) => {
+        // eslint-disable-next-line no-console
+        console.error('setNotificationActionHandler: ERROR', err);
+      });
     }
   }
   toggleWillPresent(enabled: boolean) {

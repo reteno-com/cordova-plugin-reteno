@@ -63,6 +63,15 @@
       Custom push received listener (2.9.0+)
     </ion-toggle>
   </ion-item>
+
+  <ion-item>
+    <ion-toggle
+      [checked]="isPushButtonClickedListenerEnabled"
+      (ionChange)="togglePushButtonClickedListener($event.detail.checked)"
+    >
+      Push button clicked listener
+    </ion-toggle>
+  </ion-item>
 </ion-list>
 
 @if (isIos) {
@@ -159,6 +168,22 @@
 @if (customPushReceivedEvents.length) {
   <ion-list>
     @for (event of customPushReceivedEvents; track event.key) {
+      <ion-item>
+        <ion-label>{{ event.text }}</ion-label>
+      </ion-item>
+    }
+  </ion-list>
+}
+
+@if (pushButtonClickedListenerStatus) {
+  <ion-text class="status">
+    <p>{{ pushButtonClickedListenerStatus }}</p>
+  </ion-text>
+}
+
+@if (pushButtonClickedEvents.length) {
+  <ion-list>
+    @for (event of pushButtonClickedEvents; track event.key) {
       <ion-item>
         <ion-label>{{ event.text }}</ion-label>
       </ion-item>

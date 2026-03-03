@@ -43,6 +43,13 @@ declare global {
       removeOnRetenoPushDismissedListener?: (listener: (event: Event) => void) => void;
       setOnRetenoCustomPushReceivedListener?: (listener: (event: Event) => void) => void;
       removeOnRetenoCustomPushReceivedListener?: (listener: (event: Event) => void) => void;
+      setOnRetenoPushButtonClickedListener?: (listener: (event: Event) => void) => void;
+      removeOnRetenoPushButtonClickedListener?: (listener: (event: Event) => void) => void;
+      setNotificationActionHandler?: (
+        payload: { enabled?: boolean; emitEvent?: boolean } | boolean | null,
+        success?: () => void,
+        error?: (err: unknown) => void
+      ) => Promise<void>;
       setDeviceToken?: (token: string, success?: () => void, error?: (err: unknown) => void) => Promise<void>;
       setLifecycleTrackingOptions?: (
         options: unknown,
@@ -706,5 +713,44 @@ export class RetenoService {
       return;
     }
     document.removeEventListener('reteno-custom-push-received', handler);
+  }
+
+  setNotificationActionHandler(payload: { enabled?: boolean; emitEvent?: boolean } | boolean | null): Promise<void> {
+    const sdk = window.retenosdk;
+    if (!sdk?.setNotificationActionHandler) {
+      return Promise.reject(new Error('retenosdk.setNotificationActionHandler is not available'));
+    }
+    return sdk.setNotificationActionHandler(payload);
+  }
+
+  setOnRetenoPushButtonClickedListener(listener: (payload: unknown) => void): (event: Event) => void {
+    const handler = (eventOrPayload: Event | unknown) => {
+      const detail = (eventOrPayload as CustomEvent).detail;
+      const payload = detail !== undefined ? detail : eventOrPayload;
+      listener(payload);
+    };
+    this.ensureInit()
+      .then(() => {
+        const sdk = window.retenosdk;
+        if (sdk?.setOnRetenoPushButtonClickedListener) {
+          sdk.setOnRetenoPushButtonClickedListener(handler);
+        } else {
+          document.addEventListener('reteno-push-button-clicked', handler);
+        }
+      })
+      .catch((err) => {
+        // eslint-disable-next-line no-console
+        console.error('reteno init error', err);
+      });
+    return handler;
+  }
+
+  removeOnRetenoPushButtonClickedListener(handler: (event: Event) => void): void {
+    const sdk = window.retenosdk;
+    if (sdk?.removeOnRetenoPushButtonClickedListener) {
+      sdk.removeOnRetenoPushButtonClickedListener(handler);
+      return;
+    }
+    document.removeEventListener('reteno-push-button-clicked', handler);
   }
 }

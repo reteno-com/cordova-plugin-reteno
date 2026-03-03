@@ -103,10 +103,13 @@ function onDeviceReady() {
     var notificationClickedListenerToggle = document.getElementById('retenoNotificationClickedListenerToggle');
     var pushDismissedListenerToggle = document.getElementById('retenoPushDismissedListenerToggle');
     var customPushReceivedListenerToggle = document.getElementById('retenoCustomPushReceivedListenerToggle');
+    var pushButtonClickedListenerToggle = document.getElementById('retenoPushButtonClickedListenerToggle');
     var pushDismissedEventEl = document.getElementById('retenoPushDismissedEvent');
     var customPushReceivedEventEl = document.getElementById('retenoCustomPushReceivedEvent');
+    var pushButtonClickedEventEl = document.getElementById('retenoPushButtonClickedEvent');
     var pushDismissedEventListEl = document.getElementById('retenoPushDismissedEventList');
     var customPushReceivedEventListEl = document.getElementById('retenoCustomPushReceivedEventList');
+    var pushButtonClickedEventListEl = document.getElementById('retenoPushButtonClickedEventList');
     var inboxStatusEl = document.getElementById('retenoInboxStatusText');
     var inboxCountEl = document.getElementById('retenoInboxCountText');
     var inboxMessagesListEl = document.getElementById('retenoInboxMessagesList');
@@ -199,6 +202,7 @@ function onDeviceReady() {
     if (iosNotificationHandlersEl && cordova && cordova.platformId !== 'ios') {
         iosNotificationHandlersEl.style.display = 'none';
     }
+
     var willPresentToggle = document.getElementById('retenoWillPresentToggle');
     var willPresentEmitToggle = document.getElementById('retenoWillPresentEmitToggle');
     var didReceiveToggle = document.getElementById('retenoDidReceiveToggle');
@@ -371,6 +375,12 @@ function onDeviceReady() {
     function setCustomPushReceivedEvent(text) {
         if (customPushReceivedEventEl) {
             customPushReceivedEventEl.textContent = text;
+        }
+    }
+
+    function setPushButtonClickedEvent(text) {
+        if (pushButtonClickedEventEl) {
+            pushButtonClickedEventEl.textContent = text;
         }
     }
 
@@ -578,6 +588,7 @@ function onDeviceReady() {
     var notificationClickedHandler = null;
     var pushDismissedHandler = null;
     var customPushReceivedHandler = null;
+    var pushButtonClickedHandler = null;
     var inboxCountSubscribed = false;
     var inboxCountHandler = null;
     var inAppLifecycleHandler = null;
@@ -1283,6 +1294,55 @@ function onDeviceReady() {
                 }
                 customPushReceivedHandler = null;
                 setCustomPushReceivedEvent('Custom push received listener removed.');
+            }
+        });
+    }
+
+    if (pushButtonClickedListenerToggle) {
+        pushButtonClickedListenerToggle.addEventListener('change', function () {
+            if (pushButtonClickedListenerToggle.checked) {
+                withInit(function () {
+                    var sdk = getRetenoSdk();
+                    if (!sdk || typeof sdk.setOnRetenoPushButtonClickedListener !== 'function') {
+                        setPushButtonClickedEvent('setOnRetenoPushButtonClickedListener: not available.');
+                        pushButtonClickedListenerToggle.checked = false;
+                        return;
+                    }
+
+                    // Enable the native action handler with event emission
+                    if (typeof sdk.setNotificationActionHandler === 'function') {
+                        sdk.setNotificationActionHandler({ enabled: true, emitEvent: true });
+                    }
+
+                    if (!pushButtonClickedHandler) {
+                        pushButtonClickedHandler = function (event) {
+                            var detail = event && event.detail !== undefined ? event.detail : event;
+                            var message = 'Push button clicked event: ' + safeStringify(detail);
+                            appendEventItem(pushButtonClickedEventListEl, message);
+                        };
+                        sdk.setOnRetenoPushButtonClickedListener(pushButtonClickedHandler);
+                        setPushButtonClickedEvent('Listening for push button clicked events...');
+                    }
+                }, function (err) {
+                    pushButtonClickedListenerToggle.checked = false;
+                    setPushButtonClickedEvent('Reteno init error: ' + (err && err.message ? err.message : String(err)));
+                });
+                return;
+            }
+
+            if (pushButtonClickedHandler) {
+                var sdk = getRetenoSdk();
+                if (sdk && typeof sdk.removeOnRetenoPushButtonClickedListener === 'function') {
+                    sdk.removeOnRetenoPushButtonClickedListener(pushButtonClickedHandler);
+                } else {
+                    document.removeEventListener('reteno-push-button-clicked', pushButtonClickedHandler);
+                }
+                // Disable the native action handler
+                if (sdk && typeof sdk.setNotificationActionHandler === 'function') {
+                    sdk.setNotificationActionHandler(false);
+                }
+                pushButtonClickedHandler = null;
+                setPushButtonClickedEvent('Push button clicked listener removed.');
             }
         });
     }

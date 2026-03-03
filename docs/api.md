@@ -63,10 +63,13 @@ retenosdk.init()
 // lifecycleTrackingOptions: configures lifecycle event tracking ('ALL', 'NONE', or an object).
 // isAutomaticScreenReportingEnabled: (iOS only) enables automatic screen view tracking via the native SDK.
 //   Defaults to false. When disabled, use logScreenView() for manual tracking.
+// isDebugMode: enables debug mode for near real-time event monitoring in the Reteno dashboard.
+//   Use only with test devices or developer accounts.
 retenosdk.init({
   pauseInAppMessages: true,
   pausePushInAppMessages: false,
   isAutomaticScreenReportingEnabled: true, // iOS only
+  isDebugMode: true, // enables debug mode
   lifecycleTrackingOptions: {
     appLifecycleEnabled: true,
     pushSubscriptionEnabled: true,

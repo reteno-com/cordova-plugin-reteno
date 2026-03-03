@@ -86,6 +86,8 @@ export type RetenoInitializeOptions = {
   pauseInAppMessages?: boolean;
   pausePushInAppMessages?: boolean;
   lifecycleTrackingOptions?: LifecycleTrackingOptions;
+  /** Enables Reteno debug mode for near real-time event monitoring. Use only with test devices. */
+  isDebugMode?: boolean;
 };
 
 export type InAppPauseBehaviour = 'SKIP_IN_APPS' | 'POSTPONE_IN_APPS';

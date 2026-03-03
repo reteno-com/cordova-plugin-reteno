@@ -37,13 +37,15 @@ class RetenoPlugin: CDVPlugin {
     let lifecyclePushEnabled = lifecycleOptions?.pushSubscriptionEnabled ?? true
     let lifecycleSessionEnabled = lifecycleOptions?.sessionEventsEnabled ?? true
     let screenReportingEnabled = (options["isAutomaticScreenReportingEnabled"] as? Bool) ?? false
+    let isDebugMode = (options["isDebugMode"] as? Bool) ?? false
 
     let configuration = RetenoConfiguration(
       isAutomaticAppLifecycleReportingEnabled: lifecycleAppEnabled,
       isAutomaticPushSubsriptionReportingEnabled: lifecyclePushEnabled,
       isAutomaticSessionReportingEnabled: lifecycleSessionEnabled,
       isAutomaticScreenReportingEnabled: screenReportingEnabled,
-      isPausedInAppMessages: pauseInAppMessages
+      isPausedInAppMessages: pauseInAppMessages,
+      isDebugMode: isDebugMode
     )
 
     DispatchQueue.main.async {

@@ -70,8 +70,6 @@ public class RetenoPlugin extends CordovaPlugin {
   private static final int REQ_CODE_POST_NOTIFICATIONS = 10001;
   private static final String PERMISSION_POST_NOTIFICATIONS = "android.permission.POST_NOTIFICATIONS";
   private static final String SDK_ACCESS_KEY_META = "com.reteno.SDK_ACCESS_KEY";
-  private static final String DEBUG_MODE_META = "com.reteno.plugin.DEBUG_MODE";
-  private static final String DEBUG_MODE_PREF = "RETENO_DEBUG_MODE";
 
   private static volatile RetenoPlugin activeInstance;
   private static volatile boolean useListenerPushReceived = false;
@@ -519,8 +517,7 @@ public class RetenoPlugin extends CordovaPlugin {
         return;
       }
 
-      Boolean debugOverride = readBooleanFromOptions(options, "debugMode", "debug");
-      boolean debugMode = debugOverride != null ? debugOverride.booleanValue() : readDebugModeEnabled();
+      boolean debugMode = options != null && options.optBoolean("isDebugMode", false);
 
       boolean pauseInAppMessages = options != null && options.optBoolean("pauseInAppMessages", false);
       boolean pausePushInAppMessages = options != null && options.optBoolean("pausePushInAppMessages", false);
@@ -826,32 +823,6 @@ public class RetenoPlugin extends CordovaPlugin {
       if (!TextUtils.isEmpty(normalized)) {
         return normalized;
       }
-    }
-    return null;
-  }
-
-  private Boolean readBooleanFromOptions(JSONObject options, String... keys) {
-    if (options == null || keys == null) {
-      return null;
-    }
-    for (String key : keys) {
-      if (key == null || !options.has(key)) {
-        continue;
-      }
-      Object raw = options.opt(key);
-      if (raw == null || raw == JSONObject.NULL) {
-        continue;
-      }
-      if (raw instanceof Boolean) {
-        return (Boolean) raw;
-      }
-      if (raw instanceof Number) {
-        return ((Number) raw).intValue() != 0;
-      }
-      if (raw instanceof String) {
-        return parseBooleanLenient((String) raw, null);
-      }
-      return parseBooleanLenient(String.valueOf(raw), null);
     }
     return null;
   }
@@ -1339,76 +1310,6 @@ public class RetenoPlugin extends CordovaPlugin {
     return key;
   }
 
-  private boolean readDebugModeEnabled() {
-    try {
-      String pref = this.preferences != null ? this.preferences.getString(DEBUG_MODE_PREF, null) : null;
-      Boolean parsed = parseBooleanLenient(pref, "$RETENO_DEBUG_MODE");
-      if (parsed != null) {
-        return parsed.booleanValue();
-      }
-    } catch (Exception ignored) {
-      // ignore
-    }
-
-    Boolean fromManifest = readBooleanFromManifest(DEBUG_MODE_META, "$RETENO_DEBUG_MODE");
-    if (fromManifest != null) {
-      return fromManifest.booleanValue();
-    }
-
-    return false;
-  }
-
-  private Boolean readBooleanFromManifest(String metaName, String placeholder) {
-    try {
-      Context context = this.cordova.getActivity();
-      if (context == null) {
-        return null;
-      }
-      PackageManager pm = context.getPackageManager();
-      ApplicationInfo info = pm.getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
-      if (info == null || info.metaData == null || !info.metaData.containsKey(metaName)) {
-        return null;
-      }
-      Object raw = info.metaData.get(metaName);
-      if (raw == null) {
-        return null;
-      }
-      if (raw instanceof Boolean) {
-        return (Boolean) raw;
-      }
-      if (raw instanceof Integer) {
-        return ((Integer) raw).intValue() != 0;
-      }
-      if (raw instanceof String) {
-        return parseBooleanLenient((String) raw, placeholder);
-      }
-      return parseBooleanLenient(String.valueOf(raw), placeholder);
-    } catch (Exception ignored) {
-      return null;
-    }
-  }
-
-  private Boolean parseBooleanLenient(String raw, String placeholder) {
-    if (raw == null) {
-      return null;
-    }
-    String s = raw.trim();
-    if (s.length() == 0) {
-      return null;
-    }
-    if (placeholder != null && placeholder.equals(s)) {
-      return null;
-    }
-    if ("true".equalsIgnoreCase(s) || "1".equals(s) || "yes".equalsIgnoreCase(s)
-      || "y".equalsIgnoreCase(s) || "on".equalsIgnoreCase(s)) {
-      return true;
-    }
-    if ("false".equalsIgnoreCase(s) || "0".equals(s) || "no".equalsIgnoreCase(s)
-      || "n".equalsIgnoreCase(s) || "off".equalsIgnoreCase(s)) {
-      return false;
-    }
-    return null;
-  }
 
   private void updateDefaultNotificationChannel(JSONArray args, CallbackContext callbackContext) throws JSONException {
     if (args == null || args.length() == 0) {
@@ -2292,6 +2193,28 @@ public class RetenoPlugin extends CordovaPlugin {
     }
     if (raw instanceof String) {
       return parseBooleanLenient((String) raw, null);
+    }
+    return null;
+  }
+
+  private Boolean parseBooleanLenient(String raw, String placeholder) {
+    if (raw == null) {
+      return null;
+    }
+    String s = raw.trim();
+    if (s.length() == 0) {
+      return null;
+    }
+    if (placeholder != null && placeholder.equals(s)) {
+      return null;
+    }
+    if ("true".equalsIgnoreCase(s) || "1".equals(s) || "yes".equalsIgnoreCase(s)
+      || "y".equalsIgnoreCase(s) || "on".equalsIgnoreCase(s)) {
+      return true;
+    }
+    if ("false".equalsIgnoreCase(s) || "0".equals(s) || "no".equalsIgnoreCase(s)
+      || "n".equalsIgnoreCase(s) || "off".equalsIgnoreCase(s)) {
+      return false;
     }
     return null;
   }

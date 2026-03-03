@@ -4,8 +4,6 @@
  * What it does (idempotent):
  * - Copies google-services.json into platforms/android/app/ if found in common locations
  * - Ensures Google Services Gradle plugin is applied (classpath + apply plugin)
- * - When RETENO_DEBUG_MODE is enabled: injects network_security_config.xml so that
- *   proxy tools (Charles, mitmproxy) can inspect native HTTPS traffic in debug builds
  */
 
 const fs = require('fs');
@@ -91,140 +89,13 @@ function ensureGoogleServicesApplied(platformsAndroidAppBuildGradlePath) {
 }
 
 // ---------------------------------------------------------------------------
-// Network security config (debug-only proxy support)
-// ---------------------------------------------------------------------------
-
-const NETWORK_SECURITY_CONFIG_XML = [
-  '<?xml version="1.0" encoding="utf-8"?>',
-  '<network-security-config>',
-  '    <debug-overrides>',
-  '        <trust-anchors>',
-  '            <certificates src="user" />',
-  '            <certificates src="system" />',
-  '        </trust-anchors>',
-  '    </debug-overrides>',
-  '</network-security-config>',
-  '',
-].join('\n');
-
-function isTruthyString(val) {
-  if (!val) return false;
-  const s = String(val).trim().toLowerCase();
-  return s === 'true' || s === '1' || s === 'yes';
-}
-
-function readDebugModeFromManifest(manifestPath) {
-  if (!exists(manifestPath)) return false;
-  const text = readText(manifestPath);
-  const match = text.match(
-    /com\.reteno\.plugin\.DEBUG_MODE["']\s+android:value=["']([^"']+)["']/
-  );
-  if (!match) return false;
-  return isTruthyString(match[1]);
-}
-
-function readDebugModeFromCapacitorConfig(androidAppDir) {
-  const configPath = path.join(androidAppDir, 'src', 'main', 'assets', 'capacitor.config.json');
-  if (!exists(configPath)) return false;
-  try {
-    const config = JSON.parse(readText(configPath));
-    const prefs =
-      (config && config.cordova && config.cordova.preferences) ||
-      {};
-    return isTruthyString(prefs.RETENO_DEBUG_MODE);
-  } catch (_) {
-    return false;
-  }
-}
-
-/**
- * Checks whether RETENO_DEBUG_MODE is enabled by looking at:
- * 1. The main app manifest (Cordova — resolved plugin.xml variables)
- * 2. The capacitor-cordova-android-plugins manifest (Capacitor)
- * 3. capacitor.config.json preferences (Capacitor fallback,
- *    because Capacitor may not substitute $RETENO_DEBUG_MODE correctly)
- */
-function isDebugModeEnabled(androidAppDir, androidProjectDir) {
-  const mainManifest = path.join(androidAppDir, 'src', 'main', 'AndroidManifest.xml');
-  if (readDebugModeFromManifest(mainManifest)) return true;
-
-  if (androidProjectDir) {
-    const capPluginManifest = path.join(
-      androidProjectDir, 'capacitor-cordova-android-plugins', 'src', 'main', 'AndroidManifest.xml'
-    );
-    if (readDebugModeFromManifest(capPluginManifest)) return true;
-  }
-
-  if (readDebugModeFromCapacitorConfig(androidAppDir)) return true;
-
-  return false;
-}
-
-/**
- * When RETENO_DEBUG_MODE is enabled, writes network_security_config.xml into
- * res/xml/ and adds the android:networkSecurityConfig attribute to the
- * <application> tag so that user-installed CA certificates (e.g. Charles) are
- * trusted in debug builds.
- *
- * When disabled, removes the file and attribute to keep production builds clean.
- */
-function ensureNetworkSecurityConfig(androidAppDir, androidProjectDir) {
-  const mainDir = path.join(androidAppDir, 'src', 'main');
-  const manifestPath = path.join(mainDir, 'AndroidManifest.xml');
-  const resXmlDir = path.join(mainDir, 'res', 'xml');
-  const nscPath = path.join(resXmlDir, 'network_security_config.xml');
-
-  const isDebug = isDebugModeEnabled(androidAppDir, androidProjectDir);
-
-  if (!isDebug) {
-    // Clean up: remove NSC file and manifest attribute when debug mode is off.
-    let removed = false;
-    if (exists(nscPath)) {
-      try { fs.unlinkSync(nscPath); removed = true; } catch (_) { /* ignore */ }
-    }
-    if (exists(manifestPath)) {
-      const text = readText(manifestPath);
-      const cleaned = text.replace(
-        /\s*android:networkSecurityConfig="@xml\/network_security_config"/g,
-        ''
-      );
-      if (cleaned !== text) {
-        writeText(manifestPath, cleaned);
-        removed = true;
-      }
-    }
-    return removed ? 'removed' : 'skip';
-  }
-
-  // Write the NSC file.
-  ensureDir(resXmlDir);
-  writeText(nscPath, NETWORK_SECURITY_CONFIG_XML);
-
-  // Add networkSecurityConfig attribute to <application> if missing.
-  if (exists(manifestPath)) {
-    const text = readText(manifestPath);
-    if (!text.includes('networkSecurityConfig')) {
-      const updated = text.replace(
-        /<application\b/,
-        '<application android:networkSecurityConfig="@xml/network_security_config"'
-      );
-      if (updated !== text) {
-        writeText(manifestPath, updated);
-      }
-    }
-  }
-
-  return 'applied';
-}
-
-// ---------------------------------------------------------------------------
 // Capacitor: plugin variable substitution
 // ---------------------------------------------------------------------------
 
 /**
  * Capacitor does NOT substitute $VARIABLE placeholders from plugin.xml in the
  * generated capacitor-cordova-android-plugins manifest.  This leaves values
- * like $SDK_ACCESS_KEY and $RETENO_DEBUG_MODE unresolved (defaults are used).
+ * like $SDK_ACCESS_KEY unresolved (defaults are used).
  *
  * This function reads the Cordova preferences from capacitor.config.json and
  * performs the substitution so that the manifest contains the real values.
@@ -253,7 +124,6 @@ function substituteCapacitorPluginVariables(androidProjectDir, androidAppDir) {
 
   const allowedKeys = new Set([
     'SDK_ACCESS_KEY',
-    'RETENO_DEBUG_MODE',
     'ANDROID_RETENO_FCM_VERSION',
     'ANDROID_FIREBASE_MESSAGING_VERSION',
   ]);
@@ -333,9 +203,6 @@ module.exports = function (context) {
   // --- Capacitor: substitute plugin variables in generated manifest ----------
   const varsResult = substituteCapacitorPluginVariables(androidProjectDir, androidAppDir);
 
-  // --- Network security config (conditional on RETENO_DEBUG_MODE) -----------
-  const nscResult = ensureNetworkSecurityConfig(androidAppDir, androidProjectDir);
-
   // --- Google Services / FCM ------------------------------------------------
   // Default Google Services Gradle plugin version.
   // We only add it if the project doesn't already have it.
@@ -349,7 +216,7 @@ module.exports = function (context) {
   if (!googleServicesSrc) {
     // eslint-disable-next-line no-console
     console.log(
-      `cordova-plugin-reteno: Android setup: capacitor-vars=${varsResult} network-security-config=${nscResult} google-services.json=not-found (skipping google-services Gradle plugin).`
+      `cordova-plugin-reteno: Android setup: capacitor-vars=${varsResult} google-services.json=not-found (skipping google-services Gradle plugin).`
     );
     return;
   }
@@ -370,7 +237,6 @@ module.exports = function (context) {
     [
       'cordova-plugin-reteno: Android setup:',
       `capacitor-vars=${varsResult}`,
-      `network-security-config=${nscResult}`,
       `google-services.json=${copyResult.reason}`,
       `google-services-classpath=${classpathChangedRoot || classpathChangedApp ? 'added' : 'ok'}`,
       `google-services-apply=${applyChanged ? 'added' : 'ok'}`,

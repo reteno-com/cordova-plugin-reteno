@@ -8,12 +8,6 @@
 cordova plugin add cordova-plugin-reteno --variable SDK_ACCESS_KEY=YOUR_KEY
 ```
 
-Optional: enable Reteno Android Debug Mode (Reteno SDK 2.7.0+):
-
-```sh
-cordova plugin add cordova-plugin-reteno --variable SDK_ACCESS_KEY=YOUR_KEY --variable RETENO_DEBUG_MODE=true
-```
-
 ### Configure via config.xml (Cordova)
 
 If you prefer to keep the access key in your Cordova app config (instead of passing `--variable` during installation), configure it as **plugin variables** in `config.xml`:
@@ -23,9 +17,6 @@ If you prefer to keep the access key in your Cordova app config (instead of pass
   <plugin name="cordova-plugin-reteno" spec="cordova-plugin-reteno">
     <!-- Reteno SDK access key (required) -->
     <variable name="SDK_ACCESS_KEY" value="YOUR_KEY" />
-
-    <!-- Optional: enable Reteno debug mode on Android -->
-    <variable name="RETENO_DEBUG_MODE" value="true" />
 
     <!-- Optional: Reteno Android SDK (FCM) version override -->
     <variable name="ANDROID_RETENO_FCM_VERSION" value="2.9.0" />
@@ -39,10 +30,6 @@ Notes:
 - Changing plugin variables often requires reinstalling the plugin or re-adding the platform:
   - `cordova plugin rm cordova-plugin-reteno && cordova plugin add ...`
   - or `cordova platform rm android && cordova platform add android`
-
-Notes:
-
-- Debug mode is intended for test devices/developer accounts.
 ```
 
 2. Reteno dependency is added automatically by the plugin via its Gradle hook.

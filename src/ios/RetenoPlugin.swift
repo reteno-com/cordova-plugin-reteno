@@ -41,10 +41,10 @@ class RetenoPlugin: CDVPlugin {
     let isDebugMode = (options["isDebugMode"] as? Bool) ?? false
 
     let configuration = RetenoConfiguration(
+      isAutomaticScreenReportingEnabled: screenReportingEnabled,
       isAutomaticAppLifecycleReportingEnabled: lifecycleAppEnabled,
       isAutomaticPushSubsriptionReportingEnabled: lifecyclePushEnabled,
       isAutomaticSessionReportingEnabled: lifecycleSessionEnabled,
-      isAutomaticScreenReportingEnabled: screenReportingEnabled,
       isPausedInAppMessages: pauseInAppMessages,
       isDebugMode: isDebugMode
     )

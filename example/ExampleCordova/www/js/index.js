@@ -160,6 +160,12 @@ function onDeviceReady() {
     var initLifecycleAppEl = document.getElementById('retenoInitLifecycleApp');
     var initLifecyclePushEl = document.getElementById('retenoInitLifecyclePush');
     var initLifecycleSessionEl = document.getElementById('retenoInitLifecycleSession');
+    var initScreenReportingEl = document.getElementById('retenoInitScreenReporting');
+    var initScreenReportingRowEl = document.getElementById('retenoInitScreenReportingRow');
+
+    if (initScreenReportingRowEl && cordova && cordova.platformId !== 'ios') {
+        initScreenReportingRowEl.style.display = 'none';
+    }
 
     var emailEl = document.getElementById('retenoEmail');
     var phoneEl = document.getElementById('retenoPhone');
@@ -623,6 +629,7 @@ function onDeviceReady() {
         return {
             pauseInAppMessages: !!(initPauseInAppEl && initPauseInAppEl.checked),
             pausePushInAppMessages: !!(initPausePushInAppEl && initPausePushInAppEl.checked),
+            isAutomaticScreenReportingEnabled: !!(initScreenReportingEl && initScreenReportingEl.checked),
             lifecycleTrackingOptions: {
                 appLifecycleEnabled: !!(initLifecycleAppEl && initLifecycleAppEl.checked),
                 pushSubscriptionEnabled: !!(initLifecyclePushEl && initLifecyclePushEl.checked),

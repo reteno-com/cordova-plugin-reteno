@@ -1,5 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { IonicModule } from '@ionic/angular';
+import { IonicModule, Platform } from '@ionic/angular';
 import { AppHeaderComponent } from '../shared/app-header/app-header.component';
 import { RouterModule } from '@angular/router';
 import { RetenoService } from '../services/reteno.service';
@@ -12,14 +12,18 @@ import { RetenoService } from '../services/reteno.service';
 })
 export class MainPage implements OnInit {
   private readonly reteno = inject(RetenoService);
+  private readonly platform = inject(Platform);
   initPauseInAppMessages = false;
   initPausePushInAppMessages = false;
   initLifecycleApp = true;
   initLifecyclePush = true;
   initLifecycleSession = true;
+  initScreenReporting = false;
   initialized = false;
+  isIos = false;
 
   ngOnInit(): void {
+    this.isIos = this.platform.is('ios');
     this.reteno.requestNotificationPermission().catch(() => {});
     this.syncInitOptions();
   }
@@ -32,6 +36,7 @@ export class MainPage implements OnInit {
     this.reteno.setInitOptions({
       pauseInAppMessages: this.initPauseInAppMessages,
       pausePushInAppMessages: this.initPausePushInAppMessages,
+      isAutomaticScreenReportingEnabled: this.initScreenReporting,
       lifecycleTrackingOptions: {
         appLifecycleEnabled: this.initLifecycleApp,
         pushSubscriptionEnabled: this.initLifecyclePush,
@@ -52,6 +57,7 @@ export class MainPage implements OnInit {
     const options = this.reteno.getInitOptions();
     this.initPauseInAppMessages = options.pauseInAppMessages;
     this.initPausePushInAppMessages = options.pausePushInAppMessages;
+    this.initScreenReporting = options.isAutomaticScreenReportingEnabled;
     this.initLifecycleApp = options.lifecycleTrackingOptions.appLifecycleEnabled;
     this.initLifecyclePush = options.lifecycleTrackingOptions.pushSubscriptionEnabled;
     this.initLifecycleSession = options.lifecycleTrackingOptions.sessionEventsEnabled;

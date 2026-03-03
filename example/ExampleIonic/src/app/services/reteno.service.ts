@@ -124,6 +124,7 @@ export class RetenoService {
   private initOptions: {
     pauseInAppMessages: boolean;
     pausePushInAppMessages: boolean;
+    isAutomaticScreenReportingEnabled: boolean;
     lifecycleTrackingOptions: {
       appLifecycleEnabled: boolean;
       pushSubscriptionEnabled: boolean;
@@ -132,6 +133,7 @@ export class RetenoService {
   } = {
     pauseInAppMessages: false,
     pausePushInAppMessages: false,
+    isAutomaticScreenReportingEnabled: false,
     lifecycleTrackingOptions: {
       appLifecycleEnabled: true,
       pushSubscriptionEnabled: true,
@@ -150,6 +152,7 @@ export class RetenoService {
   setInitOptions(options: {
     pauseInAppMessages?: boolean;
     pausePushInAppMessages?: boolean;
+    isAutomaticScreenReportingEnabled?: boolean;
     lifecycleTrackingOptions?: LifecycleTrackingOptions | string;
   }): void {
     if (options.pauseInAppMessages != null) {
@@ -157,6 +160,9 @@ export class RetenoService {
     }
     if (options.pausePushInAppMessages != null) {
       this.initOptions.pausePushInAppMessages = options.pausePushInAppMessages;
+    }
+    if (options.isAutomaticScreenReportingEnabled != null) {
+      this.initOptions.isAutomaticScreenReportingEnabled = options.isAutomaticScreenReportingEnabled;
     }
     if (options.lifecycleTrackingOptions && typeof options.lifecycleTrackingOptions === 'object') {
       const lto = options.lifecycleTrackingOptions as {
@@ -184,6 +190,7 @@ export class RetenoService {
   getInitOptions(): {
     pauseInAppMessages: boolean;
     pausePushInAppMessages: boolean;
+    isAutomaticScreenReportingEnabled: boolean;
     lifecycleTrackingOptions: {
       appLifecycleEnabled: boolean;
       pushSubscriptionEnabled: boolean;
@@ -193,6 +200,7 @@ export class RetenoService {
     return {
       pauseInAppMessages: this.initOptions.pauseInAppMessages,
       pausePushInAppMessages: this.initOptions.pausePushInAppMessages,
+      isAutomaticScreenReportingEnabled: this.initOptions.isAutomaticScreenReportingEnabled,
       lifecycleTrackingOptions: { ...this.initOptions.lifecycleTrackingOptions },
     };
   }
@@ -212,6 +220,7 @@ export class RetenoService {
       .init({
         pauseInAppMessages: this.initOptions.pauseInAppMessages,
         pausePushInAppMessages: this.initOptions.pausePushInAppMessages,
+        isAutomaticScreenReportingEnabled: this.initOptions.isAutomaticScreenReportingEnabled,
         lifecycleTrackingOptions: { ...this.initOptions.lifecycleTrackingOptions },
       })
       .then((res) => {
@@ -233,6 +242,7 @@ export class RetenoService {
   init(options?: {
     pauseInAppMessages?: boolean;
     pausePushInAppMessages?: boolean;
+    isAutomaticScreenReportingEnabled?: boolean;
     lifecycleTrackingOptions?: LifecycleTrackingOptions | string;
   }): Promise<unknown> {
     if (options) {

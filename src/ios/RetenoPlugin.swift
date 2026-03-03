@@ -543,6 +543,133 @@ class RetenoPlugin: CDVPlugin {
     return dict
   }
 
+  // MARK: - Recommendations
+
+  @objc(getRecommendations:)
+  func getRecommendations(_ command: CDVInvokedUrlCommand) {
+    let payload = extractPayload(from: command) ?? [:]
+
+    guard let recomVariantId = stringValue(payload["recomVariantId"]),
+          !recomVariantId.isEmpty else {
+      sendError("Missing argument: recomVariantId", to: command)
+      return
+    }
+
+    let productIds: [String] = stringArrayValue(payload["productIds"])
+    let categoryId: String = stringValue(payload["categoryId"]) ?? ""
+
+    let fields: [String]? = {
+      if payload["fields"] == nil || payload["fields"] is NSNull { return nil }
+      return stringArrayValue(payload["fields"])
+    }()
+
+    let filters: [Reteno.RecomFilter]? = {
+      guard let raw = payload["filters"] else { return nil }
+      if raw is NSNull { return nil }
+
+      // Single filter object
+      if let dict = raw as? [String: Any] {
+        if let filter = self.parseRecomFilter(dict) {
+          return [filter]
+        }
+        return nil
+      }
+      // Array of filter objects
+      if let array = raw as? [[String: Any]] {
+        var result: [Reteno.RecomFilter] = []
+        for dict in array {
+          if let filter = self.parseRecomFilter(dict) {
+            result.append(filter)
+          }
+        }
+        return result.isEmpty ? nil : result
+      }
+      return nil
+    }()
+
+    Reteno.recommendations().getRecoms(
+      recomVariantId: recomVariantId,
+      productIds: productIds,
+      categoryId: categoryId,
+      filters: filters,
+      fields: fields
+    ) { [weak self] (result: Result<[RetenoRecommendation], Error>) in
+      guard let self = self else { return }
+      switch result {
+      case .success(let recoms):
+        let recomsJson = recoms.map { $0.toDictionary() }
+        let responseDict: [String: Any] = ["recoms": recomsJson]
+        let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: responseDict)
+        self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
+      case .failure(let error):
+        self.sendError("getRecommendations: \(error.localizedDescription)", to: command)
+      }
+    }
+  }
+
+  @objc(logRecommendations:)
+  func logRecommendations(_ command: CDVInvokedUrlCommand) {
+    let payload = extractPayload(from: command) ?? [:]
+
+    guard let recomVariantId = stringValue(payload["recomVariantId"]),
+          !recomVariantId.isEmpty else {
+      sendError("Missing argument: recomVariantId", to: command)
+      return
+    }
+
+    guard let rawEvents = payload["recomEvents"] as? [[String: Any]], !rawEvents.isEmpty else {
+      sendError("Missing argument: recomEvents", to: command)
+      return
+    }
+
+    var impressions: [Reteno.RecomEvent] = []
+    var clicks: [Reteno.RecomEvent] = []
+
+    for rawEvent in rawEvents {
+      guard let productId = stringValue(rawEvent["productId"]),
+            !productId.isEmpty else {
+        sendError("Invalid recomEvent: missing productId", to: command)
+        return
+      }
+
+      let date: Date = {
+        if let raw = rawEvent["occurred"] {
+          if let str = stringValue(raw), let parsed = parseIso8601Date(str) {
+            return parsed
+          }
+          if let num = raw as? NSNumber {
+            return Date(timeIntervalSince1970: num.doubleValue / 1000.0)
+          }
+        }
+        return Date()
+      }()
+
+      let event = Reteno.RecomEvent(date: date, productId: productId)
+
+      let eventType = stringValue(rawEvent["recomEventType"])?.uppercased() ?? "IMPRESSIONS"
+      if eventType == "CLICKS" {
+        clicks.append(event)
+      } else {
+        impressions.append(event)
+      }
+    }
+
+    Reteno.recommendations().logEvent(
+      recomVariantId: recomVariantId,
+      impressions: impressions,
+      clicks: clicks
+    )
+
+    let result = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: 1)
+    commandDelegate.send(result, callbackId: command.callbackId)
+  }
+
+  private func parseRecomFilter(_ dict: [String: Any]) -> Reteno.RecomFilter? {
+    guard let name = stringValue(dict["name"]), !name.isEmpty else { return nil }
+    guard let values = stringArrayValue(dict["values"]), !values.isEmpty else { return nil }
+    return Reteno.RecomFilter(name: name, values: values)
+  }
+
   private func getPreference(_ key: String) -> String? {
     if let value = commandDelegate.settings[key] as? String { return value }
     let lower = key.lowercased()
@@ -796,6 +923,84 @@ class RetenoPlugin: CDVPlugin {
       return NSNull()
     default:
       return String(describing: value)
+    }
+  }
+}
+
+// MARK: - Dynamic RecommendableProduct model for Cordova bridge
+
+/// A generic recommendation model that captures all fields dynamically
+/// so the JS layer receives the full response without needing a typed model.
+struct RetenoRecommendation: Decodable, Reteno.RecommendableProduct {
+  let productId: String
+  private var extraFields: [String: Any] = [:]
+
+  init(json: [String: Any]) {
+    self.productId = json["productId"] as? String ?? ""
+    var extras = json
+    extras.removeValue(forKey: "productId")
+    self.extraFields = extras
+  }
+
+  init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: DynamicCodingKey.self)
+    self.productId = (try? container.decode(String.self, forKey: DynamicCodingKey(stringValue: "productId")!)) ?? ""
+    var extras: [String: Any] = [:]
+    for key in container.allKeys where key.stringValue != "productId" {
+      if let stringValue = try? container.decode(String.self, forKey: key) {
+        extras[key.stringValue] = stringValue
+      } else if let intValue = try? container.decode(Int.self, forKey: key) {
+        extras[key.stringValue] = intValue
+      } else if let doubleValue = try? container.decode(Double.self, forKey: key) {
+        extras[key.stringValue] = doubleValue
+      } else if let boolValue = try? container.decode(Bool.self, forKey: key) {
+        extras[key.stringValue] = boolValue
+      } else if (try? container.decodeNil(forKey: key)) == true {
+        extras[key.stringValue] = NSNull()
+      } else {
+        // Fallback: try to decode as a nested JSON object or array via AnyCodable-like approach
+        extras[key.stringValue] = try? container.decode(AnyCodableValue.self, forKey: key).value
+      }
+    }
+    self.extraFields = extras
+  }
+
+  func toDictionary() -> [String: Any] {
+    var dict = extraFields
+    dict["productId"] = productId
+    return dict
+  }
+}
+
+private struct DynamicCodingKey: CodingKey {
+  var stringValue: String
+  var intValue: Int?
+  init?(stringValue: String) { self.stringValue = stringValue; self.intValue = nil }
+  init?(intValue: Int) { self.stringValue = "\(intValue)"; self.intValue = intValue }
+}
+
+/// Wrapper to decode arbitrarily-typed JSON values.
+private struct AnyCodableValue: Decodable {
+  let value: Any
+
+  init(from decoder: Decoder) throws {
+    let container = try decoder.singleValueContainer()
+    if container.decodeNil() {
+      value = NSNull()
+    } else if let string = try? container.decode(String.self) {
+      value = string
+    } else if let int = try? container.decode(Int.self) {
+      value = int
+    } else if let double = try? container.decode(Double.self) {
+      value = double
+    } else if let bool = try? container.decode(Bool.self) {
+      value = bool
+    } else if let array = try? container.decode([AnyCodableValue].self) {
+      value = array.map { $0.value }
+    } else if let dict = try? container.decode([String: AnyCodableValue].self) {
+      value = dict.mapValues { $0.value }
+    } else {
+      value = NSNull()
     }
   }
 }

@@ -630,6 +630,7 @@ function onDeviceReady() {
             pauseInAppMessages: !!(initPauseInAppEl && initPauseInAppEl.checked),
             pausePushInAppMessages: !!(initPausePushInAppEl && initPausePushInAppEl.checked),
             isAutomaticScreenReportingEnabled: !!(initScreenReportingEl && initScreenReportingEl.checked),
+            isDebugMode: true,
             lifecycleTrackingOptions: {
                 appLifecycleEnabled: !!(initLifecycleAppEl && initLifecycleAppEl.checked),
                 pushSubscriptionEnabled: !!(initLifecyclePushEl && initLifecyclePushEl.checked),

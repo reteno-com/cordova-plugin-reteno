@@ -373,7 +373,7 @@ class RetenoPlugin: CDVPlugin {
       return nil
     }()
 
-    let status: Reteno.AppInboxMessagesStatus? = {
+    let status: AppInboxMessagesStatus? = {
       guard let raw = stringValue(payload["status"]) else { return nil }
       switch raw.uppercased() {
       case "OPENED": return .opened
@@ -494,7 +494,7 @@ class RetenoPlugin: CDVPlugin {
     }
   }
 
-  private func inboxMessageToDict(_ message: Reteno.AppInboxMessage) -> [String: Any] {
+  private func inboxMessageToDict(_ message: AppInboxMessage) -> [String: Any] {
     var dict: [String: Any] = [
       "id": message.id,
       "title": message.title,
@@ -539,7 +539,7 @@ class RetenoPlugin: CDVPlugin {
       return stringArrayValue(payload["fields"])
     }()
 
-    let filters: [Reteno.RecomFilter]? = {
+    let filters: [RecomFilter]? = {
       guard let raw = payload["filters"] else { return nil }
       if raw is NSNull { return nil }
 
@@ -552,7 +552,7 @@ class RetenoPlugin: CDVPlugin {
       }
       // Array of filter objects
       if let array = raw as? [[String: Any]] {
-        var result: [Reteno.RecomFilter] = []
+        var result: [RecomFilter] = []
         for dict in array {
           if let filter = self.parseRecomFilter(dict) {
             result.append(filter)
@@ -563,17 +563,16 @@ class RetenoPlugin: CDVPlugin {
       return nil
     }()
 
-    Reteno.recommendations().getRecoms(
+    Reteno.recommendations().getRecomJSONs(
       recomVariantId: recomVariantId,
       productIds: productIds,
       categoryId: categoryId,
       filters: filters,
       fields: fields
-    ) { [weak self] (result: Result<[RetenoRecommendation], Error>) in
+    ) { [weak self] (result: Result<[[String: Any]], Error>) in
       guard let self = self else { return }
       switch result {
-      case .success(let recoms):
-        let recomsJson = recoms.map { $0.toDictionary() }
+      case .success(let recomsJson):
         let responseDict: [String: Any] = ["recoms": recomsJson]
         let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: responseDict)
         self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
@@ -598,8 +597,8 @@ class RetenoPlugin: CDVPlugin {
       return
     }
 
-    var impressions: [Reteno.RecomEvent] = []
-    var clicks: [Reteno.RecomEvent] = []
+    var impressions: [RecomEvent] = []
+    var clicks: [RecomEvent] = []
 
     for rawEvent in rawEvents {
       guard let productId = stringValue(rawEvent["productId"]),
@@ -620,7 +619,7 @@ class RetenoPlugin: CDVPlugin {
         return Date()
       }()
 
-      let event = Reteno.RecomEvent(date: date, productId: productId)
+      let event = RecomEvent(date: date, productId: productId)
 
       let eventType = stringValue(rawEvent["recomEventType"])?.uppercased() ?? "IMPRESSIONS"
       if eventType == "CLICKS" {
@@ -640,10 +639,11 @@ class RetenoPlugin: CDVPlugin {
     commandDelegate.send(result, callbackId: command.callbackId)
   }
 
-  private func parseRecomFilter(_ dict: [String: Any]) -> Reteno.RecomFilter? {
+  private func parseRecomFilter(_ dict: [String: Any]) -> RecomFilter? {
     guard let name = stringValue(dict["name"]), !name.isEmpty else { return nil }
-    guard let values = stringArrayValue(dict["values"]), !values.isEmpty else { return nil }
-    return Reteno.RecomFilter(name: name, values: values)
+    let values = stringArrayValue(dict["values"])
+    guard !values.isEmpty else { return nil }
+    return RecomFilter(name: name, values: values)
   }
 
   // MARK: - Ecommerce
@@ -1232,84 +1232,6 @@ class RetenoPlugin: CDVPlugin {
       return NSNull()
     default:
       return String(describing: value)
-    }
-  }
-}
-
-// MARK: - Dynamic RecommendableProduct model for Cordova bridge
-
-/// A generic recommendation model that captures all fields dynamically
-/// so the JS layer receives the full response without needing a typed model.
-struct RetenoRecommendation: Decodable, Reteno.RecommendableProduct {
-  let productId: String
-  private var extraFields: [String: Any] = [:]
-
-  init(json: [String: Any]) {
-    self.productId = json["productId"] as? String ?? ""
-    var extras = json
-    extras.removeValue(forKey: "productId")
-    self.extraFields = extras
-  }
-
-  init(from decoder: Decoder) throws {
-    let container = try decoder.container(keyedBy: DynamicCodingKey.self)
-    self.productId = (try? container.decode(String.self, forKey: DynamicCodingKey(stringValue: "productId")!)) ?? ""
-    var extras: [String: Any] = [:]
-    for key in container.allKeys where key.stringValue != "productId" {
-      if let stringValue = try? container.decode(String.self, forKey: key) {
-        extras[key.stringValue] = stringValue
-      } else if let intValue = try? container.decode(Int.self, forKey: key) {
-        extras[key.stringValue] = intValue
-      } else if let doubleValue = try? container.decode(Double.self, forKey: key) {
-        extras[key.stringValue] = doubleValue
-      } else if let boolValue = try? container.decode(Bool.self, forKey: key) {
-        extras[key.stringValue] = boolValue
-      } else if (try? container.decodeNil(forKey: key)) == true {
-        extras[key.stringValue] = NSNull()
-      } else {
-        // Fallback: try to decode as a nested JSON object or array via AnyCodable-like approach
-        extras[key.stringValue] = try? container.decode(AnyCodableValue.self, forKey: key).value
-      }
-    }
-    self.extraFields = extras
-  }
-
-  func toDictionary() -> [String: Any] {
-    var dict = extraFields
-    dict["productId"] = productId
-    return dict
-  }
-}
-
-private struct DynamicCodingKey: CodingKey {
-  var stringValue: String
-  var intValue: Int?
-  init?(stringValue: String) { self.stringValue = stringValue; self.intValue = nil }
-  init?(intValue: Int) { self.stringValue = "\(intValue)"; self.intValue = intValue }
-}
-
-/// Wrapper to decode arbitrarily-typed JSON values.
-private struct AnyCodableValue: Decodable {
-  let value: Any
-
-  init(from decoder: Decoder) throws {
-    let container = try decoder.singleValueContainer()
-    if container.decodeNil() {
-      value = NSNull()
-    } else if let string = try? container.decode(String.self) {
-      value = string
-    } else if let int = try? container.decode(Int.self) {
-      value = int
-    } else if let double = try? container.decode(Double.self) {
-      value = double
-    } else if let bool = try? container.decode(Bool.self) {
-      value = bool
-    } else if let array = try? container.decode([AnyCodableValue].self) {
-      value = array.map { $0.value }
-    } else if let dict = try? container.decode([String: AnyCodableValue].self) {
-      value = dict.mapValues { $0.value }
-    } else {
-      value = NSNull()
     }
   }
 }

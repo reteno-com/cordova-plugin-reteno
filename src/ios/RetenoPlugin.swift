@@ -6,6 +6,7 @@ import Reteno
 @objc(RetenoPlugin)
 class RetenoPlugin: CDVPlugin {
   private static weak var activeInstance: RetenoPlugin?
+  private var inboxCountCallbackId: String?
 
   override func pluginInitialize() {
     RetenoPlugin.activeInstance = self
@@ -350,6 +351,196 @@ class RetenoPlugin: CDVPlugin {
 
     let result = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: 1)
     commandDelegate.send(result, callbackId: command.callbackId)
+  }
+
+  // MARK: - App Inbox
+
+  @objc(getAppInboxMessages:)
+  func getAppInboxMessages(_ command: CDVInvokedUrlCommand) {
+    let payload = extractPayload(from: command) ?? [:]
+
+    let page: Int? = {
+      if let n = payload["page"] as? Int { return n }
+      if let n = payload["page"] as? NSNumber { return n.intValue }
+      if let s = payload["page"] as? String, let n = Int(s) { return n }
+      return nil
+    }()
+
+    let pageSize: Int? = {
+      if let n = payload["pageSize"] as? Int { return n }
+      if let n = payload["pageSize"] as? NSNumber { return n.intValue }
+      if let s = payload["pageSize"] as? String, let n = Int(s) { return n }
+      return nil
+    }()
+
+    let status: Reteno.AppInboxMessagesStatus? = {
+      guard let raw = stringValue(payload["status"]) else { return nil }
+      switch raw.uppercased() {
+      case "OPENED": return .opened
+      case "UNOPENED": return .unopened
+      default: return nil
+      }
+    }()
+
+    Reteno.inbox().downloadMessages(page: page, pageSize: pageSize, status: status) { [weak self] result in
+      guard let self = self else { return }
+      switch result {
+      case .success(let response):
+        let messagesJson = response.messages.map { self.inboxMessageToDict($0) }
+        let responseDict: [String: Any] = [
+          "messages": messagesJson,
+          "totalPages": response.totalPages ?? 0
+        ]
+        let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: responseDict)
+        self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
+      case .failure(let error):
+        self.sendError("getAppInboxMessages: \(error.localizedDescription)", to: command)
+      }
+    }
+  }
+
+  @objc(getAppInboxMessagesCount:)
+  func getAppInboxMessagesCount(_ command: CDVInvokedUrlCommand) {
+    // iOS SDK only has onUnreadMessagesCountChanged (no direct getter).
+    // Set it once, return the first value, then restore subscription if active.
+    let hadSubscription = inboxCountCallbackId != nil
+
+    Reteno.inbox().onUnreadMessagesCountChanged = { [weak self] count in
+      guard let self = self else { return }
+
+      // Return the count to the one-shot caller
+      let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: count)
+      self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
+
+      // Restore the ongoing subscription handler if one was active,
+      // otherwise clear the callback.
+      if hadSubscription {
+        self.setupInboxCountSubscription()
+      } else {
+        Reteno.inbox().onUnreadMessagesCountChanged = nil
+      }
+    }
+  }
+
+  @objc(subscribeOnMessagesCountChanged:)
+  func subscribeOnMessagesCountChanged(_ command: CDVInvokedUrlCommand) {
+    inboxCountCallbackId = command.callbackId
+    setupInboxCountSubscription()
+
+    // Send NO_RESULT immediately to keep the callback alive
+    let noResult = CDVPluginResult(status: CDVCommandStatus_NO_RESULT)
+    noResult?.setKeepCallbackAs(true)
+    commandDelegate.send(noResult, callbackId: command.callbackId)
+  }
+
+  @objc(unsubscribeMessagesCountChanged:)
+  func unsubscribeMessagesCountChanged(_ command: CDVInvokedUrlCommand) {
+    Reteno.inbox().onUnreadMessagesCountChanged = nil
+    inboxCountCallbackId = nil
+
+    let result = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: 1)
+    commandDelegate.send(result, callbackId: command.callbackId)
+  }
+
+  /// Helper: wires up the `onUnreadMessagesCountChanged` handler that forwards
+  /// every count update to the stored `inboxCountCallbackId` callback.
+  private func setupInboxCountSubscription() {
+    Reteno.inbox().onUnreadMessagesCountChanged = { [weak self] count in
+      guard let self = self, let callbackId = self.inboxCountCallbackId else { return }
+      let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: count)
+      pluginResult?.setKeepCallbackAs(true)
+      self.commandDelegate.send(pluginResult, callbackId: callbackId)
+    }
+  }
+
+  @objc(markAsOpened:)
+  func markAsOpened(_ command: CDVInvokedUrlCommand) {
+    let arg0 = command.arguments.first
+    var messageIds: [String] = []
+
+    if let messageId = arg0 as? String, !messageId.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+      messageIds = [messageId.trimmingCharacters(in: .whitespacesAndNewlines)]
+    } else if let payload = arg0 as? [String: Any] {
+      if let id = payload["messageId"] as? String {
+        messageIds = [id.trimmingCharacters(in: .whitespacesAndNewlines)]
+      } else if let id = payload["id"] as? String {
+        messageIds = [id.trimmingCharacters(in: .whitespacesAndNewlines)]
+      } else if let ids = payload["messageIds"] as? [String] {
+        messageIds = ids.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+      }
+    } else if let ids = arg0 as? [String] {
+      messageIds = ids.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+    }
+
+    guard !messageIds.isEmpty else {
+      sendError("Missing argument: messageId", to: command)
+      return
+    }
+
+    Reteno.inbox().markAsOpened(messageIds: messageIds) { [weak self] result in
+      guard let self = self else { return }
+      switch result {
+      case .success:
+        let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: 1)
+        self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
+      case .failure(let error):
+        self.sendError("markAsOpened: \(error.localizedDescription)", to: command)
+      }
+    }
+  }
+
+  @objc(markAllMessagesAsOpened:)
+  func markAllMessagesAsOpened(_ command: CDVInvokedUrlCommand) {
+    Reteno.inbox().markAllAsOpened { [weak self] result in
+      guard let self = self else { return }
+      switch result {
+      case .success:
+        let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: 1)
+        self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
+      case .failure(let error):
+        self.sendError("markAllMessagesAsOpened: \(error.localizedDescription)", to: command)
+      }
+    }
+  }
+
+  private func inboxMessageToDict(_ message: Reteno.AppInboxMessage) -> [String: Any] {
+    var dict: [String: Any] = [
+      "id": message.id,
+      "title": message.title ?? "",
+      "createdDate": message.createdDate != nil ? RetenoPlugin.isoFormatterWithMs.string(from: message.createdDate!) : "",
+      "isNewMessage": message.isNew,
+      "content": message.content ?? NSNull(),
+      "imageUrl": message.imageURL?.absoluteString ?? NSNull(),
+      "linkUrl": message.linkURL?.absoluteString ?? NSNull(),
+    ]
+
+    // Map isNew to status for cross-platform consistency with Android
+    dict["status"] = message.isNew ? "UNOPENED" : "OPENED"
+
+    // category — may not exist in all SDK versions
+    let mirror = Mirror(reflecting: message)
+    if let categoryChild = mirror.children.first(where: { $0.label == "category" }) {
+      if let categoryValue = categoryChild.value as? String {
+        dict["category"] = categoryValue
+      } else {
+        dict["category"] = NSNull()
+      }
+    } else {
+      dict["category"] = NSNull()
+    }
+
+    // customData — may not exist in all SDK versions
+    if let customDataChild = mirror.children.first(where: { $0.label == "customData" }) {
+      if let customData = customDataChild.value as? [String: String] {
+        dict["customData"] = customData
+      } else {
+        dict["customData"] = NSNull()
+      }
+    } else {
+      dict["customData"] = NSNull()
+    }
+
+    return dict
   }
 
   private func getPreference(_ key: String) -> String? {

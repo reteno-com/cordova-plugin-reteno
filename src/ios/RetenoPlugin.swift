@@ -670,6 +670,323 @@ class RetenoPlugin: CDVPlugin {
     return Reteno.RecomFilter(name: name, values: values)
   }
 
+  // MARK: - Ecommerce
+
+  @objc(logEcommerceEvent:)
+  func logEcommerceEvent(_ command: CDVInvokedUrlCommand) {
+    guard let payload = extractPayload(from: command) else {
+      sendError("Missing argument: payload", to: command)
+      return
+    }
+
+    guard let rawType = stringValue(payload["eventType"]) ?? stringValue(payload["type"]),
+          !rawType.isEmpty else {
+      sendError("Missing argument: eventType", to: command)
+      return
+    }
+
+    let eventType = rawType.lowercased().filter { $0.isLetter || $0.isNumber }
+    let forcePush = (payload["forcePush"] as? Bool) ?? false
+
+    let occurred: Date = {
+      if let raw = payload["occurred"] {
+        if let str = stringValue(raw), let parsed = parseIso8601Date(str) { return parsed }
+        if let num = raw as? NSNumber { return Date(timeIntervalSince1970: num.doubleValue / 1000.0) }
+      }
+      return Date()
+    }()
+
+    let currencyCode = stringValue(payload["currencyCode"])
+
+    do {
+      let ecomEventType: Ecommerce.EventType
+
+      switch eventType {
+      case "productviewed":
+        let product = try parseEcomProduct(payload["product"])
+        ecomEventType = .productViewed(product: product, currencyCode: currencyCode)
+
+      case "productcategoryviewed":
+        let category = try parseEcomProductCategory(payload["category"])
+        ecomEventType = .productCategoryViewed(category: category)
+
+      case "productaddedtowishlist":
+        let product = try parseEcomProduct(payload["product"])
+        ecomEventType = .productAddedToWishlist(product: product, currencyCode: currencyCode)
+
+      case "cartupdated":
+        guard let cartId = stringValue(payload["cartId"]), !cartId.isEmpty else {
+          sendError("Missing argument: cartId", to: command)
+          return
+        }
+        let products = try parseEcomProductsInCart(payload["products"])
+        ecomEventType = .cartUpdated(cartId: cartId, products: products, currencyCode: currencyCode)
+
+      case "ordercreated":
+        let order = try parseEcomOrder(payload["order"])
+        ecomEventType = .orderCreated(order: order, currencyCode: currencyCode)
+
+      case "orderupdated":
+        let order = try parseEcomOrder(payload["order"])
+        ecomEventType = .orderUpdated(order: order, currencyCode: currencyCode)
+
+      case "orderdelivered":
+        guard let externalOrderId = stringValue(payload["externalOrderId"]), !externalOrderId.isEmpty else {
+          sendError("Missing argument: externalOrderId", to: command)
+          return
+        }
+        ecomEventType = .orderDelivered(externalOrderId: externalOrderId)
+
+      case "ordercancelled":
+        guard let externalOrderId = stringValue(payload["externalOrderId"]), !externalOrderId.isEmpty else {
+          sendError("Missing argument: externalOrderId", to: command)
+          return
+        }
+        ecomEventType = .orderCancelled(externalOrderId: externalOrderId)
+
+      case "searchrequest":
+        guard let query = stringValue(payload["search"]), !query.isEmpty else {
+          sendError("Missing argument: search", to: command)
+          return
+        }
+        let isFound = parseBoolLenient(payload["isFound"])
+        ecomEventType = .searchRequest(query: query, isFound: isFound)
+
+      default:
+        sendError("Invalid argument: eventType '\(rawType)'", to: command)
+        return
+      }
+
+      Reteno.ecommerce().logEvent(type: ecomEventType, date: occurred, forcePush: forcePush)
+
+      let result = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: 1)
+      commandDelegate.send(result, callbackId: command.callbackId)
+    } catch {
+      sendError("logEcommerceEvent: \(error.localizedDescription)", to: command)
+    }
+  }
+
+  // MARK: - Ecommerce parsers
+
+  private func parseEcomProduct(_ value: Any?) throws -> Ecommerce.Product {
+    guard let dict = dictionaryValue(value) else {
+      throw EcomParseError("Missing argument: product")
+    }
+    guard let productId = stringValue(dict["productId"]), !productId.isEmpty else {
+      throw EcomParseError("Missing argument: productId")
+    }
+    guard let price = parseDoubleLenient(dict["price"]) else {
+      throw EcomParseError("Missing argument: price")
+    }
+    guard let isInStock = parseIntLenient(dict["isInStock"]) else {
+      throw EcomParseError("Missing argument: isInStock")
+    }
+    let attributes = parseEcomAttributes(dict["attributes"])
+    return Ecommerce.Product(
+      productId: productId,
+      price: Float(price),
+      isInStock: isInStock,
+      attributes: attributes
+    )
+  }
+
+  private func parseEcomProductCategory(_ value: Any?) throws -> Ecommerce.ProductCategory {
+    guard let dict = dictionaryValue(value) else {
+      throw EcomParseError("Missing argument: category")
+    }
+    guard let productCategoryId = stringValue(dict["productCategoryId"]), !productCategoryId.isEmpty else {
+      throw EcomParseError("Missing argument: productCategoryId")
+    }
+    let attributes = parseEcomAttributes(dict["attributes"])
+    return Ecommerce.ProductCategory(
+      productCategoryId: productCategoryId,
+      attributes: attributes
+    )
+  }
+
+  private func parseEcomProductsInCart(_ value: Any?) throws -> [Ecommerce.ProductInCart] {
+    guard let array = value as? [[String: Any]], !array.isEmpty else {
+      throw EcomParseError("Missing argument: products")
+    }
+    return try array.map { dict in
+      guard let productId = stringValue(dict["productId"]), !productId.isEmpty else {
+        throw EcomParseError("Missing argument: productId")
+      }
+      guard let price = parseDoubleLenient(dict["price"]) else {
+        throw EcomParseError("Missing argument: price")
+      }
+      guard let quantity = parseIntLenient(dict["quantity"]) else {
+        throw EcomParseError("Missing argument: quantity")
+      }
+      let discount = parseDoubleLenient(dict["discount"]).map { Float($0) }
+      let name = stringValue(dict["name"])
+      let category = stringValue(dict["category"])
+      let attributes = parseEcomAttributes(dict["attributes"])
+      return Ecommerce.ProductInCart(
+        productId: productId,
+        price: Float(price),
+        quantity: quantity,
+        discount: discount,
+        name: name,
+        category: category,
+        attributes: attributes
+      )
+    }
+  }
+
+  private func parseEcomOrder(_ value: Any?) throws -> Ecommerce.Order {
+    guard let dict = dictionaryValue(value) else {
+      throw EcomParseError("Missing argument: order")
+    }
+    guard let externalOrderId = stringValue(dict["externalOrderId"]), !externalOrderId.isEmpty else {
+      throw EcomParseError("Missing argument: externalOrderId")
+    }
+    guard let totalCost = parseDoubleLenient(dict["totalCost"]) else {
+      throw EcomParseError("Missing argument: totalCost")
+    }
+    guard let status = parseEcomOrderStatus(dict["status"]) else {
+      throw EcomParseError("Missing argument: status")
+    }
+
+    let orderDate: Date = {
+      if let raw = dict["date"] {
+        if let str = stringValue(raw), let parsed = parseIso8601Date(str) { return parsed }
+        if let num = raw as? NSNumber { return Date(timeIntervalSince1970: num.doubleValue / 1000.0) }
+      }
+      return Date()
+    }()
+
+    let cartId = stringValue(dict["cartId"])
+    let email = stringValue(dict["email"])
+    let phone = stringValue(dict["phone"])
+    let firstName = stringValue(dict["firstName"])
+    let lastName = stringValue(dict["lastName"])
+    let shipping = parseDoubleLenient(dict["shipping"]).map { Float($0) }
+    let discount = parseDoubleLenient(dict["discount"]).map { Float($0) }
+    let taxes = parseDoubleLenient(dict["taxes"]).map { Float($0) }
+    let restoreUrl = stringValue(dict["restoreUrl"])
+    let statusDescription = stringValue(dict["statusDescription"])
+    let storeId = stringValue(dict["storeId"])
+    let source = stringValue(dict["source"])
+    let deliveryMethod = stringValue(dict["deliveryMethod"])
+    let paymentMethod = stringValue(dict["paymentMethod"])
+    let deliveryAddress = stringValue(dict["deliveryAddress"])
+    let items = parseEcomOrderItems(dict["items"])
+
+    return Ecommerce.Order(
+      externalOrderId: externalOrderId,
+      totalCost: Float(totalCost),
+      status: status,
+      date: orderDate,
+      cartId: cartId,
+      email: email,
+      phone: phone,
+      firstName: firstName,
+      lastName: lastName,
+      shipping: shipping,
+      discount: discount,
+      taxes: taxes,
+      restoreUrl: restoreUrl,
+      statusDescription: statusDescription,
+      storeId: storeId,
+      source: source,
+      deliveryMethod: deliveryMethod,
+      paymentMethod: paymentMethod,
+      deliveryAddress: deliveryAddress,
+      items: items
+    )
+  }
+
+  private func parseEcomOrderItems(_ value: Any?) -> [Ecommerce.Order.Item]? {
+    guard let array = value as? [[String: Any]], !array.isEmpty else { return nil }
+    return array.compactMap { dict -> Ecommerce.Order.Item? in
+      guard let externalItemId = stringValue(dict["externalItemId"]),
+            let name = stringValue(dict["name"]),
+            let category = stringValue(dict["category"]),
+            let quantity = parseDoubleLenient(dict["quantity"]),
+            let cost = parseDoubleLenient(dict["cost"]),
+            let url = stringValue(dict["url"]) else {
+        return nil
+      }
+      let imageUrl = stringValue(dict["imageUrl"])
+      let description = stringValue(dict["description"])
+      return Ecommerce.Order.Item(
+        externalItemId: externalItemId,
+        name: name,
+        category: category,
+        quantity: quantity,
+        cost: Float(cost),
+        url: url,
+        imageUrl: imageUrl,
+        description: description
+      )
+    }
+  }
+
+  private func parseEcomOrderStatus(_ value: Any?) -> Ecommerce.Order.Status? {
+    guard let raw = stringValue(value) else { return nil }
+    switch raw.uppercased() {
+    case "DELIVERED": return .DELIVERED
+    case "IN_PROGRESS": return .IN_PROGRESS
+    case "CANCELLED": return .CANCELLED
+    case "INITIALIZED": return .INITIALIZED
+    default: return nil
+    }
+  }
+
+  /// Converts JS `[{name: "size", value: ["M","L"]}, ...]` to iOS SDK `["size": ["M","L"], ...]`
+  private func parseEcomAttributes(_ value: Any?) -> [String: [String]]? {
+    // Already in dictionary form (from iOS native callers or certain JS shapes)
+    if let dict = value as? [String: [String]] { return dict }
+    if let dict = value as? [String: Any] {
+      var result: [String: [String]] = [:]
+      for (key, val) in dict {
+        if let arr = val as? [String] { result[key] = arr }
+        else if let str = val as? String { result[key] = [str] }
+      }
+      return result.isEmpty ? nil : result
+    }
+    // Array of {name, value} objects (Cordova JS convention, matching Android)
+    guard let array = value as? [[String: Any]] else { return nil }
+    var result: [String: [String]] = [:]
+    for item in array {
+      guard let name = stringValue(item["name"]) else { continue }
+      if let values = item["value"] as? [String] {
+        result[name] = values
+      } else if let singleValue = stringValue(item["value"]) {
+        result[name] = [singleValue]
+      }
+    }
+    return result.isEmpty ? nil : result
+  }
+
+  private func parseDoubleLenient(_ value: Any?) -> Double? {
+    if let n = value as? Double { return n }
+    if let n = value as? NSNumber { return n.doubleValue }
+    if let n = value as? Int { return Double(n) }
+    if let s = value as? String, let d = Double(s) { return d }
+    return nil
+  }
+
+  private func parseIntLenient(_ value: Any?) -> Int? {
+    if let n = value as? Int { return n }
+    if let n = value as? NSNumber { return n.intValue }
+    if let s = value as? String, let i = Int(s) { return i }
+    if let d = value as? Double { return Int(d) }
+    return nil
+  }
+
+  private func parseBoolLenient(_ value: Any?) -> Bool? {
+    if let b = value as? Bool { return b }
+    if let n = value as? NSNumber { return n.boolValue }
+    if let s = value as? String {
+      let lower = s.lowercased()
+      if lower == "true" || lower == "1" || lower == "yes" { return true }
+      if lower == "false" || lower == "0" || lower == "no" { return false }
+    }
+    return nil
+  }
+
   private func getPreference(_ key: String) -> String? {
     if let value = commandDelegate.settings[key] as? String { return value }
     let lower = key.lowercased()
@@ -1003,4 +1320,12 @@ private struct AnyCodableValue: Decodable {
       value = NSNull()
     }
   }
+}
+
+// MARK: - Ecommerce parse error
+
+private struct EcomParseError: LocalizedError {
+  let message: String
+  init(_ message: String) { self.message = message }
+  var errorDescription: String? { message }
 }

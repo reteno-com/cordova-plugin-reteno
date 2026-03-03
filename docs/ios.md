@@ -150,3 +150,8 @@ Lifecycle tracking note for iOS:
 
 - iOS lifecycle tracking is configured during SDK initialization (`retenosdk.init({ lifecycleTrackingOptions: ... })`).
 - Calling `setLifecycleTrackingOptions(...)` after initialization is not supported on iOS.
+
+Screen view tracking note for iOS:
+
+- **Automatic** — pass `isAutomaticScreenReportingEnabled: true` to `retenosdk.init(...)`. The native SDK will track screen transitions automatically. Defaults to `false`.
+- **Manual** — call `retenosdk.logScreenView(screenName)` on each navigation event. This works on both iOS and Android regardless of `isAutomaticScreenReportingEnabled`.

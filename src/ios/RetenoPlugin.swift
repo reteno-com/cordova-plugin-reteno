@@ -36,11 +36,13 @@ class RetenoPlugin: CDVPlugin {
     let lifecycleAppEnabled = lifecycleOptions?.appLifecycleEnabled ?? true
     let lifecyclePushEnabled = lifecycleOptions?.pushSubscriptionEnabled ?? true
     let lifecycleSessionEnabled = lifecycleOptions?.sessionEventsEnabled ?? true
+    let screenReportingEnabled = (options["isAutomaticScreenReportingEnabled"] as? Bool) ?? false
 
     let configuration = RetenoConfiguration(
       isAutomaticAppLifecycleReportingEnabled: lifecycleAppEnabled,
       isAutomaticPushSubsriptionReportingEnabled: lifecyclePushEnabled,
       isAutomaticSessionReportingEnabled: lifecycleSessionEnabled,
+      isAutomaticScreenReportingEnabled: screenReportingEnabled,
       isPausedInAppMessages: pauseInAppMessages
     )
 

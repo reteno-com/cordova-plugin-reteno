@@ -10,7 +10,7 @@ Official guide: https://docs.reteno.com/reference/ios
 - Xcode: 15.0+
 - Swift: 5.7+
 
-## 1) Add the plugin and configure preferences
+## Add the plugin and configure preferences
 
 In `config.xml` add/verify:
 
@@ -29,7 +29,7 @@ The plugin reads `SDK_ACCESS_KEY` during initialization.
 
 If `pod install` fails with "required a higher minimum deployment target", raise your iOS deployment target to `15.0` or higher and run install again.
 
-## 2) Add Notification Service Extension (NSE)
+## Add Notification Service Extension (NSE)
 
 NSE is required for rich push (images, attachments) and correct push payload handling.
 
@@ -43,7 +43,7 @@ import Reteno
 class NotificationService: RetenoNotificationServiceExtension {}
 ```
 
-## 3) App Groups
+## App Groups
 
 Enable App Groups for the main target and the NSE target.
 
@@ -59,20 +59,91 @@ Example:
 group.com.example.app.reteno-local-storage
 ```
 
-## 4) Podfile for the NSE target
+## Podfile for extension targets
 
 The plugin wires `Reteno` pod into the **main** iOS target automatically.
-For the NSE target you must add the pod manually in `platforms/ios/Podfile`:
+For extension targets you must add the pod manually in `platforms/ios/Podfile`.
+Both extension targets must be **nested inside** the main app target block:
 
 ```ruby
-target 'NotificationServiceExtension' do
-  pod 'Reteno', '2.6.1'
+target 'App' do
+  # ... existing pods ...
+
+  target 'NotificationServiceExtension' do
+    inherit! :search_paths
+    pod 'Reteno', '2.6.1'
+  end
+
+  target 'NotificationContentExtension' do
+    inherit! :search_paths
+    pod 'Reteno', '2.6.1'
+  end
 end
 ```
 
-If you override `IOS_RETENO_FCM_VERSION` in `config.xml`, keep this Podfile version in sync.
+If you override `IOS_RETENO_FCM_VERSION` in `config.xml`, keep the Podfile version in sync.
 
-## 5) Initialize the SDK in JS
+## Add Notification Content Extension (NCE) — Images Carousel
+
+The Notification Content Extension is required for rich push notifications with an **Images Carousel**.
+It provides the `UNNotificationContentExtension` entry point that renders a custom carousel UI.
+
+Official guide: https://docs.reteno.com/reference/ios-images-carousel
+
+### Create the extension target *(manual Xcode step)*
+
+In Xcode: **File → New → Target → Notification Content Extension**. Name it `NotificationContentExtension`.
+
+See the official guide for screenshots: https://docs.reteno.com/reference/ios-images-carousel
+
+### Replace extension files
+
+1. **Delete** the generated `MainInterface.storyboard` (it is not used with `RetenoCarouselNotificationViewController`).
+2. Replace the contents of `NotificationViewController.swift` with:
+
+```swift
+import Reteno
+
+final class NotificationViewController: RetenoCarouselNotificationViewController {}
+```
+
+### Update `Info.plist` of the NCE
+
+Open `NotificationContentExtension/Info.plist` as source code and replace the `NSExtension` dict with:
+
+```xml
+<key>NSExtension</key>
+<dict>
+    <key>NSExtensionAttributes</key>
+    <dict>
+        <key>UNNotificationExtensionCategory</key>
+        <string>ImageCarousel</string>
+        <key>UNNotificationExtensionInitialContentSizeRatio</key>
+        <real>0.5</real>
+        <key>UNNotificationExtensionUserInteractionEnabled</key>
+        <true/>
+    </dict>
+    <key>NSExtensionPointIdentifier</key>
+    <string>com.apple.usernotifications.content-extension</string>
+    <key>NSExtensionPrincipalClass</key>
+    <string>$(PRODUCT_MODULE_NAME).NotificationViewController</string>
+</dict>
+```
+
+### Deployment target
+
+Make sure the NCE **Deployment Target** in Xcode matches the main app target (iOS 15.0+). A mismatch is the most common reason carousel images fail to display.
+
+### Embed App Extensions — Copy only when installing *(manual Xcode step)*
+
+> **This step must be done manually in Xcode** — it cannot be automated.
+> Official guide (Troubleshooting → "Turn off Copy Only when Installing"): https://docs.reteno.com/reference/ios-images-carousel
+
+In Xcode: **Main target → Build Phases → Embed App Extensions**. For **both** `NotificationServiceExtension` and `NotificationContentExtension` ensure **"Copy only when installing"** is **unchecked**.
+
+If this checkbox is left on, the extensions will not be embedded during Debug builds and carousel images will not appear.
+
+## Initialize the SDK in JS
 
 Call initialization once on app startup:
 
@@ -80,13 +151,32 @@ Call initialization once on app startup:
 await retenosdk.init();
 ```
 
-`SDK_ACCESS_KEY` is taken from `config.xml`. You can also pass it explicitly:
+**Cordova**: `SDK_ACCESS_KEY` is read from `config.xml` automatically. You can also pass it explicitly:
 
 ```js
 await retenosdk.init({ accessKey: 'YOUR_RETENO_ACCESS_KEY' });
 ```
 
-## 6) Set Up a Notification Permission Request
+**Capacitor**: Cordova plugin preferences are configured in `capacitor.config.ts` under `cordova.preferences`:
+
+```ts
+const config: CapacitorConfig = {
+  // ...
+  cordova: {
+    preferences: {
+      SDK_ACCESS_KEY: 'YOUR_RETENO_ACCESS_KEY',
+    },
+  },
+};
+```
+
+Or pass the key explicitly in JS:
+
+```js
+await retenosdk.init({ accessKey: 'YOUR_RETENO_ACCESS_KEY' });
+```
+
+## Request Notification Permission
 
 iOS requires an explicit permission prompt before the app can receive push notifications.
 Call the plugin helper when it makes sense in your UX flow (usually after a user action):
@@ -95,7 +185,7 @@ Call the plugin helper when it makes sense in your UX flow (usually after a user
 await retenosdk.requestNotificationPermission();
 ```
 
-## 7) Provide Device Tokens to the SDK
+## Provide Device Tokens to the SDK
 
 If another SDK/plugin obtains the device token (APNs/FCM), pass it to Reteno so it can register the device:
 
@@ -108,7 +198,7 @@ If your app retrieves tokens natively, here are the two common options and how t
 - FCM (Firebase Messaging): get `fcmToken` in `MessagingDelegate`, then forward it to JS and call `retenosdk.setDeviceToken(fcmToken)`.
 - APNs: get `deviceToken` in `didRegisterForRemoteNotificationsWithDeviceToken`, convert to hex string, then forward it to JS and call `retenosdk.setDeviceToken(tokenString)`.
 
-## 8) Add Custom Behavior for Notifications (optional)
+## Custom Notification Behavior (optional)
 
 If you need custom behavior without editing native AppDelegate, the plugin provides optional helpers.
 Configure them **after** SDK initialization.
@@ -156,7 +246,7 @@ Typical setup for hybrid apps:
 
 If you use Universal Links on iOS, you must also configure the Apple-side association for your domain. In practice, Reteno can deliver the link in the push payload, but opening the correct screen inside a hybrid app is still handled by your deeplink integration layer.
 
-## 9) User Information and User Behaviour methods
+## User Information and User Behaviour methods
 
 The plugin supports the main iOS methods described in Reteno docs:
 
@@ -176,3 +266,4 @@ Screen view tracking note for iOS:
 
 - **Automatic** — pass `isAutomaticScreenReportingEnabled: true` to `retenosdk.init(...)`. The native SDK will track screen transitions automatically. Defaults to `false`.
 - **Manual** — call `retenosdk.logScreenView(screenName)` on each navigation event. This works on both iOS and Android regardless of `isAutomaticScreenReportingEnabled`.
+

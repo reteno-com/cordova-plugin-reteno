@@ -26,6 +26,11 @@ target 'App' do
     inherit! :search_paths
     pod 'Reteno', '2.6.1'
   end
+
+  target 'NotificationContentExtension' do
+    inherit! :search_paths
+    pod 'Reteno', '2.6.1'
+  end
 end
 
 post_install do |installer|

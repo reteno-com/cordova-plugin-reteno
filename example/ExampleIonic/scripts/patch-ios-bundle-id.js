@@ -15,6 +15,7 @@ const extEntitlementsPath = path.join(
 
 const IOS_BUNDLE_ID = 'com.reteno.example-app';
 const EXT_BUNDLE_ID = `${IOS_BUNDLE_ID}.NotificationServiceExtension`;
+const NCE_BUNDLE_ID = `${IOS_BUNDLE_ID}.NotificationContentExtension`;
 const APP_GROUP = `group.${IOS_BUNDLE_ID}.reteno-local-storage`;
 
 function replaceAll(content, from, to) {
@@ -35,6 +36,7 @@ function patchFile(filePath, patchFn) {
 patchFile(projectPath, (content) => {
   // Replace bundle ids in build settings.
   content = content.replace(/PRODUCT_BUNDLE_IDENTIFIER\s*=\s*com\.reteno\.sample\.NotificationServiceExtension;/g, `PRODUCT_BUNDLE_IDENTIFIER = ${EXT_BUNDLE_ID};`);
+  content = content.replace(/PRODUCT_BUNDLE_IDENTIFIER\s*=\s*com\.reteno\.sample\.NotificationContentExtension;/g, `PRODUCT_BUNDLE_IDENTIFIER = ${NCE_BUNDLE_ID};`);
   content = content.replace(/PRODUCT_BUNDLE_IDENTIFIER\s*=\s*com\.reteno\.sample;/g, `PRODUCT_BUNDLE_IDENTIFIER = ${IOS_BUNDLE_ID};`);
   return content;
 });

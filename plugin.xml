@@ -4,12 +4,6 @@
     <engines>
         <engine name="cordova-android" version=">=12.0.0" />
     </engines>
-    <!-- Android Reteno SDK (FCM) version override -->
-    <preference name="ANDROID_RETENO_FCM_VERSION" default="2.9.1" />
-    <!-- iOS Reteno SDK version override -->
-    <preference name="IOS_RETENO_FCM_VERSION" default="2.6.1" />
-    <!-- Firebase Messaging version used by Reteno FCM module -->
-    <preference name="ANDROID_FIREBASE_MESSAGING_VERSION" default="23.1.0" />
     <preference name="SDK_ACCESS_KEY" default="MISSING" />
     <hook type="before_plugin_install" src="scripts/validate-install.js" />
     <hook type="after_plugin_install" src="scripts/android-fcm-setup.js" />
@@ -61,7 +55,7 @@
 
   <podspec>
     <pods>
-      <pod name="Reteno" spec="$IOS_RETENO_FCM_VERSION" />
+      <pod name="Reteno" spec="2.6.1" />
     </pods>
   </podspec>
 

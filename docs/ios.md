@@ -20,9 +20,6 @@ In `config.xml` add/verify:
 
 <!-- Reteno SDK access key (required) -->
 <preference name="SDK_ACCESS_KEY" value="YOUR_RETENO_ACCESS_KEY" />
-
-<!-- Optional: iOS Reteno SDK version override -->
-<preference name="IOS_RETENO_FCM_VERSION" value="2.6.1" />
 ```
 
 The plugin reads `SDK_ACCESS_KEY` during initialization.
@@ -81,7 +78,6 @@ target 'App' do
 end
 ```
 
-If you override `IOS_RETENO_FCM_VERSION` in `config.xml`, keep the Podfile version in sync.
 
 ## Add Notification Content Extension (NCE) — Images Carousel
 

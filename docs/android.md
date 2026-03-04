@@ -17,9 +17,6 @@ If you prefer to keep the access key in your Cordova app config (instead of pass
   <plugin name="cordova-plugin-reteno" spec="cordova-plugin-reteno">
     <!-- Reteno SDK access key (required) -->
     <variable name="SDK_ACCESS_KEY" value="YOUR_KEY" />
-
-    <!-- Optional: Reteno Android SDK (FCM) version override -->
-    <variable name="ANDROID_RETENO_FCM_VERSION" value="2.9.1" />
   </plugin>
 </widget>
 ```
@@ -33,22 +30,6 @@ Notes:
 ```
 
 2. Reteno dependency is added automatically by the plugin via its Gradle hook.
-
-   If you need a different Reteno SDK version, you can override it:
-   - During plugin installation:
-
-     ```sh
-     cordova plugin add cordova-plugin-reteno --variable ANDROID_RETENO_FCM_VERSION=2.9.1
-     ```
-
-   - Or from your Android project (for example in `platforms/android/build.gradle`):
-
-   ```groovy
-   // Example: always take the latest 2.x (dynamic versions can reduce reproducibility)
-   ext.retenoFcmVersion = '2.+'
-   // or pin an exact version:
-   // ext.retenoFcmVersion = '2.9.1'
-   ```
 
 3. Android 13+ (and `targetSdkVersion >= 33`) requires notification runtime permission. The plugin injects the manifest permission (`POST_NOTIFICATIONS`), but you still must request it at runtime in your app.
 

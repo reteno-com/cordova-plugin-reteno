@@ -19,7 +19,14 @@ const PODFILE_PATH = path.join(IOS_ROOT, 'Podfile');
 const APP_NAME = 'App';
 const APP_DIR = path.join(IOS_ROOT, APP_NAME);
 const EXTENSION_NAME = 'NotificationContentExtension';
-const RETENO_VERSION = process.env.IOS_RETENO_VERSION || '2.6.1';
+const RETENO_VERSION = (() => {
+  try {
+    const content = fs.readFileSync(PODFILE_PATH, 'utf8');
+    const match = content.match(/pod\s+'Reteno',\s+'([^']+)'/);
+    if (match) return match[1];
+  } catch (e) {}
+  return '2.6.1';
+})();
 const IOS_BUNDLE_ID = 'com.reteno.example-app';
 const NCE_BUNDLE_ID = `${IOS_BUNDLE_ID}.${EXTENSION_NAME}`;
 const DEPLOYMENT_TARGET = '15.0';

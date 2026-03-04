@@ -8,7 +8,6 @@
     <content src="index.html" />
     <preference name="deployment-target" value="15.0" />
     <preference name="SDK_ACCESS_KEY" value="630A66AF-C1D3-4F2A-ACC1-0D51C38D2B05" />
-    <preference name="IOS_RETENO_FCM_VERSION" value="2.6.1" />
     <edit-config file="*-Info.plist" mode="merge" target="ITSAppUsesNonExemptEncryption">
         <false/>
     </edit-config>

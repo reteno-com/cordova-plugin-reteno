@@ -444,9 +444,7 @@ function __callWithAutoInit(action, args, success, error) {
     },
 
     requestNotificationPermission: function (success, error) {
-      // If Reteno isn't initialized yet, permission can still be requested,
-      // but Reteno's internal status update will fail until init().
-      return __callWithExec('requestNotificationPermission', [], success, error);
+      return __callWithAutoInit('requestNotificationPermission', [], success, error);
     },
 
     /*

@@ -89,63 +89,6 @@ function ensureGoogleServicesApplied(platformsAndroidAppBuildGradlePath) {
 }
 
 // ---------------------------------------------------------------------------
-// Capacitor: plugin variable substitution
-// ---------------------------------------------------------------------------
-
-/**
- * Capacitor does NOT substitute $VARIABLE placeholders from plugin.xml in the
- * generated capacitor-cordova-android-plugins manifest.  This leaves values
- * like $SDK_ACCESS_KEY unresolved (defaults are used).
- *
- * This function reads the Cordova preferences from capacitor.config.json and
- * performs the substitution so that the manifest contains the real values.
- */
-function substituteCapacitorPluginVariables(androidProjectDir, androidAppDir) {
-  const capPluginManifest = path.join(
-    androidProjectDir, 'capacitor-cordova-android-plugins', 'src', 'main', 'AndroidManifest.xml'
-  );
-  if (!exists(capPluginManifest)) return 'skip';
-
-  const configPath = path.join(androidAppDir, 'src', 'main', 'assets', 'capacitor.config.json');
-  if (!exists(configPath)) return 'skip';
-
-  let prefs;
-  try {
-    const config = JSON.parse(readText(configPath));
-    prefs = (config && config.cordova && config.cordova.preferences) || {};
-  } catch (_) {
-    return 'skip';
-  }
-
-  if (Object.keys(prefs).length === 0) return 'skip';
-
-  let text = readText(capPluginManifest);
-  let changed = false;
-
-  const allowedKeys = new Set([
-    'SDK_ACCESS_KEY',
-    'ANDROID_RETENO_FCM_VERSION',
-    'ANDROID_FIREBASE_MESSAGING_VERSION',
-  ]);
-
-  for (const key of Object.keys(prefs)) {
-    if (!allowedKeys.has(key)) continue;
-    const placeholder = '$' + key;
-    if (text.includes(placeholder)) {
-      text = text.split(placeholder).join(String(prefs[key]));
-      changed = true;
-    }
-  }
-
-  if (changed) {
-    writeText(capPluginManifest, text);
-    return 'applied';
-  }
-
-  return 'ok';
-}
-
-// ---------------------------------------------------------------------------
 // google-services.json helpers
 // ---------------------------------------------------------------------------
 
@@ -188,20 +131,12 @@ module.exports = function (context) {
 
   if (!projectRoot) return;
 
-  const cordovaAndroidDir = path.join(projectRoot, 'platforms', 'android');
-  const capacitorAndroidDir = path.join(projectRoot, 'android');
-  const androidProjectDir = exists(cordovaAndroidDir)
-    ? cordovaAndroidDir
-    : (exists(capacitorAndroidDir) ? capacitorAndroidDir : null);
-
-  if (!androidProjectDir) return;
+  const androidProjectDir = path.join(projectRoot, 'platforms', 'android');
+  if (!exists(androidProjectDir)) return;
 
   const androidAppDir = path.join(androidProjectDir, 'app');
   const platformsAndroidBuildGradlePath = path.join(androidProjectDir, 'build.gradle');
   const platformsAndroidAppBuildGradlePath = path.join(androidAppDir, 'build.gradle');
-
-  // --- Capacitor: substitute plugin variables in generated manifest ----------
-  const varsResult = substituteCapacitorPluginVariables(androidProjectDir, androidAppDir);
 
   // --- Google Services / FCM ------------------------------------------------
   // Default Google Services Gradle plugin version.
@@ -216,18 +151,14 @@ module.exports = function (context) {
   if (!googleServicesSrc) {
     // eslint-disable-next-line no-console
     console.log(
-      `cordova-plugin-reteno: Android setup: capacitor-vars=${varsResult} google-services.json=not-found (skipping google-services Gradle plugin).`
+      'cordova-plugin-reteno: Android setup: google-services.json=not-found (skipping google-services Gradle plugin).'
     );
     return;
   }
 
   const copyResult = copyGoogleServicesJson(projectRoot, androidAppDir);
-  const classpathChangedRoot = ensureGoogleServicesClasspath(
+  const classpathChanged = ensureGoogleServicesClasspath(
     platformsAndroidBuildGradlePath,
-    googleServicesVersion
-  );
-  const classpathChangedApp = ensureGoogleServicesClasspath(
-    platformsAndroidAppBuildGradlePath,
     googleServicesVersion
   );
   const applyChanged = ensureGoogleServicesApplied(platformsAndroidAppBuildGradlePath);
@@ -236,9 +167,8 @@ module.exports = function (context) {
   console.log(
     [
       'cordova-plugin-reteno: Android setup:',
-      `capacitor-vars=${varsResult}`,
       `google-services.json=${copyResult.reason}`,
-      `google-services-classpath=${classpathChangedRoot || classpathChangedApp ? 'added' : 'ok'}`,
+      `google-services-classpath=${classpathChanged ? 'added' : 'ok'}`,
       `google-services-apply=${applyChanged ? 'added' : 'ok'}`,
     ].join(' ')
   );

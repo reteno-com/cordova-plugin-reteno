@@ -19,8 +19,8 @@ Notes:
 | [logEvent](../www/cordova-plugin-reteno.js)                        | iOS, Android       | [Types](../types/index.ts)                                                                                                                        |
 | [logScreenView](../www/cordova-plugin-reteno.js)                   | iOS, Android       | Logs a screen view for manual tracking.                                                                                                           |
 | [forcePushData](../www/cordova-plugin-reteno.js)                   | iOS, Android       | Forces Reteno to sync queued data. On iOS the plugin performs a technical `logEvent(..., forcePush: true)` call under the hood.                 |
-| [pauseInAppMessages](../www/cordova-plugin-reteno.js)             | Android            | Pauses or resumes in-app messages at runtime. Pass `true` to pause, `false` to resume.                                                            |
-| [setInAppMessagesPauseBehaviour](../www/cordova-plugin-reteno.js) | Android            | Sets how paused in-app messages are handled: `SKIP_IN_APPS` or `POSTPONE_IN_APPS`. [Types](../types/index.ts)                                     |
+| [pauseInAppMessages](../www/cordova-plugin-reteno.js)             | iOS, Android       | Pauses or resumes in-app messages at runtime. Pass `true` to pause, `false` to resume.                                                            |
+| [setInAppMessagesPauseBehaviour](../www/cordova-plugin-reteno.js) | iOS, Android       | Sets how paused in-app messages are handled: `SKIP_IN_APPS` or `POSTPONE_IN_APPS`. [Types](../types/index.ts)                                     |
 | [getInitialNotification](../www/cordova-plugin-reteno.js)          | iOS, Android       | Returns push notification that triggered creating app instance                                                                                    |
 | [setOnRetenoPushReceivedListener](../www/cordova-plugin-reteno.js) | iOS, Android       | Sets listener for newly received push notification.                                                                                               |
 | [removeOnRetenoPushReceivedListener](../www/cordova-plugin-reteno.js) | iOS, Android       | Removes listener for push notification received events.                                                                                           |
@@ -272,7 +272,7 @@ retenosdk.pauseInAppMessages(false)
 
 ### setInAppMessagesPauseBehaviour example
 
-Configure how paused in-app messages are handled (requires Reteno SDK v2.0.3+). Type: `InAppPauseBehaviour` in [types](../types/index.ts).
+Configure how paused in-app messages are handled. Type: `InAppPauseBehaviour` in [types](../types/index.ts).
 
 ```js
 // Discard messages received while paused

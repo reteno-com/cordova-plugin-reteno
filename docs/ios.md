@@ -310,6 +310,29 @@ Payload notes for iOS:
     - `isOpenUrlClicked`
 - Error events (`onError`) include `data.errorMessage` (string).
 
+## In-Apps Pause (iOS)
+
+Official reference: https://docs.reteno.com/reference/ios-sdk-in-apps-pause
+
+The plugin supports both initialization-time and runtime in-app pause controls on iOS:
+
+```js
+// Start SDK with in-apps paused
+await retenosdk.init({ pauseInAppMessages: true });
+
+// Runtime pause/resume
+await retenosdk.pauseInAppMessages(true);  // pause
+await retenosdk.pauseInAppMessages(false); // resume
+```
+
+Pause behavior can also be configured at runtime:
+
+```js
+await retenosdk.setInAppMessagesPauseBehaviour('SKIP_IN_APPS');
+// or
+await retenosdk.setInAppMessagesPauseBehaviour('POSTPONE_IN_APPS');
+```
+
 ## Custom Notification Behavior (optional)
 
 If you need custom behavior without editing native AppDelegate, the plugin provides optional helpers.

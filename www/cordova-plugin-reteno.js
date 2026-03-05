@@ -371,7 +371,7 @@ function __callWithAutoInit(action, args, success, error) {
 
     /*
         iOS only. Requires all three conditions:
-        1. IOS_DEVICE_TOKEN_HANDLING_MODE preference set to 'manual' in plugin.xml
+        1. IOS_DEVICE_TOKEN_HANDLING_MODE is 'manual' (this is the plugin default)
         2. 'FirebaseMessaging' pod installed
         3. GoogleService-Info.plist added to the app target
 
@@ -397,7 +397,7 @@ function __callWithAutoInit(action, args, success, error) {
         });
       } else {
         p = Promise.reject(
-          new Error("setFCMToken requires Reteno to be initialized first. Ensure IOS_DEVICE_TOKEN_HANDLING_MODE is set to 'manual' in plugin.xml.")
+          new Error("setFCMToken requires Reteno to be initialized first. Ensure IOS_DEVICE_TOKEN_HANDLING_MODE is 'manual' (default).")
         );
       }
 

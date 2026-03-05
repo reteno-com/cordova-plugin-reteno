@@ -56,10 +56,10 @@ class RetenoPlugin: CDVPlugin {
 
     let deviceTokenMode: DeviceTokenHandlingMode
     if let prefMode = getPreference("ios_device_token_handling_mode"),
-       prefMode.lowercased() == "manual" {
-      deviceTokenMode = .manual
-    } else {
+       prefMode.lowercased() == "automatic" {
       deviceTokenMode = .automatic
+    } else {
+      deviceTokenMode = .manual
     }
 
     let configuration = RetenoConfiguration(
@@ -261,7 +261,7 @@ class RetenoPlugin: CDVPlugin {
   func setFCMToken(_ command: CDVInvokedUrlCommand) {
     guard isManualTokenMode else {
       sendError(
-        "setFCMToken: IOS_DEVICE_TOKEN_HANDLING_MODE must be set to 'manual' in plugin.xml to use FCM tokens.",
+        "setFCMToken: IOS_DEVICE_TOKEN_HANDLING_MODE must be 'manual' (default).",
         to: command
       )
       return

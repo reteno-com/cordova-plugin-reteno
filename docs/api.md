@@ -15,7 +15,7 @@ Notes:
 | [setMultiAccountUserAttributes](../www/cordova-plugin-reteno.js)   | iOS, Android       | [Types](../types/index.ts)                                                                                                                        |
 | [setLifecycleTrackingOptions](../www/cordova-plugin-reteno.js)     | iOS, Android       | Android: applies immediately. iOS: supported only before initialization (stored and applied during `init(...)`). [Types](../types/index.ts)      |
 | [setDeviceToken](../www/cordova-plugin-reteno.js)                  | iOS, Android       | Forwards the device token to Reteno (use when another plugin owns push callbacks/token, e.g. Firebasex messaging enabled).                        |
-| [setFCMToken](../www/cordova-plugin-reteno.js)                     | iOS                | Manual fallback for iOS Firebase flow: fetches current FCM token from Firebase and forwards it to Reteno. Requires `IOS_DEVICE_TOKEN_HANDLING_MODE=manual`, `FirebaseMessaging` pod, and configured `GoogleService-Info.plist`. |
+| [setFCMToken](../www/cordova-plugin-reteno.js)                     | iOS                | Manual fallback for iOS Firebase flow: fetches current FCM token from Firebase and forwards it to Reteno. Requires `IOS_DEVICE_TOKEN_HANDLING_MODE=manual` (plugin default), `FirebaseMessaging` pod, and configured `GoogleService-Info.plist`. |
 | [logEvent](../www/cordova-plugin-reteno.js)                        | iOS, Android       | [Types](../types/index.ts)                                                                                                                        |
 | [logScreenView](../www/cordova-plugin-reteno.js)                   | iOS, Android       | Logs a screen view for manual tracking.                                                                                                           |
 | [forcePushData](../www/cordova-plugin-reteno.js)                   | iOS, Android       | Forces Reteno to sync queued data. On iOS the plugin performs a technical `logEvent(..., forcePush: true)` call under the hood.                 |
@@ -311,7 +311,7 @@ If you obtain a token outside this plugin (for example via another plugin/SDK), 
 
 Notes:
 - On Android, if Reteno receives FCM callbacks directly, you generally don't need to call `setDeviceToken`.
-- On iOS with Firebase, prefer the `IOS_DEVICE_TOKEN_HANDLING_MODE=manual` flow and `setFCMToken()` (or automatic forwarding in `init()`), described in [iOS docs](./ios.md#using-fcm-firebase-cloud-messaging-on-ios).
+- On iOS with Firebase, prefer the default `IOS_DEVICE_TOKEN_HANDLING_MODE=manual` flow and `setFCMToken()` (or automatic forwarding in `init()`), described in [iOS docs](./ios.md#using-fcm-firebase-cloud-messaging-on-ios).
 
 ```js
 // 1) Initialize Reteno first.

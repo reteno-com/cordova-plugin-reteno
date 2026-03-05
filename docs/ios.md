@@ -161,7 +161,7 @@ const config: CapacitorConfig = {
   cordova: {
     preferences: {
       SDK_ACCESS_KEY: 'YOUR_RETENO_ACCESS_KEY',
-      // Required only when using iOS Firebase (FCM) flow below:
+      // Plugin default is 'manual'. Set explicitly only if you need to override.
       IOS_DEVICE_TOKEN_HANDLING_MODE: 'manual',
     },
   },
@@ -194,7 +194,7 @@ await retenosdk.setDeviceToken(token);
 If your app retrieves tokens natively, here are the two common options and how they map to the plugin:
 
 - APNs: get `deviceToken` in `didRegisterForRemoteNotificationsWithDeviceToken`, convert to hex string, then forward it to JS and call `retenosdk.setDeviceToken(tokenString)`.
-- FCM (Firebase Messaging): use the dedicated iOS Firebase flow below (`IOS_DEVICE_TOKEN_HANDLING_MODE=manual`). In that mode, the plugin can forward FCM tokens automatically after `init()`, and `setFCMToken()` is available as a manual fallback.
+- FCM (Firebase Messaging): use the dedicated iOS Firebase flow below. `IOS_DEVICE_TOKEN_HANDLING_MODE` defaults to `manual`, so the plugin can forward FCM tokens automatically after `init()`, and `setFCMToken()` is available as a manual fallback.
 
 ## Using FCM (Firebase Cloud Messaging) on iOS
 
@@ -240,25 +240,13 @@ When `IOS_DEVICE_TOKEN_HANDLING_MODE` is set to `manual`, the plugin:
 
 No AppDelegate changes are required for either Cordova or Capacitor.
 
-### 4. Set `IOS_DEVICE_TOKEN_HANDLING_MODE` preference to `manual` (required)
+### 4. `IOS_DEVICE_TOKEN_HANDLING_MODE` defaults to `manual`
 
-> **`IOS_DEVICE_TOKEN_HANDLING_MODE: manual`** is **mandatory** when using FCM on iOS.
-> Without it, the Reteno SDK manages APNS tokens directly and FCM tokens will **not** be forwarded — push notifications via Firebase will not work.
+`IOS_DEVICE_TOKEN_HANDLING_MODE` now defaults to `manual` in the plugin, so no extra config is required for the Firebase flow in most cases.
 
-Add the preference to your `config.xml`:
+If you previously overrode it to `automatic`, switch it back to `manual` to use FCM token forwarding.
 
-```xml
-<plugin name="cordova-plugin-reteno">
-  <variable name="SDK_ACCESS_KEY" value="YOUR_RETENO_ACCESS_KEY" />
-  <variable name="IOS_DEVICE_TOKEN_HANDLING_MODE" value="manual" />
-</plugin>
-```
-
-Or pass it when installing the plugin:
-
-```bash
-cordova plugin add cordova-plugin-reteno --variable SDK_ACCESS_KEY="YOUR_KEY" --variable IOS_DEVICE_TOKEN_HANDLING_MODE="manual"
-```
+Only set `automatic` when you intentionally want APNS-only token handling by the native Reteno SDK.
 
 When `IOS_DEVICE_TOKEN_HANDLING_MODE` is `manual` **and** Firebase is configured (either already configured by the app or auto-configured because `GoogleService-Info.plist` is present), the plugin automatically:
 

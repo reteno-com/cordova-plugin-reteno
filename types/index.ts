@@ -96,16 +96,23 @@ export type InAppPauseBehaviour = 'SKIP_IN_APPS' | 'POSTPONE_IN_APPS';
 export type InAppLifecycleEvent = 'beforeDisplay' | 'onDisplay' | 'beforeClose' | 'afterClose' | 'onError';
 
 export type InAppData = {
-  id: string;
+  id?: string;
+};
+
+export type InAppActionData = {
+  isCloseButtonClicked: boolean;
+  isButtonClicked: boolean;
+  isOpenUrlClicked: boolean;
 };
 
 export type InAppCloseData = {
-  id: string;
+  id?: string;//android only
   closeAction: string;
+  action?: InAppActionData;
 };
 
 export type InAppErrorData = {
-  id: string;
+  id?: string;
   errorMessage: string;
 };
 
@@ -115,6 +122,8 @@ export type InAppLifecyclePayload = {
 };
 
 export type InAppLifecycleListener = (payload: InAppLifecyclePayload) => void;
+
+export type InAppStatusHandler = InAppLifecycleListener;
 
 export type NotificationChannelConfig = {
   name: string;

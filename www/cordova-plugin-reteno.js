@@ -354,10 +354,12 @@ function __callWithAutoInit(action, args, success, error) {
 
     setOnInAppLifecycleCallback: function (arg0, arg1) {
       var listener = typeof arg0 === 'function' ? arg0 : arg1;
-      if (listener === null) {
+      if (arg0 === null || listener === null) {
         return __callWithAutoInit('setInAppLifecycleCallback', [null]);
       }
-      if (typeof listener !== 'function') return;
+      if (typeof listener !== 'function') {
+        return Promise.reject(new Error('setOnInAppLifecycleCallback: expected a function or null'));
+      }
       document.addEventListener('reteno-in-app-lifecycle', listener);
       return __callWithAutoInit('setInAppLifecycleCallback', []);
     },

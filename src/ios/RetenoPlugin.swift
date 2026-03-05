@@ -531,6 +531,27 @@ class RetenoPlugin: CDVPlugin {
     commandDelegate.send(result, callbackId: command.callbackId)
   }
 
+  @objc(setInAppLifecycleCallback:)
+  func setInAppLifecycleCallback(_ command: CDVInvokedUrlCommand) {
+    let arg0 = command.arguments.first
+
+    if arg0 == nil || arg0 is NSNull {
+      // Reteno iOS SDK provides only "add" API; installing a no-op handler effectively disables JS events.
+      Reteno.addInAppStatusHandler { _ in }
+      let result = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: 1)
+      commandDelegate.send(result, callbackId: command.callbackId)
+      return
+    }
+
+    Reteno.addInAppStatusHandler { status in
+      let payload = RetenoPlugin.inAppLifecyclePayload(from: status)
+      RetenoPlugin.emitJsEvent("reteno-in-app-lifecycle", payload: payload)
+    }
+
+    let result = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: 1)
+    commandDelegate.send(result, callbackId: command.callbackId)
+  }
+
   // MARK: - App Inbox
 
   @objc(getAppInboxMessages:)
@@ -1353,6 +1374,55 @@ class RetenoPlugin: CDVPlugin {
       }
     }
     return result
+  }
+
+  private static func inAppLifecyclePayload(from status: InAppMessageStatus) -> [AnyHashable: Any] {
+    var data: [AnyHashable: Any] = [:]
+    let eventName: String
+
+    switch status {
+    case .inAppShouldBeDisplayed:
+      eventName = "beforeDisplay"
+    case .inAppIsDisplayed:
+      eventName = "onDisplay"
+    case .inAppShouldBeClosed(let action):
+      eventName = "beforeClose"
+      data["closeAction"] = closeActionName(action)
+      data["action"] = inAppActionPayload(action)
+    case .inAppIsClosed(let action):
+      eventName = "afterClose"
+      data["closeAction"] = closeActionName(action)
+      data["action"] = inAppActionPayload(action)
+    case .inAppReceivedError(let error):
+      eventName = "onError"
+      data["errorMessage"] = error
+    }
+
+    return [
+      "event": eventName,
+      "data": data,
+    ]
+  }
+
+  private static func closeActionName(_ action: InAppMessageAction) -> String {
+    if action.isCloseButtonClicked {
+      return "closeButtonClicked"
+    }
+    if action.isButtonClicked {
+      return "buttonClicked"
+    }
+    if action.isOpenUrlClicked {
+      return "openUrlClicked"
+    }
+    return "unknown"
+  }
+
+  private static func inAppActionPayload(_ action: InAppMessageAction) -> [AnyHashable: Any] {
+    return [
+      "isCloseButtonClicked": action.isCloseButtonClicked,
+      "isButtonClicked": action.isButtonClicked,
+      "isOpenUrlClicked": action.isOpenUrlClicked,
+    ]
   }
 
   private static let isoFormatter: ISO8601DateFormatter = {

@@ -268,6 +268,48 @@ This call fails with an error if:
 - `FirebaseApp.configure()` has not been called (`GoogleService-Info.plist` missing or configure not called).
 - The FCM token is not yet available (APNS token has not been received yet — ensure `registerForRemoteNotifications` has been called).
 
+## In-App Status Handler (iOS)
+
+Official reference: https://docs.reteno.com/reference/ios-sdk-in-app-status-handler
+
+The plugin now bridges Reteno iOS `addInAppStatusHandler(...)` into JS through `reteno-in-app-lifecycle` events.
+
+Use:
+
+```js
+function onInAppStatus(event) {
+  const detail = event.detail || event;
+  console.log('In-app status:', detail.event, detail.data);
+}
+
+await retenosdk.setOnInAppLifecycleCallback(onInAppStatus);
+```
+
+To unsubscribe:
+
+```js
+await retenosdk.setOnInAppLifecycleCallback(null);
+```
+
+Status mapping used by the plugin:
+
+- `inAppShouldBeDisplayed` -> `beforeDisplay`
+- `inAppIsDisplayed` -> `onDisplay`
+- `inAppShouldBeClosed(action)` -> `beforeClose`
+- `inAppIsClosed(action)` -> `afterClose`
+- `inAppReceivedError(error)` -> `onError`
+
+Payload notes for iOS:
+
+- Display events (`beforeDisplay`, `onDisplay`) include an empty `data` object (iOS SDK does not provide an in-app message ID, unlike Android).
+- Close events (`beforeClose`, `afterClose`) include:
+  - `data.closeAction` — one of: `"closeButtonClicked"`, `"buttonClicked"`, `"openUrlClicked"`, `"unknown"`
+  - `data.action` — object with boolean flags:
+    - `isCloseButtonClicked`
+    - `isButtonClicked`
+    - `isOpenUrlClicked`
+- Error events (`onError`) include `data.errorMessage` (string).
+
 ## Custom Notification Behavior (optional)
 
 If you need custom behavior without editing native AppDelegate, the plugin provides optional helpers.

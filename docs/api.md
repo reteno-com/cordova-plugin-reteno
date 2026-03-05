@@ -35,7 +35,7 @@ Notes:
 | [setNotificationActionHandler](../www/cordova-plugin-reteno.js)    | iOS, Android       | On iOS, installs the native action button handler when both `enabled` (default: `true`) and `emitEvent` are true — e.g. `{ emitEvent: true }` or `{ enabled: true, emitEvent: true }`. Any other value (e.g. `false`, `null`, `true`, `{ enabled: true }`) clears the handler. On Android, this is a no-op (button clicks are detected automatically). [Types](../types/index.ts) |
 | [setOnInAppMessageCustomDataReceivedListener](../www/cordova-plugin-reteno.js) | Android            | Sets listener for in-app message custom data events.                                                                                              |
 | [removeOnInAppMessageCustomDataReceivedListener](../www/cordova-plugin-reteno.js) | Android            | Removes listener for in-app message custom data events.                                                                                            |
-| [setOnInAppLifecycleCallback](../www/cordova-plugin-reteno.js)    | Android            | Subscribes to in-app message lifecycle events (beforeDisplay, onDisplay, beforeClose, afterClose, onError). Pass `null` to unsubscribe. [Types](../types/index.ts) |
+| [setOnInAppLifecycleCallback](../www/cordova-plugin-reteno.js)    | iOS, Android       | Subscribes to in-app status/lifecycle events (beforeDisplay, onDisplay, beforeClose, afterClose, onError). Pass `null` to unsubscribe. [Types](../types/index.ts) |
 | [init](../www/cordova-plugin-reteno.js)                            | iOS, Android       | Initializes Reteno SDK. Accepts optional `RetenoInitializeOptions` with `pauseInAppMessages`, `pausePushInAppMessages`, `lifecycleTrackingOptions` and `isAutomaticScreenReportingEnabled` (iOS only). [Types](../types/index.ts) |
 | [requestNotificationPermission](../www/cordova-plugin-reteno.js)   | iOS, Android       | Requests push permission (iOS) or `POST_NOTIFICATIONS` (Android 13+). Returns `0` or `1` on Android (`RequestNotificationPermissionResult`) in [types](../types/index.ts). |
 | [setWillPresentNotificationOptions](../www/cordova-plugin-reteno.js) | iOS               | Sets presentation options for foreground notifications. Optionally emits `reteno-push-received`. [Types](../types/index.ts)                        |
@@ -288,18 +288,32 @@ retenosdk.setInAppMessagesPauseBehaviour('POSTPONE_IN_APPS')
 
 ### setOnInAppLifecycleCallback example
 
-Subscribe to in-app message lifecycle events. The listener receives events with `event` (lifecycle stage) and `data` (context-specific payload). Types: `InAppLifecyclePayload`, `InAppData`, `InAppCloseData`, `InAppErrorData` in [types](../types/index.ts).
+Subscribe to in-app message status/lifecycle events. The listener receives events with `event` (lifecycle stage) and `data` (context-specific payload). Types: `InAppLifecyclePayload`, `InAppData`, `InAppCloseData`, `InAppErrorData` in [types](../types/index.ts).
 
 ```js
-function onInAppLifecycle(event) {
+function onInAppStatus(event) {
   var detail = event.detail || event;
-  console.log('In-app lifecycle:', detail.event, detail.data);
+  console.log('In-app status:', detail.event, detail.data);
   // detail.event is one of: 'beforeDisplay', 'onDisplay', 'beforeClose', 'afterClose', 'onError'
-  // detail.data contains: { id } for display events,
-  //   { id, closeAction } for close events, { id, errorMessage } for error events
+  //
+  // detail.data per platform:
+  //
+  // | Event          | Android                        | iOS                                          |
+  // |----------------|--------------------------------|----------------------------------------------|
+  // | beforeDisplay  | { id }                         | {} (empty)                                   |
+  // | onDisplay      | { id }                         | {} (empty)                                   |
+  // | beforeClose    | { id, closeAction }            | { closeAction, action }                      |
+  // | afterClose     | { id, closeAction }            | { closeAction, action }                      |
+  // | onError        | { id, errorMessage }           | { errorMessage }                             |
+  //
+  // closeAction values:
+  //   Android: string from native SDK (e.g. via InAppCloseData.getCloseAction())
+  //   iOS:     "closeButtonClicked", "buttonClicked", "openUrlClicked", or "unknown"
+  //
+  // action (iOS only): { isCloseButtonClicked, isButtonClicked, isOpenUrlClicked }
 }
 
-retenosdk.setOnInAppLifecycleCallback(onInAppLifecycle);
+retenosdk.setOnInAppLifecycleCallback(onInAppStatus);
 
 // Later, to unsubscribe:
 retenosdk.setOnInAppLifecycleCallback(null);

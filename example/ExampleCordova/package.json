@@ -12,7 +12,7 @@
     "run:android:emulator": "cordova run android --emulator",
     "publish:ios:testflight": "npm run build:ios:debug && bundle install && bundle exec fastlane ios testflight --env testflight",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "add:plugin": "cordova plugin add \"file:/Users/serhiiporaiko/projects/Yalantis/reteno-cordova/cordova-plugin-reteno-0.0.1.tgz\" --variable SDK_ACCESS_KEY=630A66AF-C1D3-4F2A-ACC1-0D51C38D2B05"
+    "add:plugin": "cordova plugin add \"file:/Users/serhiiporaiko/projects/Yalantis/reteno-cordova/cordova-plugin-reteno-0.0.1.tgz\" --variable SDK_ACCESS_KEY=630A66AF-C1D3-4F2A-ACC1-0D51C38D2B05 --variable IOS_DEVICE_TOKEN_HANDLING_MODE=manual"
   },
   "keywords": [
     "ecosystem:cordova"
@@ -33,7 +33,8 @@
     ],
     "plugins": {
       "cordova-plugin-reteno": {
-        "SDK_ACCESS_KEY": "630A66AF-C1D3-4F2A-ACC1-0D51C38D2B05"
+        "SDK_ACCESS_KEY": "630A66AF-C1D3-4F2A-ACC1-0D51C38D2B05",
+        "IOS_DEVICE_TOKEN_HANDLING_MODE": "manual"
       },
       "cordova-plugin-app-version": {}
     }

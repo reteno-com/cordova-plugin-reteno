@@ -54,6 +54,7 @@ export class MainPage implements OnInit {
               console.warn('setFCMToken: WARN', err);
             });
         }
+        return Promise.resolve();
       })
       .catch((err) => {
         // eslint-disable-next-line no-console

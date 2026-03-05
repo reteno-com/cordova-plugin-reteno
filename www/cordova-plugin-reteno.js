@@ -133,6 +133,7 @@ function __callWithAutoInit(action, args, success, error) {
           accessKey?: string,
           pauseInAppMessages?: boolean,
           pausePushInAppMessages?: boolean,
+          inAppMessagesPauseBehaviour?: 'SKIP_IN_APPS' | 'POSTPONE_IN_APPS',
           isAutomaticScreenReportingEnabled?: boolean,
           isDebugMode?: boolean,
           lifecycleTrackingOptions?: { appLifecycleEnabled?: boolean, pushSubscriptionEnabled?: boolean, sessionEventsEnabled?: boolean }

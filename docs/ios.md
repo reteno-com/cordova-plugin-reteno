@@ -317,8 +317,11 @@ Official reference: https://docs.reteno.com/reference/ios-sdk-in-apps-pause
 The plugin supports both initialization-time and runtime in-app pause controls on iOS:
 
 ```js
-// Start SDK with in-apps paused
-await retenosdk.init({ pauseInAppMessages: true });
+// Start SDK with in-apps paused and configure pause behaviour
+await retenosdk.init({
+  pauseInAppMessages: true,
+  inAppMessagesPauseBehaviour: 'SKIP_IN_APPS', // or 'POSTPONE_IN_APPS'
+});
 
 // Runtime pause/resume
 await retenosdk.pauseInAppMessages(true);  // pause
@@ -396,6 +399,29 @@ Lifecycle tracking note for iOS:
 
 - iOS lifecycle tracking is configured during SDK initialization (`retenosdk.init({ lifecycleTrackingOptions: ... })`).
 - Calling `setLifecycleTrackingOptions(...)` after initialization is not supported on iOS.
+- `lifecycleTrackingOptions` accepts:
+  - `'ALL'` -> enables app lifecycle, push subscription, and session event tracking.
+  - `'NONE'` -> disables app lifecycle, push subscription, and session event tracking.
+  - object:
+    - `appLifecycleEnabled`
+    - `pushSubscriptionEnabled`
+    - `sessionEventsEnabled`
+
+## App Lifecycle Events (iOS)
+
+Official reference: https://docs.reteno.com/reference/ios-app-lifecycle-events
+
+When automatic tracking is enabled, the native iOS SDK can report these events:
+
+- `ApplicationInstalled`
+- `ApplicationUpdated`
+- `ApplicationOpened`
+- `ApplicationBackgrounded`
+
+Related automatic events controlled by the same init options:
+
+- Push subscription status events (`pushSubscriptionEnabled`)
+- Session events (`sessionEventsEnabled`)
 
 Screen view tracking note for iOS:
 

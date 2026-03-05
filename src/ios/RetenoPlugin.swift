@@ -47,7 +47,38 @@ class RetenoPlugin: CDVPlugin {
     }
 
     let pauseInAppMessages = (options["pauseInAppMessages"] as? Bool) ?? false
-    let lifecycleOptions = parseLifecycleTrackingOptions(options["lifecycleTrackingOptions"])
+    let inAppMessagesPauseBehaviourInput = options["inAppMessagesPauseBehaviour"]
+    let inAppMessagesPauseBehaviour: PauseBehaviour
+    if let inAppMessagesPauseBehaviourInput, !(inAppMessagesPauseBehaviourInput is NSNull) {
+      guard let parsed = parseInAppMessagesPauseBehaviour(inAppMessagesPauseBehaviourInput) else {
+        sendError(
+          "Invalid argument: inAppMessagesPauseBehaviour. Expected 'SKIP_IN_APPS' or 'POSTPONE_IN_APPS'.",
+          to: command
+        )
+        return
+      }
+      inAppMessagesPauseBehaviour = parsed
+    } else {
+      inAppMessagesPauseBehaviour = .postponeInApps
+    }
+    let lifecycleOptionsInput = options["lifecycleTrackingOptions"]
+    let lifecycleOptions: (
+      appLifecycleEnabled: Bool,
+      pushSubscriptionEnabled: Bool,
+      sessionEventsEnabled: Bool
+    )?
+    if let lifecycleOptionsInput, !(lifecycleOptionsInput is NSNull) {
+      guard let parsedOptions = parseLifecycleTrackingOptions(lifecycleOptionsInput) else {
+        sendError(
+          "Invalid argument: lifecycleTrackingOptions. Expected 'ALL', 'NONE', or { appLifecycleEnabled, pushSubscriptionEnabled, sessionEventsEnabled }.",
+          to: command
+        )
+        return
+      }
+      lifecycleOptions = parsedOptions
+    } else {
+      lifecycleOptions = nil
+    }
     let lifecycleAppEnabled = lifecycleOptions?.appLifecycleEnabled ?? true
     let lifecyclePushEnabled = lifecycleOptions?.pushSubscriptionEnabled ?? true
     let lifecycleSessionEnabled = lifecycleOptions?.sessionEventsEnabled ?? true
@@ -68,6 +99,7 @@ class RetenoPlugin: CDVPlugin {
       isAutomaticPushSubsriptionReportingEnabled: lifecyclePushEnabled,
       isAutomaticSessionReportingEnabled: lifecycleSessionEnabled,
       isPausedInAppMessages: pauseInAppMessages,
+      inAppMessagesPauseBehaviour: inAppMessagesPauseBehaviour,
       isDebugMode: isDebugMode,
       deviceTokenHandlingMode: deviceTokenMode
     )
@@ -1317,6 +1349,18 @@ class RetenoPlugin: CDVPlugin {
       pushSubscriptionEnabled: (payload["pushSubscriptionEnabled"] as? Bool) ?? true,
       sessionEventsEnabled: (payload["sessionEventsEnabled"] as? Bool) ?? true
     )
+  }
+
+  private func parseInAppMessagesPauseBehaviour(_ value: Any?) -> PauseBehaviour? {
+    guard let raw = stringValue(value) else { return nil }
+    switch raw.uppercased() {
+    case "SKIP_IN_APPS":
+      return .skipInApps
+    case "POSTPONE_IN_APPS":
+      return .postponeInApps
+    default:
+      return nil
+    }
   }
 
   private func parseIso8601Date(_ value: String) -> Date? {

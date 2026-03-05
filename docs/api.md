@@ -13,7 +13,7 @@ Notes:
 | [setUserAttributes](../www/cordova-plugin-reteno.js)               | iOS, Android       | [Types](../types/index.ts)                                                                                                                        |
 | [setAnonymousUserAttributes](../www/cordova-plugin-reteno.js)      | iOS, Android       | [Types](../types/index.ts)                                                                                                                        |
 | [setMultiAccountUserAttributes](../www/cordova-plugin-reteno.js)   | iOS, Android       | [Types](../types/index.ts)                                                                                                                        |
-| [setLifecycleTrackingOptions](../www/cordova-plugin-reteno.js)     | iOS, Android       | Android: applies immediately. iOS: supported only before initialization (stored and applied during `init(...)`). [Types](../types/index.ts)      |
+| [setLifecycleTrackingOptions](../www/cordova-plugin-reteno.js)     | iOS, Android       | Configures automatic tracking for app lifecycle, push subscription, and session events. Android: applies immediately. iOS: supported only before initialization (stored and applied during `init(...)`). [Types](../types/index.ts)      |
 | [setDeviceToken](../www/cordova-plugin-reteno.js)                  | iOS, Android       | Forwards the device token to Reteno (use when another plugin owns push callbacks/token, e.g. Firebasex messaging enabled).                        |
 | [setFCMToken](../www/cordova-plugin-reteno.js)                     | iOS                | Manual fallback for iOS Firebase flow: fetches current FCM token from Firebase and forwards it to Reteno. Requires `IOS_DEVICE_TOKEN_HANDLING_MODE=manual` (plugin default), `FirebaseMessaging` pod, and configured `GoogleService-Info.plist`. |
 | [logEvent](../www/cordova-plugin-reteno.js)                        | iOS, Android       | [Types](../types/index.ts)                                                                                                                        |
@@ -36,7 +36,7 @@ Notes:
 | [setOnInAppMessageCustomDataReceivedListener](../www/cordova-plugin-reteno.js) | Android            | Sets listener for in-app message custom data events.                                                                                              |
 | [removeOnInAppMessageCustomDataReceivedListener](../www/cordova-plugin-reteno.js) | Android            | Removes listener for in-app message custom data events.                                                                                            |
 | [setOnInAppLifecycleCallback](../www/cordova-plugin-reteno.js)    | iOS, Android       | Subscribes to in-app status/lifecycle events (beforeDisplay, onDisplay, beforeClose, afterClose, onError). Pass `null` to unsubscribe. [Types](../types/index.ts) |
-| [init](../www/cordova-plugin-reteno.js)                            | iOS, Android       | Initializes Reteno SDK. Accepts optional `RetenoInitializeOptions` with `pauseInAppMessages`, `pausePushInAppMessages`, `lifecycleTrackingOptions` and `isAutomaticScreenReportingEnabled` (iOS only). [Types](../types/index.ts) |
+| [init](../www/cordova-plugin-reteno.js)                            | iOS, Android       | Initializes Reteno SDK. Accepts optional `RetenoInitializeOptions` with `pauseInAppMessages`, `pausePushInAppMessages`, `inAppMessagesPauseBehaviour` (iOS), `lifecycleTrackingOptions` and `isAutomaticScreenReportingEnabled` (iOS only). [Types](../types/index.ts) |
 | [requestNotificationPermission](../www/cordova-plugin-reteno.js)   | iOS, Android       | Requests push permission (iOS) or `POST_NOTIFICATIONS` (Android 13+). Returns `0` or `1` on Android (`RequestNotificationPermissionResult`) in [types](../types/index.ts). |
 | [setWillPresentNotificationOptions](../www/cordova-plugin-reteno.js) | iOS               | Sets presentation options for foreground notifications. Optionally emits `reteno-push-received`. [Types](../types/index.ts)                        |
 | [setDidReceiveNotificationResponseHandler](../www/cordova-plugin-reteno.js) | iOS          | Enables a response handler for notification taps. Optionally emits `reteno-notification-clicked`. [Types](../types/index.ts)                       |
@@ -65,7 +65,8 @@ retenosdk.init()
 // Initialize with in-app messages paused and lifecycle tracking configured.
 // pauseInAppMessages: pauses all in-app messages until resumed.
 // pausePushInAppMessages: pauses in-app messages triggered by push notifications.
-// lifecycleTrackingOptions: configures lifecycle event tracking ('ALL', 'NONE', or an object).
+// inAppMessagesPauseBehaviour: (iOS) defines handling while paused: 'SKIP_IN_APPS' or 'POSTPONE_IN_APPS'.
+// lifecycleTrackingOptions: configures app lifecycle, push subscription, and session event tracking ('ALL', 'NONE', or an object).
 // isAutomaticScreenReportingEnabled: (iOS only) enables automatic screen view tracking via the native SDK.
 //   Defaults to false. When disabled, use logScreenView() for manual tracking.
 // isDebugMode: enables debug mode for near real-time event monitoring in the Reteno dashboard.
@@ -73,6 +74,7 @@ retenosdk.init()
 retenosdk.init({
   pauseInAppMessages: true,
   pausePushInAppMessages: false,
+  inAppMessagesPauseBehaviour: 'SKIP_IN_APPS', // iOS
   isAutomaticScreenReportingEnabled: true, // iOS only
   isDebugMode: true, // enables debug mode
   lifecycleTrackingOptions: {
@@ -212,6 +214,7 @@ retenosdk.setLifecycleTrackingOptions('NONE');
 ```
 
 If `init()` has already started/completed on iOS, `setLifecycleTrackingOptions(...)` returns an error.
+Invalid values (anything except `'ALL'`, `'NONE'`, or an object with known fields) return an error.
 
 ### logEvent payload example
 
@@ -273,6 +276,7 @@ retenosdk.pauseInAppMessages(false)
 ### setInAppMessagesPauseBehaviour example
 
 Configure how paused in-app messages are handled. Type: `InAppPauseBehaviour` in [types](../types/index.ts).
+On iOS, you can also preconfigure this during `init(...)` via `inAppMessagesPauseBehaviour`.
 
 ```js
 // Discard messages received while paused

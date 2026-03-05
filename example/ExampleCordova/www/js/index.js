@@ -235,6 +235,7 @@ function onDeviceReady() {
     if (initLifecycleAppEl && !initLifecycleAppEl.checked) initLifecycleAppEl.checked = true;
     if (initLifecyclePushEl && !initLifecyclePushEl.checked) initLifecyclePushEl.checked = true;
     if (initLifecycleSessionEl && !initLifecycleSessionEl.checked) initLifecycleSessionEl.checked = true;
+    if (initScreenReportingEl && initScreenReportingEl.checked) initScreenReportingEl.checked = false;
     if (initPauseInAppEl && initPauseInAppEl.checked) initPauseInAppEl.checked = false;
     if (initPausePushInAppEl && initPausePushInAppEl.checked) initPausePushInAppEl.checked = false;
     if (inAppPauseToggle && inAppPauseToggle.checked) inAppPauseToggle.checked = false;
@@ -631,10 +632,12 @@ function onDeviceReady() {
     var initPromise = null;
 
     function buildInitOptions() {
+        var isIos = cordova && cordova.platformId === 'ios';
         var options = {
             pauseInAppMessages: !!(initPauseInAppEl && initPauseInAppEl.checked),
             pausePushInAppMessages: !!(initPausePushInAppEl && initPausePushInAppEl.checked),
-            isAutomaticScreenReportingEnabled: !!(initScreenReportingEl && initScreenReportingEl.checked),
+            // Keep native screen auto-tracking disabled in hybrid demos.
+            isAutomaticScreenReportingEnabled: isIos && !!(initScreenReportingEl && initScreenReportingEl.checked),
             isDebugMode: true,
             lifecycleTrackingOptions: {
                 appLifecycleEnabled: !!(initLifecycleAppEl && initLifecycleAppEl.checked),

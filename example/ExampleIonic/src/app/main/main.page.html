@@ -51,8 +51,8 @@
         @if (isIos) {
           <ion-item>
             <ion-toggle
-              [checked]="initScreenReporting"
-              (ionChange)="initScreenReporting = $event.detail.checked; onInitOptionsChanged()"
+              [checked]="false"
+              [disabled]="true"
             >
               isAutomaticScreenReportingEnabled (iOS)
             </ion-toggle>

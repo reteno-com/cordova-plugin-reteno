@@ -36,7 +36,7 @@ Notes:
 | [setOnInAppMessageCustomDataReceivedListener](../www/cordova-plugin-reteno.js) | Android            | Sets listener for in-app message custom data events.                                                                                              |
 | [removeOnInAppMessageCustomDataReceivedListener](../www/cordova-plugin-reteno.js) | Android            | Removes listener for in-app message custom data events.                                                                                            |
 | [setOnInAppLifecycleCallback](../www/cordova-plugin-reteno.js)    | iOS, Android       | Subscribes to in-app status/lifecycle events (beforeDisplay, onDisplay, beforeClose, afterClose, onError). Pass `null` to unsubscribe. [Types](../types/index.ts) |
-| [init](../www/cordova-plugin-reteno.js)                            | iOS, Android       | Initializes Reteno SDK. Accepts optional `RetenoInitializeOptions` with `pauseInAppMessages`, `pausePushInAppMessages`, `inAppMessagesPauseBehaviour` (iOS), `lifecycleTrackingOptions` and `isAutomaticScreenReportingEnabled` (iOS only). [Types](../types/index.ts) |
+| [init](../www/cordova-plugin-reteno.js)                            | iOS, Android       | Initializes Reteno SDK. Accepts optional `RetenoInitializeOptions` with `pauseInAppMessages`, `pausePushInAppMessages`, `inAppMessagesPauseBehaviour` (iOS), `lifecycleTrackingOptions` and `isAutomaticScreenReportingEnabled` (iOS; see note below). [Types](../types/index.ts) |
 | [requestNotificationPermission](../www/cordova-plugin-reteno.js)   | iOS, Android       | Requests push permission (iOS) or `POST_NOTIFICATIONS` (Android 13+). Returns `0` or `1` on Android (`RequestNotificationPermissionResult`) in [types](../types/index.ts). |
 | [setWillPresentNotificationOptions](../www/cordova-plugin-reteno.js) | iOS               | Sets presentation options for foreground notifications. Optionally emits `reteno-push-received`. [Types](../types/index.ts)                        |
 | [setDidReceiveNotificationResponseHandler](../www/cordova-plugin-reteno.js) | iOS          | Enables a response handler for notification taps. Optionally emits `reteno-notification-clicked`. [Types](../types/index.ts)                       |
@@ -67,15 +67,21 @@ retenosdk.init()
 // pausePushInAppMessages: pauses in-app messages triggered by push notifications.
 // inAppMessagesPauseBehaviour: (iOS) defines handling while paused: 'SKIP_IN_APPS' or 'POSTPONE_IN_APPS'.
 // lifecycleTrackingOptions: configures app lifecycle, push subscription, and session event tracking ('ALL', 'NONE', or an object).
-// isAutomaticScreenReportingEnabled: (iOS only) enables automatic screen view tracking via the native SDK.
-//   Defaults to false. When disabled, use logScreenView() for manual tracking.
+// isAutomaticScreenReportingEnabled: enables automatic native screen view tracking on iOS.
+//   Keep this false in Cordova/Ionic WebView apps (including Android demos).
+//   Defaults to false. Note: in Cordova/Ionic apps the UI runs inside a single WebView,
+//   so automatic tracking captures native UIViewController transitions (e.g. CDVViewController),
+//   NOT your JS screen navigations. For meaningful screen tracking, use logScreenView()
+//   manually (e.g. by subscribing to your router's navigation events).
+//   On Android the native SDK tracks Fragment transitions, which is equally irrelevant
+//   in a WebView-based app — use logScreenView() instead.
 // isDebugMode: enables debug mode for near real-time event monitoring in the Reteno dashboard.
 //   Use only with test devices or developer accounts.
 retenosdk.init({
   pauseInAppMessages: true,
   pausePushInAppMessages: false,
   inAppMessagesPauseBehaviour: 'SKIP_IN_APPS', // iOS
-  isAutomaticScreenReportingEnabled: true, // iOS only
+  isAutomaticScreenReportingEnabled: false, // keep false for hybrid/WebView apps
   isDebugMode: true, // enables debug mode
   lifecycleTrackingOptions: {
     appLifecycleEnabled: true,

@@ -63,10 +63,11 @@ export class MainPage implements OnInit {
   }
 
   onInitOptionsChanged(): void {
+    this.initScreenReporting = false;
     this.reteno.setInitOptions({
       pauseInAppMessages: this.initPauseInAppMessages,
       pausePushInAppMessages: this.initPausePushInAppMessages,
-      isAutomaticScreenReportingEnabled: this.initScreenReporting,
+      isAutomaticScreenReportingEnabled: false,
       lifecycleTrackingOptions: {
         appLifecycleEnabled: this.initLifecycleApp,
         pushSubscriptionEnabled: this.initLifecyclePush,
@@ -87,7 +88,7 @@ export class MainPage implements OnInit {
     const options = this.reteno.getInitOptions();
     this.initPauseInAppMessages = options.pauseInAppMessages;
     this.initPausePushInAppMessages = options.pausePushInAppMessages;
-    this.initScreenReporting = options.isAutomaticScreenReportingEnabled;
+    this.initScreenReporting = false;
     this.initLifecycleApp = options.lifecycleTrackingOptions.appLifecycleEnabled;
     this.initLifecyclePush = options.lifecycleTrackingOptions.pushSubscriptionEnabled;
     this.initLifecycleSession = options.lifecycleTrackingOptions.sessionEventsEnabled;

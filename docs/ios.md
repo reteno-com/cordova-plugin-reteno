@@ -423,7 +423,9 @@ Related automatic events controlled by the same init options:
 - Push subscription status events (`pushSubscriptionEnabled`)
 - Session events (`sessionEventsEnabled`)
 
-Screen view tracking note for iOS:
+Screen view tracking:
 
-- **Automatic** — pass `isAutomaticScreenReportingEnabled: true` to `retenosdk.init(...)`. The native SDK will track screen transitions automatically. Defaults to `false`.
-- **Manual** — call `retenosdk.logScreenView(screenName)` on each navigation event. This works on both iOS and Android regardless of `isAutomaticScreenReportingEnabled`.
+- **Manual (recommended for Cordova/Ionic)** — call `retenosdk.logScreenView(screenName)` on each navigation event (for example, by subscribing to your router's navigation events). This works on both iOS and Android and tracks the actual JS screens your users see.
+- **Automatic** — pass `isAutomaticScreenReportingEnabled: true` to `retenosdk.init(...)`. The native iOS SDK will track `UIViewController` transitions automatically. Defaults to `false`.
+
+> **Note on automatic screen tracking in hybrid apps:** In Cordova/Ionic the entire UI runs inside a single WebView, so automatic tracking only captures native controller transitions (e.g. `CDVViewController`), not your JS screen navigations. The same applies to Android, where the native SDK's `autoScreenTracking` monitors `Fragment` transitions. For meaningful screen analytics in a hybrid app, always use `logScreenView()` manually.

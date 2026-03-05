@@ -68,6 +68,48 @@ function findTargetsByName(project, targetName) {
     .filter(({ target }) => unquote(target && target.name) === normalizedName);
 }
 
+function findTargetByName(project, targetName) {
+  return findTargetsByName(project, targetName)[0] || null;
+}
+
+function ensureMainAppInfoPlistRef(project) {
+  const groups = project.hash.project.objects.PBXGroup || {};
+  const appGroupKey = Object.keys(groups).find((k) => {
+    if (k.endsWith('_comment')) return false;
+    const g = groups[k];
+    if (!g) return false;
+    const groupName = unquote(g.name || '');
+    const groupPath = unquote(g.path || '');
+    return groupPath === APP_NAME || groupName === APP_NAME;
+  });
+  if (!appGroupKey) return false;
+
+  const appGroup = groups[appGroupKey];
+  if (!Array.isArray(appGroup.children)) return false;
+
+  const infoChild = appGroup.children.find((c) => String(c.comment || '') === 'Info.plist');
+  if (!infoChild || !infoChild.value) return false;
+
+  const refs = project.pbxFileReferenceSection();
+  const ref = refs[infoChild.value];
+  if (!ref) return false;
+
+  let changed = false;
+  if (unquote(ref.path) !== 'Info.plist') {
+    ref.path = 'Info.plist';
+    changed = true;
+  }
+  if (ref.sourceTree !== '"<group>"') {
+    ref.sourceTree = '"<group>"';
+    changed = true;
+  }
+  if (ref.name) {
+    delete ref.name;
+    changed = true;
+  }
+  return changed;
+}
+
 function setTargetBuildSettings(project, targetUuid, settings) {
   const nativeTargets = project.pbxNativeTargetSection();
   const configListId = nativeTargets[targetUuid] && nativeTargets[targetUuid].buildConfigurationList;
@@ -125,6 +167,132 @@ function disableEmbedCopyOnlyWhenInstalling(project) {
       phase.runOnlyForDeploymentPostprocessing = 0;
     }
   });
+}
+
+function findFirstEmbedAppExtensionsPhase(project) {
+  const phases = project.hash.project.objects.PBXCopyFilesBuildPhase || {};
+  for (const key of nonCommentKeys(phases)) {
+    const phase = phases[key];
+    if (!phase) continue;
+    const commentKey = `${key}_comment`;
+    if (phases[commentKey] === 'Embed App Extensions' || phase.name === '"Embed App Extensions"') {
+      return { key, phase, phases };
+    }
+  }
+  return null;
+}
+
+function findFileRefByName(project, fileName) {
+  const refs = project.pbxFileReferenceSection();
+  for (const key of nonCommentKeys(refs)) {
+    const ref = refs[key];
+    if (!ref) continue;
+    const refName = unquote(ref.name);
+    const refPath = unquote(ref.path);
+    if (refName === fileName || refPath === fileName) {
+      return key;
+    }
+  }
+  return null;
+}
+
+function ensureAppexInEmbedAppExtensions(project, appexName) {
+  const embed = findFirstEmbedAppExtensionsPhase(project);
+  if (!embed) return false;
+
+  const { phase } = embed;
+  if (!Array.isArray(phase.files)) {
+    phase.files = [];
+  }
+
+  // Already embedded.
+  if (phase.files.some((f) => (f && String(f.comment || '').includes(`${appexName} in Embed App Extensions`)))) {
+    return false;
+  }
+
+  const fileRefUuid = findFileRefByName(project, appexName);
+  if (!fileRefUuid) return false;
+
+  const buildFiles = project.pbxBuildFileSection();
+  let template = null;
+  for (const bfKey of nonCommentKeys(buildFiles)) {
+    const entry = buildFiles[bfKey];
+    if (!entry || !entry.fileRef) continue;
+    if (String(entry.fileRef).includes('NotificationServiceExtension.appex')) {
+      template = entry;
+      break;
+    }
+  }
+
+  const buildFileUuid = project.generateUuid();
+  const buildFileComment = `${appexName} in Embed App Extensions`;
+  const fileRefComment = `${appexName}`;
+
+  if (template) {
+    const cloned = JSON.parse(JSON.stringify(template));
+    cloned.fileRef = `${fileRefUuid} /* ${fileRefComment} */`;
+    buildFiles[buildFileUuid] = cloned;
+  } else {
+    buildFiles[buildFileUuid] = {
+      isa: 'PBXBuildFile',
+      fileRef: `${fileRefUuid} /* ${fileRefComment} */`,
+      settings: { ATTRIBUTES: ['RemoveHeadersOnCopy'] },
+    };
+  }
+  buildFiles[`${buildFileUuid}_comment`] = buildFileComment;
+
+  phase.files.push({
+    value: buildFileUuid,
+    comment: buildFileComment,
+  });
+
+  return true;
+}
+
+function removeAppexFromCopyFilesPhases(project, appexName, appTargetUuid) {
+  const phases = project.hash.project.objects.PBXCopyFilesBuildPhase || {};
+  const buildFiles = project.pbxBuildFileSection();
+  const targets = project.pbxNativeTargetSection();
+  const appTarget = appTargetUuid ? targets[appTargetUuid] : null;
+  let changed = false;
+
+  nonCommentKeys(phases).forEach((phaseKey) => {
+    const phase = phases[phaseKey];
+    if (!phase || !Array.isArray(phase.files)) return;
+    const commentKey = `${phaseKey}_comment`;
+    const phaseName = phases[commentKey] || unquote(phase.name);
+    if (phaseName !== 'Copy Files' && phaseName !== '"Copy Files"') return;
+
+    const kept = [];
+    const removedBuildFileUuids = [];
+
+    phase.files.forEach((fileRef) => {
+      const comment = String((fileRef && fileRef.comment) || '');
+      if (comment.includes(appexName)) {
+        removedBuildFileUuids.push(fileRef.value);
+        changed = true;
+      } else {
+        kept.push(fileRef);
+      }
+    });
+
+    phase.files = kept;
+
+    removedBuildFileUuids.forEach((uuid) => {
+      delete buildFiles[uuid];
+      delete buildFiles[`${uuid}_comment`];
+    });
+
+    // Remove empty "Copy Files" phase from App target to avoid future duplicates.
+    if (phase.files.length === 0 && appTarget && Array.isArray(appTarget.buildPhases)) {
+      appTarget.buildPhases = appTarget.buildPhases.filter((bp) => bp.value !== phaseKey);
+      delete phases[phaseKey];
+      delete phases[commentKey];
+      changed = true;
+    }
+  });
+
+  return changed;
 }
 
 /**
@@ -237,6 +405,7 @@ final class NotificationViewController: RetenoCarouselNotificationViewController
 
   const extensionRelDir = `${APP_NAME}/${EXTENSION_NAME}`;
   let nceTargetUuid;
+  const appTarget = findTargetByName(project, APP_NAME);
 
   if (existingTargets.length === 1) {
     log(`'${EXTENSION_NAME}' target already exists — skipping target creation.`);
@@ -267,27 +436,29 @@ final class NotificationViewController: RetenoCarouselNotificationViewController
     }
   }
 
-  // Normalize any prefixed file reference paths the xcode module may have set.
+  // Normalize file refs so they always resolve from SOURCE_ROOT, not from an implicit group path.
+  const nceVcPath = `${extensionRelDir}/NotificationViewController.swift`;
   const fileRefs = project.pbxFileReferenceSection();
   nonCommentKeys(fileRefs).forEach((key) => {
     const ref = fileRefs[key];
     if (!ref || typeof ref.path !== 'string') return;
     const raw = unquote(ref.path);
-    if (raw === `${EXTENSION_NAME}/NotificationViewController.swift`) {
-      ref.path = '"NotificationViewController.swift"';
+    if (
+      raw === 'NotificationViewController.swift' ||
+      raw === `${EXTENSION_NAME}/NotificationViewController.swift` ||
+      raw === nceVcPath
+    ) {
+      ref.path = `"${nceVcPath}"`;
       ref.name = '"NotificationViewController.swift"';
-    } else if (raw === `${EXTENSION_NAME}/Info.plist`) {
-      ref.path = '"Info.plist"';
-      ref.name = '"Info.plist"';
+      ref.sourceTree = 'SOURCE_ROOT';
     }
   });
 
   if (
-    !hasFilePath(project, `${EXTENSION_NAME}/NotificationViewController.swift`) &&
-    !hasFilePath(project, 'NotificationViewController.swift')
+    !hasFilePath(project, nceVcPath)
   ) {
     project.addSourceFile(
-      'NotificationViewController.swift',
+      nceVcPath,
       { target: nceTargetUuid },
       nceGroupKey
     );
@@ -295,7 +466,7 @@ final class NotificationViewController: RetenoCarouselNotificationViewController
 
   if (
     !hasFilePath(project, `${EXTENSION_NAME}/Info.plist`) &&
-    !hasFilePath(project, 'Info.plist')
+    !hasFilePath(project, `${extensionRelDir}/Info.plist`)
   ) {
     project.addFile('Info.plist', nceGroupKey);
   }
@@ -311,7 +482,10 @@ final class NotificationViewController: RetenoCarouselNotificationViewController
     TARGETED_DEVICE_FAMILY: '"1,2"',
   });
 
+  ensureMainAppInfoPlistRef(project);
+  removeAppexFromCopyFilesPhases(project, `${EXTENSION_NAME}.appex`, appTarget && appTarget.uuid);
   disableEmbedCopyOnlyWhenInstalling(project);
+  ensureAppexInEmbedAppExtensions(project, `${EXTENSION_NAME}.appex`);
 
   fs.writeFileSync(PROJECT_PATH, project.writeSync(), 'utf8');
   log('Xcode project updated.');

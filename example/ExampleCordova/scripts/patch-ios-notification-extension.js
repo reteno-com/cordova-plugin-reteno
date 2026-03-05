@@ -162,6 +162,54 @@ function ensureContentExtensionPodTarget(podfilePath, appName, contentExtensionN
   return false;
 }
 
+/**
+ * Ensures Podfile has a post_install hook that disables ObjC Swift header
+ * generation for Reteno pod target. This avoids simulator dependency scanner
+ * failures when modulemap points to a missing Reteno-Swift.h.
+ */
+function ensureRetenoSwiftHeaderSetting(podfilePath) {
+  const current = readFileIfExists(podfilePath);
+  if (!current) return false;
+
+  // Already configured.
+  if (current.includes("target.name == 'Reteno'") && current.includes('SWIFT_INSTALL_OBJC_HEADER')) {
+    return false;
+  }
+
+  const snippet =
+`post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    next unless target.name == 'Reteno'
+    target.build_configurations.each do |config|
+      config.build_settings['SWIFT_INSTALL_OBJC_HEADER'] = 'NO'
+    end
+  end
+end
+`;
+
+  let next = current;
+
+  // If post_install exists, inject only Reteno block into it.
+  if (/post_install\s+do\s+\|installer\|/.test(current)) {
+    next = current.replace(
+      /(post_install\s+do\s+\|installer\|\n)/,
+      `$1  installer.pods_project.targets.each do |target|\n` +
+      `    next unless target.name == 'Reteno'\n` +
+      `    target.build_configurations.each do |config|\n` +
+      `      config.build_settings['SWIFT_INSTALL_OBJC_HEADER'] = 'NO'\n` +
+      `    end\n` +
+      `  end\n`
+    );
+  } else {
+    // No post_install: append one.
+    next = `${current.trimEnd()}\n\n${snippet}`;
+  }
+
+  if (next === current) return false;
+  fs.writeFileSync(podfilePath, next, 'utf8');
+  return true;
+}
+
 function nonCommentKeys(section) {
   return Object.keys(section || {}).filter((key) => !key.endsWith('_comment'));
 }
@@ -625,6 +673,7 @@ final class NotificationViewController: RetenoCarouselNotificationViewController
   if (tokenMode === 'manual') {
     ensureFirebaseMessagingPod(podfilePath, appName);
   }
+  ensureRetenoSwiftHeaderSetting(podfilePath);
   // ─────────────────────────────────────────────────────────────────────────────
 
   log(`iOS NotificationServiceExtension ensured for ${appName}.`);

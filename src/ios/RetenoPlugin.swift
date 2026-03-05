@@ -233,6 +233,70 @@ class RetenoPlugin: CDVPlugin {
     )
   }
 
+  @objc(pauseInAppMessages:)
+  func pauseInAppMessages(_ command: CDVInvokedUrlCommand) {
+    let arg0 = command.arguments.first
+    let isPaused: Bool?
+
+    if let value = arg0 as? Bool {
+      isPaused = value
+    } else if let payload = arg0 as? [String: Any], let value = payload["isPaused"] as? Bool {
+      isPaused = value
+    } else {
+      isPaused = nil
+    }
+
+    guard let resolvedIsPaused = isPaused else {
+      sendError("Missing argument: isPaused", to: command)
+      return
+    }
+
+    DispatchQueue.main.async {
+      Reteno.pauseInAppMessages(isPaused: resolvedIsPaused)
+      let result = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: 1)
+      self.commandDelegate.send(result, callbackId: command.callbackId)
+    }
+  }
+
+  @objc(setInAppMessagesPauseBehaviour:)
+  func setInAppMessagesPauseBehaviour(_ command: CDVInvokedUrlCommand) {
+    let arg0 = command.arguments.first
+    let behaviourRaw: String?
+
+    if let value = arg0 as? String {
+      behaviourRaw = value
+    } else if let payload = arg0 as? [String: Any], let value = payload["behaviour"] as? String {
+      behaviourRaw = value
+    } else {
+      behaviourRaw = nil
+    }
+
+    guard let resolvedBehaviour = behaviourRaw?.trimmingCharacters(in: .whitespacesAndNewlines),
+          !resolvedBehaviour.isEmpty else {
+      sendError("Missing argument: behaviour ('SKIP_IN_APPS' or 'POSTPONE_IN_APPS')", to: command)
+      return
+    }
+
+    let behaviour = resolvedBehaviour.uppercased()
+    DispatchQueue.main.async {
+      switch behaviour {
+      case "SKIP_IN_APPS":
+        Reteno.setInAppMessagesPauseBehaviour(pauseBehaviour: .skipInApps)
+      case "POSTPONE_IN_APPS":
+        Reteno.setInAppMessagesPauseBehaviour(pauseBehaviour: .postponeInApps)
+      default:
+        self.sendError(
+          "Invalid argument: behaviour. Expected 'SKIP_IN_APPS' or 'POSTPONE_IN_APPS'.",
+          to: command
+        )
+        return
+      }
+
+      let result = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: 1)
+      self.commandDelegate.send(result, callbackId: command.callbackId)
+    }
+  }
+
   @objc(setDeviceToken:)
   func setDeviceToken(_ command: CDVInvokedUrlCommand) {
     let arg0 = command.arguments.first

@@ -311,7 +311,7 @@
                     <h2>Notifications</h2>
                 </div>
 
-                <div class="reteno-form" aria-label="Reteno notification channel form">
+                <div id="retenoAndroidNotificationChannelForm" class="reteno-form" aria-label="Reteno notification channel form">
                     <h2>Reteno: updateDefaultNotificationChannel</h2>
 
                     <label class="reteno-label" for="retenoNotificationName">Channel name</label>
@@ -354,13 +354,13 @@
                         <span class="toggle-ui" aria-hidden="true"></span>
                     </label>
 
-                    <label class="toggle-row">
+                    <label id="retenoPushDismissedListenerRow" class="toggle-row">
                         <span class="toggle-label">setOnRetenoPushDismissedListener (2.9.1+)</span>
                         <input id="retenoPushDismissedListenerToggle" class="toggle-input" type="checkbox">
                         <span class="toggle-ui" aria-hidden="true"></span>
                     </label>
 
-                    <label class="toggle-row">
+                    <label id="retenoCustomPushReceivedListenerRow" class="toggle-row">
                         <span class="toggle-label">setOnRetenoCustomPushReceivedListener (2.9.1+)</span>
                         <input id="retenoCustomPushReceivedListenerToggle" class="toggle-input" type="checkbox">
                         <span class="toggle-ui" aria-hidden="true"></span>
@@ -452,7 +452,7 @@
                         <span class="toggle-ui" aria-hidden="true"></span>
                     </label>
 
-                    <label class="toggle-row">
+                    <label id="retenoInAppCustomDataRow" class="toggle-row">
                         <span class="toggle-label">setOnInAppMessageCustomDataReceivedListener</span>
                         <input id="retenoInAppCustomDataToggle" class="toggle-input" type="checkbox">
                         <span class="toggle-ui" aria-hidden="true"></span>

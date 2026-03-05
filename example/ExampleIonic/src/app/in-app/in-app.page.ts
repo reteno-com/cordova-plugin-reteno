@@ -1,6 +1,6 @@
 import { Component, NgZone, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { IonicModule } from '@ionic/angular';
+import { IonicModule, Platform } from '@ionic/angular';
 import { AppHeaderComponent } from '../shared/app-header/app-header.component';
 import { RetenoService } from '../services/reteno.service';
 
@@ -25,6 +25,7 @@ export class InAppPage implements OnInit {
   isCustomDataEnabled = false;
   lifecycleEvents: EventView[] = [];
   customDataEvents: EventView[] = [];
+  isIos = false;
 
   private lifecycleHandler: ((event: Event) => void) | null = null;
   private customDataHandler: ((event: Event) => void) | null = null;
@@ -32,6 +33,7 @@ export class InAppPage implements OnInit {
   private readonly formBuilder = inject(FormBuilder);
   private readonly reteno = inject(RetenoService);
   private readonly zone = inject(NgZone);
+  private readonly platform = inject(Platform);
 
   form = this.formBuilder.group({
     behaviour: this.formBuilder.control<string>('POSTPONE_IN_APPS', {
@@ -40,7 +42,9 @@ export class InAppPage implements OnInit {
     }),
   });
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    this.isIos = this.platform.is('ios');
+  }
 
   // Screen view is tracked globally in AppComponent.
 

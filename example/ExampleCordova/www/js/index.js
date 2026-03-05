@@ -192,9 +192,27 @@ function onDeviceReady() {
     var notificationNameEl = document.getElementById('retenoNotificationName');
     var notificationDescriptionEl = document.getElementById('retenoNotificationDescription');
     var iosNotificationHandlersEl = document.getElementById('retenoIosNotificationHandlers');
+    var androidNotificationChannelFormEl = document.getElementById('retenoAndroidNotificationChannelForm');
+    var pushDismissedListenerRowEl = document.getElementById('retenoPushDismissedListenerRow');
+    var customPushReceivedListenerRowEl = document.getElementById('retenoCustomPushReceivedListenerRow');
+    var inAppCustomDataRowEl = document.getElementById('retenoInAppCustomDataRow');
 
-    if (iosNotificationHandlersEl && cordova && cordova.platformId !== 'ios') {
+    var isIos = !!(cordova && cordova.platformId === 'ios');
+
+    if (iosNotificationHandlersEl && !isIos) {
         iosNotificationHandlersEl.style.display = 'none';
+    }
+    if (androidNotificationChannelFormEl && isIos) {
+        androidNotificationChannelFormEl.style.display = 'none';
+    }
+    if (pushDismissedListenerRowEl && isIos) {
+        pushDismissedListenerRowEl.style.display = 'none';
+    }
+    if (customPushReceivedListenerRowEl && isIos) {
+        customPushReceivedListenerRowEl.style.display = 'none';
+    }
+    if (inAppCustomDataRowEl && isIos) {
+        inAppCustomDataRowEl.style.display = 'none';
     }
 
     var willPresentToggle = document.getElementById('retenoWillPresentToggle');

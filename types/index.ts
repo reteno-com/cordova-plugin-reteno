@@ -85,6 +85,7 @@ export type LifecycleTrackingOptions =
 export type RetenoInitializeOptions = {
   pauseInAppMessages?: boolean;
   pausePushInAppMessages?: boolean;
+  isAutomaticScreenReportingEnabled?: boolean;
   lifecycleTrackingOptions?: LifecycleTrackingOptions;
   /** Enables Reteno debug mode for near real-time event monitoring. Use only with test devices. */
   isDebugMode?: boolean;

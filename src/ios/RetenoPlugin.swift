@@ -2,11 +2,19 @@ import Foundation
 import UIKit
 import UserNotifications
 import Reteno
+#if canImport(FirebaseMessaging)
+import FirebaseCore
+import FirebaseMessaging
+#endif
 
 @objc(RetenoPlugin)
 class RetenoPlugin: CDVPlugin {
   private static weak var activeInstance: RetenoPlugin?
   private var inboxCountCallbackId: String?
+  private var isManualTokenMode = false
+  #if canImport(FirebaseMessaging)
+  private var fcmTokenObserver: NSObjectProtocol?
+  #endif
 
   override func pluginInitialize() {
     RetenoPlugin.activeInstance = self
@@ -16,6 +24,12 @@ class RetenoPlugin: CDVPlugin {
     if RetenoPlugin.activeInstance === self {
       RetenoPlugin.activeInstance = nil
     }
+    #if canImport(FirebaseMessaging)
+    if let observer = fcmTokenObserver {
+      NotificationCenter.default.removeObserver(observer)
+      fcmTokenObserver = nil
+    }
+    #endif
     super.onAppTerminate()
   }
 
@@ -40,22 +54,94 @@ class RetenoPlugin: CDVPlugin {
     let screenReportingEnabled = (options["isAutomaticScreenReportingEnabled"] as? Bool) ?? false
     let isDebugMode = (options["isDebugMode"] as? Bool) ?? false
 
+    let deviceTokenMode: DeviceTokenHandlingMode
+    if let prefMode = getPreference("ios_device_token_handling_mode"),
+       prefMode.lowercased() == "manual" {
+      deviceTokenMode = .manual
+    } else {
+      deviceTokenMode = .automatic
+    }
+
     let configuration = RetenoConfiguration(
       isAutomaticScreenReportingEnabled: screenReportingEnabled,
       isAutomaticAppLifecycleReportingEnabled: lifecycleAppEnabled,
       isAutomaticPushSubsriptionReportingEnabled: lifecyclePushEnabled,
       isAutomaticSessionReportingEnabled: lifecycleSessionEnabled,
       isPausedInAppMessages: pauseInAppMessages,
-      isDebugMode: isDebugMode
+      isDebugMode: isDebugMode,
+      deviceTokenHandlingMode: deviceTokenMode
     )
+
+    self.isManualTokenMode = (deviceTokenMode == .manual)
 
     DispatchQueue.main.async {
       Reteno.start(apiKey: apiKey, configuration: configuration)
+
+      // When IOS_DEVICE_TOKEN_HANDLING_MODE is manual and FirebaseMessaging is available,
+      // configure Firebase if the developer hasn't done it yet, then hook FCM
+      // token delivery into Reteno automatically.
+      #if canImport(FirebaseMessaging)
+      if deviceTokenMode == .manual {
+        if self.configureFirebaseIfPossible() {
+          self.startFCMTokenObservation()
+        } else {
+          NSLog("[RetenoPlugin] WARNING: IOS_DEVICE_TOKEN_HANDLING_MODE is 'manual' but Firebase could not be configured. Check that GoogleService-Info.plist is present in the main app target.")
+        }
+      }
+      #else
+      if deviceTokenMode == .manual {
+        NSLog("[RetenoPlugin] WARNING: IOS_DEVICE_TOKEN_HANDLING_MODE is 'manual' but FirebaseMessaging is not available. Add pod 'FirebaseMessaging' to enable FCM token forwarding.")
+      }
+      #endif
 
       let result = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: 1)
       self.commandDelegate.send(result, callbackId: command.callbackId)
     }
   }
+
+  // MARK: - FCM token auto-hook
+
+  #if canImport(FirebaseMessaging)
+  private func configureFirebaseIfPossible() -> Bool {
+    if FirebaseApp.app() != nil {
+      return true
+    }
+
+    // Avoid FirebaseApp.configure() crashing when GoogleService-Info.plist is absent.
+    guard Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist") != nil else {
+      return false
+    }
+
+    FirebaseApp.configure()
+    return FirebaseApp.app() != nil
+  }
+
+  private func startFCMTokenObservation() {
+    // Remove any previous observer to avoid duplicates on re-init
+    if let existing = fcmTokenObserver {
+      NotificationCenter.default.removeObserver(existing)
+    }
+
+    // Subscribe to every future token refresh
+    fcmTokenObserver = NotificationCenter.default.addObserver(
+      forName: Notification.Name.MessagingRegistrationTokenRefreshed,
+      object: nil,
+      queue: nil
+    ) { [weak self] _ in
+      self?.forwardCurrentFCMTokenToReteno()
+    }
+
+    // Try to forward an already-available token (warm start / token cached by Firebase)
+    forwardCurrentFCMTokenToReteno()
+  }
+
+  private func forwardCurrentFCMTokenToReteno() {
+    Messaging.messaging().token { token, error in
+      guard let token = token, !token.isEmpty, error == nil else { return }
+      Reteno.userNotificationService.processRemoteNotificationsToken(token)
+    }
+  }
+  #endif
 
   @objc(requestNotificationPermission:)
   func requestNotificationPermission(_ command: CDVInvokedUrlCommand) {
@@ -169,6 +255,55 @@ class RetenoPlugin: CDVPlugin {
       let result = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: 1)
       self.commandDelegate.send(result, callbackId: command.callbackId)
     }
+  }
+
+  @objc(setFCMToken:)
+  func setFCMToken(_ command: CDVInvokedUrlCommand) {
+    guard isManualTokenMode else {
+      sendError(
+        "setFCMToken: IOS_DEVICE_TOKEN_HANDLING_MODE must be set to 'manual' in plugin.xml to use FCM tokens.",
+        to: command
+      )
+      return
+    }
+
+    #if canImport(FirebaseMessaging)
+    guard FirebaseApp.app() != nil else {
+      sendError(
+        "setFCMToken: FirebaseApp is not configured. Make sure GoogleService-Info.plist is added to the app target.",
+        to: command
+      )
+      return
+    }
+
+    Messaging.messaging().token { [weak self] token, error in
+      guard let self = self else { return }
+
+      if let error = error {
+        let result = CDVPluginResult(status: CDVCommandStatus_ERROR, messageAs: error.localizedDescription)
+        self.commandDelegate.send(result, callbackId: command.callbackId)
+        return
+      }
+
+      guard let fcmToken = token, !fcmToken.isEmpty else {
+        let result = CDVPluginResult(
+          status: CDVCommandStatus_ERROR,
+          messageAs: "setFCMToken: FCM token is not available yet. Ensure GoogleService-Info.plist is added to the app target and APNS token has been received (registerForRemoteNotifications was called)."
+        )
+        self.commandDelegate.send(result, callbackId: command.callbackId)
+        return
+      }
+
+      Reteno.userNotificationService.processRemoteNotificationsToken(fcmToken)
+      let result = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: fcmToken)
+      self.commandDelegate.send(result, callbackId: command.callbackId)
+    }
+    #else
+    sendError(
+      "setFCMToken: FirebaseMessaging is not available. Add 'pod \"FirebaseMessaging\"' to your Podfile to enable FCM support.",
+      to: command
+    )
+    #endif
   }
 
   @objc(setWillPresentNotificationOptions:)

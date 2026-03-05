@@ -161,6 +161,8 @@ const config: CapacitorConfig = {
   cordova: {
     preferences: {
       SDK_ACCESS_KEY: 'YOUR_RETENO_ACCESS_KEY',
+      // Required only when using iOS Firebase (FCM) flow below:
+      IOS_DEVICE_TOKEN_HANDLING_MODE: 'manual',
     },
   },
 };
@@ -183,7 +185,7 @@ await retenosdk.requestNotificationPermission();
 
 ## Provide Device Tokens to the SDK
 
-If another SDK/plugin obtains the device token (APNs/FCM), pass it to Reteno so it can register the device:
+If another SDK/plugin obtains the device token (typically APNs on iOS), pass it to Reteno so it can register the device:
 
 ```js
 await retenosdk.setDeviceToken(token);
@@ -191,8 +193,92 @@ await retenosdk.setDeviceToken(token);
 
 If your app retrieves tokens natively, here are the two common options and how they map to the plugin:
 
-- FCM (Firebase Messaging): get `fcmToken` in `MessagingDelegate`, then forward it to JS and call `retenosdk.setDeviceToken(fcmToken)`.
 - APNs: get `deviceToken` in `didRegisterForRemoteNotificationsWithDeviceToken`, convert to hex string, then forward it to JS and call `retenosdk.setDeviceToken(tokenString)`.
+- FCM (Firebase Messaging): use the dedicated iOS Firebase flow below (`IOS_DEVICE_TOKEN_HANDLING_MODE=manual`). In that mode, the plugin can forward FCM tokens automatically after `init()`, and `setFCMToken()` is available as a manual fallback.
+
+## Using FCM (Firebase Cloud Messaging) on iOS
+
+If your app uses Firebase for push delivery on iOS, follow the steps below to integrate FCM token handling with Reteno.
+
+### 1. Add `FirebaseMessaging` pod to your Podfile
+
+The plugin does **not** add `FirebaseMessaging` automatically — it is an optional dependency.
+Add it manually to `platforms/ios/Podfile` inside the main app target:
+
+```ruby
+target 'App' do
+  # ... existing pods ...
+  pod 'FirebaseMessaging'
+end
+```
+
+Then run:
+
+```sh
+cd platforms/ios && pod install
+```
+
+> If `FirebaseMessaging` is not installed, `setFCMToken()` will return an error and `init()` will log a warning instead of crashing.
+
+### 2. Add `GoogleService-Info.plist`
+
+Download `GoogleService-Info.plist` from the [Firebase Console](https://console.firebase.google.com/) and add it to your **iOS app target** in Xcode:
+
+- Open `platforms/ios/<AppName>.xcworkspace` in Xcode.
+- Drag `GoogleService-Info.plist` into the project navigator under the main app target.
+- Make sure **"Copy items if needed"** is checked and the file is added to the **main app target** (not only the extension targets).
+
+If your app calls `FirebaseApp.configure()` without this file, Firebase will crash at runtime. The plugin avoids auto-configuring Firebase when the file is missing and logs a warning in manual mode.
+
+### 3. Configure AppDelegate
+
+Nothing to do. Firebase iOS SDK uses **method swizzling** by default — it automatically intercepts `didRegisterForRemoteNotificationsWithDeviceToken` and forwards the APNS token to Firebase without any AppDelegate code.
+
+When `IOS_DEVICE_TOKEN_HANDLING_MODE` is set to `manual`, the plugin:
+1. Calls `FirebaseApp.configure()` automatically on `init()` if not already called and `GoogleService-Info.plist` is present.
+2. Subscribes to FCM token updates and forwards them to Reteno once Firebase is configured.
+
+No AppDelegate changes are required for either Cordova or Capacitor.
+
+### 4. Set `IOS_DEVICE_TOKEN_HANDLING_MODE` preference to `manual` (required)
+
+> **`IOS_DEVICE_TOKEN_HANDLING_MODE: manual`** is **mandatory** when using FCM on iOS.
+> Without it, the Reteno SDK manages APNS tokens directly and FCM tokens will **not** be forwarded — push notifications via Firebase will not work.
+
+Add the preference to your `config.xml`:
+
+```xml
+<plugin name="cordova-plugin-reteno">
+  <variable name="SDK_ACCESS_KEY" value="YOUR_RETENO_ACCESS_KEY" />
+  <variable name="IOS_DEVICE_TOKEN_HANDLING_MODE" value="manual" />
+</plugin>
+```
+
+Or pass it when installing the plugin:
+
+```bash
+cordova plugin add cordova-plugin-reteno --variable SDK_ACCESS_KEY="YOUR_KEY" --variable IOS_DEVICE_TOKEN_HANDLING_MODE="manual"
+```
+
+When `IOS_DEVICE_TOKEN_HANDLING_MODE` is `manual` **and** Firebase is configured (either already configured by the app or auto-configured because `GoogleService-Info.plist` is present), the plugin automatically:
+
+1. Subscribes to `MessagingRegistrationTokenRefreshed` — every future FCM token rotation is forwarded to Reteno immediately.
+2. Tries to forward the already-cached FCM token on warm starts.
+
+You do **not** need to call `setFCMToken()` manually in this flow.
+
+### 5. Manual fallback: `setFCMToken()`
+
+If you need to explicitly trigger token delivery (e.g. for debugging or after a permission grant), call:
+
+```js
+const token = await retenosdk.setFCMToken();
+console.log('FCM token forwarded to Reteno:', token);
+```
+
+This call fails with an error if:
+- `FirebaseApp.configure()` has not been called (`GoogleService-Info.plist` missing or configure not called).
+- The FCM token is not yet available (APNS token has not been received yet — ensure `registerForRemoteNotifications` has been called).
 
 ## Custom Notification Behavior (optional)
 
@@ -262,4 +348,3 @@ Screen view tracking note for iOS:
 
 - **Automatic** — pass `isAutomaticScreenReportingEnabled: true` to `retenosdk.init(...)`. The native SDK will track screen transitions automatically. Defaults to `false`.
 - **Manual** — call `retenosdk.logScreenView(screenName)` on each navigation event. This works on both iOS and Android regardless of `isAutomaticScreenReportingEnabled`.
-

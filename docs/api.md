@@ -47,8 +47,8 @@ Notes:
 | [unsubscribeMessagesCountChanged](../www/cordova-plugin-reteno.js)  | Android            | Unsubscribes from App Inbox messages count changes.                                                                                                 |
 | [markAsOpened](../www/cordova-plugin-reteno.js)                    | Android            | Marks an App Inbox message as opened.                                                                                                              |
 | [markAllMessagesAsOpened](../www/cordova-plugin-reteno.js)         | Android            | Marks all App Inbox messages as opened.                                                                                                             |
-| [getRecommendations](../www/cordova-plugin-reteno.js)             | Android            | Fetches product or category recommendations. [Types](../types/index.ts)                                                                            |
-| [logRecommendations](../www/cordova-plugin-reteno.js)             | Android            | Sends recommendation impressions or clicks. [Types](../types/index.ts)                                                                             |
+| [getRecommendations](../www/cordova-plugin-reteno.js)             | iOS, Android       | Fetches product or category recommendations. [Types](../types/index.ts)                                                                            |
+| [logRecommendations](../www/cordova-plugin-reteno.js)             | iOS, Android       | Sends recommendation impressions or clicks. [Types](../types/index.ts)                                                                             |
 
 ### init example
 

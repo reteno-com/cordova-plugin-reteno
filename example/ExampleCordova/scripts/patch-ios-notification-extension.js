@@ -97,6 +97,36 @@ function ensureExtensionPodTarget(podfilePath, appName, extensionName, retenoVer
 }
 
 /**
+ * Adds `pod 'FirebaseMessaging'` to the main app target in the Podfile.
+ * Idempotent — skips if already present.
+ */
+function ensureFirebaseMessagingPod(podfilePath, appName) {
+  const current = readFileIfExists(podfilePath);
+  if (!current) return false;
+
+  const mainTargetRegex = new RegExp(`(target '${appName}' do\\n)([\\s\\S]*)(\\nend[\\s]*)$`);
+  const match = current.match(mainTargetRegex);
+  if (!match) return false;
+
+  const targetHeader = match[1];
+  const targetBody = match[2];
+  const targetFooter = match[3];
+
+  if (targetBody.includes("pod 'FirebaseMessaging'")) return false;
+
+  const next =
+    current.slice(0, match.index) +
+    targetHeader +
+    `  pod 'FirebaseMessaging'\n` +
+    targetBody +
+    targetFooter;
+  if (next === current) return false;
+
+  fs.writeFileSync(podfilePath, next, 'utf8');
+  return true;
+}
+
+/**
  * Adds a pod target for the Notification Content Extension.
  * Uses a greedy match so it inserts BEFORE the outer closing `end` of the main
  * app target (not inside a previously-added nested NSE target block).
@@ -246,6 +276,15 @@ function ensureBuildPhase(project, targetUuid, buildPhaseType, comment, optionsO
 function unquote(value) {
   if (typeof value !== 'string') return value;
   return value.replace(/^"(.*)"$/, '$1');
+}
+
+function getConfigXmlPreference(appRoot, name) {
+  const configPath = path.join(appRoot, 'config.xml');
+  const content = readFileIfExists(configPath);
+  if (!content) return null;
+  const regex = new RegExp(`<preference\\s+name=["']${name}["']\\s+value=["']([^"']+)["']`, 'i');
+  const match = content.match(regex);
+  return match ? match[1] : null;
 }
 
 function main() {
@@ -582,6 +621,10 @@ final class NotificationViewController: RetenoCarouselNotificationViewController
 
   ensureExtensionPodTarget(podfilePath, appName, extensionName, retenoVersion, iosDeploymentTarget);
   ensureContentExtensionPodTarget(podfilePath, appName, contentExtensionName, retenoVersion);
+  const tokenMode = getConfigXmlPreference(appRoot, 'IOS_DEVICE_TOKEN_HANDLING_MODE');
+  if (tokenMode === 'manual') {
+    ensureFirebaseMessagingPod(podfilePath, appName);
+  }
   // ─────────────────────────────────────────────────────────────────────────────
 
   log(`iOS NotificationServiceExtension ensured for ${appName}.`);

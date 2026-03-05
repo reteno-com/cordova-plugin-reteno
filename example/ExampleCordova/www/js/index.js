@@ -73,13 +73,7 @@ function onDeviceReady() {
             .catch(function () {});
     })();
 
-    // Request push permission right after startup (Android 13+)
-    if (window.retenosdk && typeof window.retenosdk.requestNotificationPermission === 'function') {
-        var permissionPromise = window.retenosdk.requestNotificationPermission();
-        if (permissionPromise && typeof permissionPromise.catch === 'function') {
-            permissionPromise.catch(function () {});
-        }
-    }
+    // Reteno init and push permission are requested automatically during startup.
 
     var statusEl = document.getElementById('retenoStatus');
     var eventStatusEl = document.getElementById('retenoEventStatus');
@@ -637,7 +631,7 @@ function onDeviceReady() {
     var initPromise = null;
 
     function buildInitOptions() {
-        return {
+        var options = {
             pauseInAppMessages: !!(initPauseInAppEl && initPauseInAppEl.checked),
             pausePushInAppMessages: !!(initPausePushInAppEl && initPausePushInAppEl.checked),
             isAutomaticScreenReportingEnabled: !!(initScreenReportingEl && initScreenReportingEl.checked),
@@ -648,6 +642,8 @@ function onDeviceReady() {
                 sessionEventsEnabled: !!(initLifecycleSessionEl && initLifecycleSessionEl.checked),
             },
         };
+
+        return options;
     }
 
     function ensureInit() {
@@ -686,6 +682,34 @@ function onDeviceReady() {
     }
 
     setInitOptionsVisible(true);
+
+    ensureInit()
+        .then(function () {
+            var sdk = getRetenoSdk();
+            if (sdk && typeof sdk.requestNotificationPermission === 'function') {
+                return sdk.requestNotificationPermission().catch(function (err) {
+                    console.warn('requestNotificationPermission: WARN', err);
+                });
+            }
+        })
+        .then(function () {
+            if (cordova && cordova.platformId === 'ios') {
+                var sdk = getRetenoSdk();
+                if (sdk && typeof sdk.setFCMToken === 'function') {
+                    return sdk.setFCMToken()
+                        .then(function (token) {
+                            console.log('setFCMToken: OK', token);
+                        })
+                        .catch(function (err) {
+                            console.warn('setFCMToken: WARN', err);
+                        });
+                }
+            }
+        })
+        .catch(function (err) {
+            console.error('initReteno: ERROR', err);
+        });
+
     navButtons.forEach(function (button) {
         button.addEventListener('click', function () {
             var target = button.getAttribute('data-target');

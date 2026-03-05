@@ -24,12 +24,41 @@ export class MainPage implements OnInit {
 
   ngOnInit(): void {
     this.isIos = this.platform.is('ios');
-    this.reteno.requestNotificationPermission().catch(() => {});
     this.syncInitOptions();
+    this.initReteno();
   }
 
   ionViewDidEnter(): void {
     this.initialized = this.reteno.isInitialized();
+  }
+
+  initReteno(): void {
+    this.reteno.init()
+      .then(() => {
+        this.initialized = true;
+        return this.reteno.requestNotificationPermission()
+          .catch((err) => {
+            // eslint-disable-next-line no-console
+            console.warn('requestNotificationPermission: WARN', err);
+          });
+      })
+      .then(() => {
+        if (this.isIos) {
+          return this.reteno.setFCMToken()
+            .then((token: unknown) => {
+              // eslint-disable-next-line no-console
+              console.log('setFCMToken: OK', token);
+            })
+            .catch((err: unknown) => {
+              // eslint-disable-next-line no-console
+              console.warn('setFCMToken: WARN', err);
+            });
+        }
+      })
+      .catch((err) => {
+        // eslint-disable-next-line no-console
+        console.error('initReteno: ERROR', err);
+      });
   }
 
   onInitOptionsChanged(): void {

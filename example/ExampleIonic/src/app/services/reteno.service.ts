@@ -51,6 +51,7 @@ declare global {
         error?: (err: unknown) => void
       ) => Promise<void>;
       setDeviceToken?: (token: string, success?: () => void, error?: (err: unknown) => void) => Promise<void>;
+      setFCMToken?: (success?: (token: unknown) => void, error?: (err: unknown) => void) => Promise<unknown>;
       setLifecycleTrackingOptions?: (
         options: unknown,
         success?: () => void,
@@ -334,6 +335,16 @@ export class RetenoService {
         return Promise.reject(new Error('retenosdk.setDeviceToken is not available'));
       }
       return sdk.setDeviceToken(token);
+    });
+  }
+
+  setFCMToken(): Promise<unknown> {
+    return this.withInit(() => {
+      const sdk = window.retenosdk;
+      if (!sdk?.setFCMToken) {
+        return Promise.reject(new Error('retenosdk.setFCMToken is not available'));
+      }
+      return sdk.setFCMToken();
     });
   }
 

@@ -44,7 +44,8 @@ platform :ios do
 
     plists = [
       File.join(ios_root, "App", "Info.plist"),
-      File.join(ios_root, "App", "NotificationServiceExtension", "Info.plist")
+      File.join(ios_root, "App", "NotificationServiceExtension", "Info.plist"),
+      File.join(ios_root, "App", "NotificationContentExtension", "Info.plist")
     ].select { |p| File.exist?(p) }
 
     UI.user_error!("No Info.plist files found to set BUILD_NUMBER") if plists.empty?
@@ -79,7 +80,8 @@ platform :ios do
 
     plists = [
       File.join(ios_root, "App", "Info.plist"),
-      File.join(ios_root, "App", "NotificationServiceExtension", "Info.plist")
+      File.join(ios_root, "App", "NotificationServiceExtension", "Info.plist"),
+      File.join(ios_root, "App", "NotificationContentExtension", "Info.plist")
     ].select { |p| File.exist?(p) }
 
     UI.user_error!("No Info.plist files found to set APP_VERSION") if plists.empty?

@@ -4,15 +4,8 @@
     <engines>
         <engine name="cordova-android" version=">=12.0.0" />
     </engines>
-    <!-- Android Reteno SDK (FCM) version override -->
-    <preference name="ANDROID_RETENO_FCM_VERSION" default="2.9.0" />
-    <!-- iOS Reteno SDK version override -->
-    <preference name="IOS_RETENO_FCM_VERSION" default="2.6.1" />
-    <!-- Firebase Messaging version used by Reteno FCM module -->
-    <preference name="ANDROID_FIREBASE_MESSAGING_VERSION" default="23.1.0" />
     <preference name="SDK_ACCESS_KEY" default="MISSING" />
-    <!-- Reteno Android Debug Mode (Reteno SDK 2.7.0+) -->
-    <preference name="RETENO_DEBUG_MODE" default="false" />
+    <preference name="IOS_DEVICE_TOKEN_HANDLING_MODE" default="manual" />
     <hook type="before_plugin_install" src="scripts/validate-install.js" />
     <hook type="after_plugin_install" src="scripts/android-fcm-setup.js" />
     <hook type="after_platform_add" src="scripts/android-fcm-setup.js" />
@@ -28,40 +21,6 @@
 
     <config-file target="AndroidManifest.xml" parent="/manifest/application">
         <meta-data android:name="com.reteno.SDK_ACCESS_KEY" android:value="$SDK_ACCESS_KEY" />
-        <meta-data android:name="com.reteno.plugin.DEBUG_MODE" android:value="$RETENO_DEBUG_MODE" />
-
-        <!-- Reteno push events: forward PushReceived to plugin receiver -->
-        <receiver
-            android:name="com.reteno.plugin.RetenoPushReceiver"
-            android:enabled="true"
-            android:exported="true" />
-        <meta-data
-            android:name="com.reteno.Receiver.PushReceived"
-            android:value="com.reteno.plugin.RetenoPushReceiver"
-            xmlns:tools="http://schemas.android.com/tools"
-            tools:replace="android:value" />
-
-        <!-- Reteno notification clicked receiver: handles user taps on push notifications -->
-        <receiver
-            android:name="com.reteno.plugin.RetenoNotificationClickedReceiver"
-            android:enabled="true"
-            android:exported="true" />
-        <meta-data
-            android:name="com.reteno.Receiver.NotificationClicked"
-            android:value="com.reteno.plugin.RetenoNotificationClickedReceiver"
-            xmlns:tools="http://schemas.android.com/tools"
-            tools:replace="android:value" />
-
-        <!-- Reteno in-app message custom data receiver -->
-        <receiver
-            android:name="com.reteno.plugin.RetenoInAppDataReceiver"
-            android:enabled="true"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="com.reteno.custom-inapp-data" />
-            </intent-filter>
-        </receiver>
-
     </config-file>
 
   <config-file target="config.xml" parent="/*">
@@ -80,15 +39,6 @@
       src="src/android/app/src/main/java/com/reteno/plugin/RetenoEvent.java" 
       target-dir="src/com/reteno/plugin" />
   <source-file
-      src="src/android/app/src/main/java/com/reteno/plugin/RetenoPushReceiver.java"
-      target-dir="src/com/reteno/plugin" />
-  <source-file
-      src="src/android/app/src/main/java/com/reteno/plugin/RetenoNotificationClickedReceiver.java"
-      target-dir="src/com/reteno/plugin" />
-  <source-file
-      src="src/android/app/src/main/java/com/reteno/plugin/RetenoInAppDataReceiver.java"
-      target-dir="src/com/reteno/plugin" />
-  <source-file
       src="src/android/app/src/main/java/com/reteno/plugin/RetenoUserAttributes.java"
       target-dir="src/com/reteno/plugin" />
   <source-file 
@@ -102,11 +52,12 @@
       <param name="ios-package" value="RetenoPlugin" />
     </feature>
     <preference name="UseSwiftLanguageVersion" value="5.0" />
+    <preference name="IOS_DEVICE_TOKEN_HANDLING_MODE" value="$IOS_DEVICE_TOKEN_HANDLING_MODE" />
   </config-file>
 
   <podspec>
     <pods>
-      <pod name="Reteno" spec="$IOS_RETENO_FCM_VERSION" />
+      <pod name="Reteno" spec="2.6.1" />
     </pods>
   </podspec>
 

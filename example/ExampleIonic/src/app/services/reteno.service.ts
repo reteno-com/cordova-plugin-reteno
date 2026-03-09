@@ -43,7 +43,15 @@ declare global {
       removeOnRetenoPushDismissedListener?: (listener: (event: Event) => void) => void;
       setOnRetenoCustomPushReceivedListener?: (listener: (event: Event) => void) => void;
       removeOnRetenoCustomPushReceivedListener?: (listener: (event: Event) => void) => void;
+      setOnRetenoPushButtonClickedListener?: (listener: (event: Event) => void) => void;
+      removeOnRetenoPushButtonClickedListener?: (listener: (event: Event) => void) => void;
+      setNotificationActionHandler?: (
+        payload: { enabled?: boolean; emitEvent?: boolean } | boolean | null,
+        success?: () => void,
+        error?: (err: unknown) => void
+      ) => Promise<void>;
       setDeviceToken?: (token: string, success?: () => void, error?: (err: unknown) => void) => Promise<void>;
+      setFCMToken?: (success?: (token: unknown) => void, error?: (err: unknown) => void) => Promise<unknown>;
       setLifecycleTrackingOptions?: (
         options: unknown,
         success?: () => void,
@@ -124,6 +132,8 @@ export class RetenoService {
   private initOptions: {
     pauseInAppMessages: boolean;
     pausePushInAppMessages: boolean;
+    isAutomaticScreenReportingEnabled: boolean;
+    isDebugMode: boolean;
     lifecycleTrackingOptions: {
       appLifecycleEnabled: boolean;
       pushSubscriptionEnabled: boolean;
@@ -132,6 +142,8 @@ export class RetenoService {
   } = {
     pauseInAppMessages: false,
     pausePushInAppMessages: false,
+    isAutomaticScreenReportingEnabled: false,
+    isDebugMode: true,
     lifecycleTrackingOptions: {
       appLifecycleEnabled: true,
       pushSubscriptionEnabled: true,
@@ -150,6 +162,7 @@ export class RetenoService {
   setInitOptions(options: {
     pauseInAppMessages?: boolean;
     pausePushInAppMessages?: boolean;
+    isAutomaticScreenReportingEnabled?: boolean;
     lifecycleTrackingOptions?: LifecycleTrackingOptions | string;
   }): void {
     if (options.pauseInAppMessages != null) {
@@ -157,6 +170,9 @@ export class RetenoService {
     }
     if (options.pausePushInAppMessages != null) {
       this.initOptions.pausePushInAppMessages = options.pausePushInAppMessages;
+    }
+    if (options.isAutomaticScreenReportingEnabled != null) {
+      this.initOptions.isAutomaticScreenReportingEnabled = options.isAutomaticScreenReportingEnabled;
     }
     if (options.lifecycleTrackingOptions && typeof options.lifecycleTrackingOptions === 'object') {
       const lto = options.lifecycleTrackingOptions as {
@@ -184,6 +200,8 @@ export class RetenoService {
   getInitOptions(): {
     pauseInAppMessages: boolean;
     pausePushInAppMessages: boolean;
+    isAutomaticScreenReportingEnabled: boolean;
+    isDebugMode: boolean;
     lifecycleTrackingOptions: {
       appLifecycleEnabled: boolean;
       pushSubscriptionEnabled: boolean;
@@ -193,6 +211,8 @@ export class RetenoService {
     return {
       pauseInAppMessages: this.initOptions.pauseInAppMessages,
       pausePushInAppMessages: this.initOptions.pausePushInAppMessages,
+      isAutomaticScreenReportingEnabled: this.initOptions.isAutomaticScreenReportingEnabled,
+      isDebugMode: this.initOptions.isDebugMode,
       lifecycleTrackingOptions: { ...this.initOptions.lifecycleTrackingOptions },
     };
   }
@@ -212,6 +232,8 @@ export class RetenoService {
       .init({
         pauseInAppMessages: this.initOptions.pauseInAppMessages,
         pausePushInAppMessages: this.initOptions.pausePushInAppMessages,
+        isAutomaticScreenReportingEnabled: this.initOptions.isAutomaticScreenReportingEnabled,
+        isDebugMode: this.initOptions.isDebugMode,
         lifecycleTrackingOptions: { ...this.initOptions.lifecycleTrackingOptions },
       })
       .then((res) => {
@@ -233,6 +255,7 @@ export class RetenoService {
   init(options?: {
     pauseInAppMessages?: boolean;
     pausePushInAppMessages?: boolean;
+    isAutomaticScreenReportingEnabled?: boolean;
     lifecycleTrackingOptions?: LifecycleTrackingOptions | string;
   }): Promise<unknown> {
     if (options) {
@@ -312,6 +335,16 @@ export class RetenoService {
         return Promise.reject(new Error('retenosdk.setDeviceToken is not available'));
       }
       return sdk.setDeviceToken(token);
+    });
+  }
+
+  setFCMToken(): Promise<unknown> {
+    return this.withInit(() => {
+      const sdk = window.retenosdk;
+      if (!sdk?.setFCMToken) {
+        return Promise.reject(new Error('retenosdk.setFCMToken is not available'));
+      }
+      return sdk.setFCMToken();
     });
   }
 
@@ -691,5 +724,44 @@ export class RetenoService {
       return;
     }
     document.removeEventListener('reteno-custom-push-received', handler);
+  }
+
+  setNotificationActionHandler(payload: { enabled?: boolean; emitEvent?: boolean } | boolean | null): Promise<void> {
+    const sdk = window.retenosdk;
+    if (!sdk?.setNotificationActionHandler) {
+      return Promise.reject(new Error('retenosdk.setNotificationActionHandler is not available'));
+    }
+    return sdk.setNotificationActionHandler(payload);
+  }
+
+  setOnRetenoPushButtonClickedListener(listener: (payload: unknown) => void): (event: Event) => void {
+    const handler = (eventOrPayload: Event | unknown) => {
+      const detail = (eventOrPayload as CustomEvent).detail;
+      const payload = detail !== undefined ? detail : eventOrPayload;
+      listener(payload);
+    };
+    this.ensureInit()
+      .then(() => {
+        const sdk = window.retenosdk;
+        if (sdk?.setOnRetenoPushButtonClickedListener) {
+          sdk.setOnRetenoPushButtonClickedListener(handler);
+        } else {
+          document.addEventListener('reteno-push-button-clicked', handler);
+        }
+      })
+      .catch((err) => {
+        // eslint-disable-next-line no-console
+        console.error('reteno init error', err);
+      });
+    return handler;
+  }
+
+  removeOnRetenoPushButtonClickedListener(handler: (event: Event) => void): void {
+    const sdk = window.retenosdk;
+    if (sdk?.removeOnRetenoPushButtonClickedListener) {
+      sdk.removeOnRetenoPushButtonClickedListener(handler);
+      return;
+    }
+    document.removeEventListener('reteno-push-button-clicked', handler);
   }
 }

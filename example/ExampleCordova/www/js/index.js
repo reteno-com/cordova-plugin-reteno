@@ -73,13 +73,7 @@ function onDeviceReady() {
             .catch(function () {});
     })();
 
-    // Request push permission right after startup (Android 13+)
-    if (window.retenosdk && typeof window.retenosdk.requestNotificationPermission === 'function') {
-        var permissionPromise = window.retenosdk.requestNotificationPermission();
-        if (permissionPromise && typeof permissionPromise.catch === 'function') {
-            permissionPromise.catch(function () {});
-        }
-    }
+    // Reteno init and push permission are requested automatically during startup.
 
     var statusEl = document.getElementById('retenoStatus');
     var eventStatusEl = document.getElementById('retenoEventStatus');
@@ -103,10 +97,13 @@ function onDeviceReady() {
     var notificationClickedListenerToggle = document.getElementById('retenoNotificationClickedListenerToggle');
     var pushDismissedListenerToggle = document.getElementById('retenoPushDismissedListenerToggle');
     var customPushReceivedListenerToggle = document.getElementById('retenoCustomPushReceivedListenerToggle');
+    var pushButtonClickedListenerToggle = document.getElementById('retenoPushButtonClickedListenerToggle');
     var pushDismissedEventEl = document.getElementById('retenoPushDismissedEvent');
     var customPushReceivedEventEl = document.getElementById('retenoCustomPushReceivedEvent');
+    var pushButtonClickedEventEl = document.getElementById('retenoPushButtonClickedEvent');
     var pushDismissedEventListEl = document.getElementById('retenoPushDismissedEventList');
     var customPushReceivedEventListEl = document.getElementById('retenoCustomPushReceivedEventList');
+    var pushButtonClickedEventListEl = document.getElementById('retenoPushButtonClickedEventList');
     var inboxStatusEl = document.getElementById('retenoInboxStatusText');
     var inboxCountEl = document.getElementById('retenoInboxCountText');
     var inboxMessagesListEl = document.getElementById('retenoInboxMessagesList');
@@ -160,6 +157,12 @@ function onDeviceReady() {
     var initLifecycleAppEl = document.getElementById('retenoInitLifecycleApp');
     var initLifecyclePushEl = document.getElementById('retenoInitLifecyclePush');
     var initLifecycleSessionEl = document.getElementById('retenoInitLifecycleSession');
+    var initScreenReportingEl = document.getElementById('retenoInitScreenReporting');
+    var initScreenReportingRowEl = document.getElementById('retenoInitScreenReportingRow');
+
+    if (initScreenReportingRowEl && cordova && cordova.platformId !== 'ios') {
+        initScreenReportingRowEl.style.display = 'none';
+    }
 
     var emailEl = document.getElementById('retenoEmail');
     var phoneEl = document.getElementById('retenoPhone');
@@ -189,10 +192,29 @@ function onDeviceReady() {
     var notificationNameEl = document.getElementById('retenoNotificationName');
     var notificationDescriptionEl = document.getElementById('retenoNotificationDescription');
     var iosNotificationHandlersEl = document.getElementById('retenoIosNotificationHandlers');
+    var androidNotificationChannelFormEl = document.getElementById('retenoAndroidNotificationChannelForm');
+    var pushDismissedListenerRowEl = document.getElementById('retenoPushDismissedListenerRow');
+    var customPushReceivedListenerRowEl = document.getElementById('retenoCustomPushReceivedListenerRow');
+    var inAppCustomDataRowEl = document.getElementById('retenoInAppCustomDataRow');
 
-    if (iosNotificationHandlersEl && cordova && cordova.platformId !== 'ios') {
+    var isIos = !!(cordova && cordova.platformId === 'ios');
+
+    if (iosNotificationHandlersEl && !isIos) {
         iosNotificationHandlersEl.style.display = 'none';
     }
+    if (androidNotificationChannelFormEl && isIos) {
+        androidNotificationChannelFormEl.style.display = 'none';
+    }
+    if (pushDismissedListenerRowEl && isIos) {
+        pushDismissedListenerRowEl.style.display = 'none';
+    }
+    if (customPushReceivedListenerRowEl && isIos) {
+        customPushReceivedListenerRowEl.style.display = 'none';
+    }
+    if (inAppCustomDataRowEl && isIos) {
+        inAppCustomDataRowEl.style.display = 'none';
+    }
+
     var willPresentToggle = document.getElementById('retenoWillPresentToggle');
     var willPresentEmitToggle = document.getElementById('retenoWillPresentEmitToggle');
     var didReceiveToggle = document.getElementById('retenoDidReceiveToggle');
@@ -231,6 +253,7 @@ function onDeviceReady() {
     if (initLifecycleAppEl && !initLifecycleAppEl.checked) initLifecycleAppEl.checked = true;
     if (initLifecyclePushEl && !initLifecyclePushEl.checked) initLifecyclePushEl.checked = true;
     if (initLifecycleSessionEl && !initLifecycleSessionEl.checked) initLifecycleSessionEl.checked = true;
+    if (initScreenReportingEl && initScreenReportingEl.checked) initScreenReportingEl.checked = false;
     if (initPauseInAppEl && initPauseInAppEl.checked) initPauseInAppEl.checked = false;
     if (initPausePushInAppEl && initPausePushInAppEl.checked) initPausePushInAppEl.checked = false;
     if (inAppPauseToggle && inAppPauseToggle.checked) inAppPauseToggle.checked = false;
@@ -365,6 +388,12 @@ function onDeviceReady() {
     function setCustomPushReceivedEvent(text) {
         if (customPushReceivedEventEl) {
             customPushReceivedEventEl.textContent = text;
+        }
+    }
+
+    function setPushButtonClickedEvent(text) {
+        if (pushButtonClickedEventEl) {
+            pushButtonClickedEventEl.textContent = text;
         }
     }
 
@@ -572,6 +601,7 @@ function onDeviceReady() {
     var notificationClickedHandler = null;
     var pushDismissedHandler = null;
     var customPushReceivedHandler = null;
+    var pushButtonClickedHandler = null;
     var inboxCountSubscribed = false;
     var inboxCountHandler = null;
     var inAppLifecycleHandler = null;
@@ -620,15 +650,21 @@ function onDeviceReady() {
     var initPromise = null;
 
     function buildInitOptions() {
-        return {
+        var isIos = cordova && cordova.platformId === 'ios';
+        var options = {
             pauseInAppMessages: !!(initPauseInAppEl && initPauseInAppEl.checked),
             pausePushInAppMessages: !!(initPausePushInAppEl && initPausePushInAppEl.checked),
+            // Keep native screen auto-tracking disabled in hybrid demos.
+            isAutomaticScreenReportingEnabled: isIos && !!(initScreenReportingEl && initScreenReportingEl.checked),
+            isDebugMode: true,
             lifecycleTrackingOptions: {
                 appLifecycleEnabled: !!(initLifecycleAppEl && initLifecycleAppEl.checked),
                 pushSubscriptionEnabled: !!(initLifecyclePushEl && initLifecyclePushEl.checked),
                 sessionEventsEnabled: !!(initLifecycleSessionEl && initLifecycleSessionEl.checked),
             },
         };
+
+        return options;
     }
 
     function ensureInit() {
@@ -667,6 +703,34 @@ function onDeviceReady() {
     }
 
     setInitOptionsVisible(true);
+
+    ensureInit()
+        .then(function () {
+            var sdk = getRetenoSdk();
+            if (sdk && typeof sdk.requestNotificationPermission === 'function') {
+                return sdk.requestNotificationPermission().catch(function (err) {
+                    console.warn('requestNotificationPermission: WARN', err);
+                });
+            }
+        })
+        .then(function () {
+            if (cordova && cordova.platformId === 'ios') {
+                var sdk = getRetenoSdk();
+                if (sdk && typeof sdk.setFCMToken === 'function') {
+                    return sdk.setFCMToken()
+                        .then(function (token) {
+                            console.log('setFCMToken: OK', token);
+                        })
+                        .catch(function (err) {
+                            console.warn('setFCMToken: WARN', err);
+                        });
+                }
+            }
+        })
+        .catch(function (err) {
+            console.error('initReteno: ERROR', err);
+        });
+
     navButtons.forEach(function (button) {
         button.addEventListener('click', function () {
             var target = button.getAttribute('data-target');
@@ -1205,7 +1269,7 @@ function onDeviceReady() {
                 withInit(function () {
                     var sdk = getRetenoSdk();
                     if (!sdk || typeof sdk.setOnRetenoPushDismissedListener !== 'function') {
-                        setPushDismissedEvent('setOnRetenoPushDismissedListener: not available (requires SDK 2.9.0+).');
+                        setPushDismissedEvent('setOnRetenoPushDismissedListener: not available (requires SDK 2.9.1+).');
                         pushDismissedListenerToggle.checked = false;
                         return;
                     }
@@ -1245,7 +1309,7 @@ function onDeviceReady() {
                 withInit(function () {
                     var sdk = getRetenoSdk();
                     if (!sdk || typeof sdk.setOnRetenoCustomPushReceivedListener !== 'function') {
-                        setCustomPushReceivedEvent('setOnRetenoCustomPushReceivedListener: not available (requires SDK 2.9.0+).');
+                        setCustomPushReceivedEvent('setOnRetenoCustomPushReceivedListener: not available (requires SDK 2.9.1+).');
                         customPushReceivedListenerToggle.checked = false;
                         return;
                     }
@@ -1275,6 +1339,55 @@ function onDeviceReady() {
                 }
                 customPushReceivedHandler = null;
                 setCustomPushReceivedEvent('Custom push received listener removed.');
+            }
+        });
+    }
+
+    if (pushButtonClickedListenerToggle) {
+        pushButtonClickedListenerToggle.addEventListener('change', function () {
+            if (pushButtonClickedListenerToggle.checked) {
+                withInit(function () {
+                    var sdk = getRetenoSdk();
+                    if (!sdk || typeof sdk.setOnRetenoPushButtonClickedListener !== 'function') {
+                        setPushButtonClickedEvent('setOnRetenoPushButtonClickedListener: not available.');
+                        pushButtonClickedListenerToggle.checked = false;
+                        return;
+                    }
+
+                    // Enable the native action handler with event emission
+                    if (typeof sdk.setNotificationActionHandler === 'function') {
+                        sdk.setNotificationActionHandler({ enabled: true, emitEvent: true });
+                    }
+
+                    if (!pushButtonClickedHandler) {
+                        pushButtonClickedHandler = function (event) {
+                            var detail = event && event.detail !== undefined ? event.detail : event;
+                            var message = 'Push button clicked event: ' + safeStringify(detail);
+                            appendEventItem(pushButtonClickedEventListEl, message);
+                        };
+                        sdk.setOnRetenoPushButtonClickedListener(pushButtonClickedHandler);
+                        setPushButtonClickedEvent('Listening for push button clicked events...');
+                    }
+                }, function (err) {
+                    pushButtonClickedListenerToggle.checked = false;
+                    setPushButtonClickedEvent('Reteno init error: ' + (err && err.message ? err.message : String(err)));
+                });
+                return;
+            }
+
+            if (pushButtonClickedHandler) {
+                var sdk = getRetenoSdk();
+                if (sdk && typeof sdk.removeOnRetenoPushButtonClickedListener === 'function') {
+                    sdk.removeOnRetenoPushButtonClickedListener(pushButtonClickedHandler);
+                } else {
+                    document.removeEventListener('reteno-push-button-clicked', pushButtonClickedHandler);
+                }
+                // Disable the native action handler
+                if (sdk && typeof sdk.setNotificationActionHandler === 'function') {
+                    sdk.setNotificationActionHandler(false);
+                }
+                pushButtonClickedHandler = null;
+                setPushButtonClickedEvent('Push button clicked listener removed.');
             }
         });
     }

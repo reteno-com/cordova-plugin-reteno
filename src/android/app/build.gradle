@@ -1,13 +1,6 @@
 apply plugin: 'com.android.application'
 
-def retenoFcmVersion = null
-if (project.hasProperty('ANDROID_RETENO_FCM_VERSION')) {
-    retenoFcmVersion = project.property('ANDROID_RETENO_FCM_VERSION')
-} else if (rootProject.ext.has('retenoFcmVersion')) {
-    retenoFcmVersion = rootProject.ext.retenoFcmVersion
-} else {
-    retenoFcmVersion = '2.8.9'
-}
+def retenoFcmVersion = '2.9.1'
 
 android {
     namespace 'com.reteno.plugin'

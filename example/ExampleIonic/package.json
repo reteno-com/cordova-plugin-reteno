@@ -7,9 +7,9 @@
     "clean:ios:build": "rm -rf ios/App/build",
     "build:android:debug": "npm run build && npx cap sync android && cd android && ./gradlew :app:assembleDebug",
     "build:android:release": "npm run build && npx cap sync android && cd android && ./gradlew :app:bundleRelease",
-    "build:ios:debug": "npm run build && npm run clean:ios:build && npx cap sync ios && node scripts/patch-ios-bundle-id.js && xcodebuild -workspace ios/App/App.xcworkspace -scheme App -configuration Debug -sdk iphoneos -destination 'generic/platform=iOS' build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=\"\"",
-    "build:ios:release": "npm run build && npm run clean:ios:build && npx cap sync ios && node scripts/patch-ios-bundle-id.js && xcodebuild -workspace ios/App/App.xcworkspace -scheme App -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' archive -archivePath build/App.xcarchive",
-    "publish:ios:testflight": "npm run build && npm run clean:ios:build && npx cap sync ios && node scripts/patch-ios-bundle-id.js && cd ios/App && bundle install && bundle exec fastlane ios testflight --env testflight",
+    "build:ios:debug": "npm run build && npm run clean:ios:build && npx cap sync ios && node scripts/patch-ios-bundle-id.js && node scripts/patch-ios-content-extension.js && xcodebuild -workspace ios/App/App.xcworkspace -scheme App -configuration Debug -sdk iphoneos -destination 'generic/platform=iOS' build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=\"\"",
+    "build:ios:release": "npm run build && npm run clean:ios:build && npx cap sync ios && node scripts/patch-ios-bundle-id.js && node scripts/patch-ios-content-extension.js && xcodebuild -workspace ios/App/App.xcworkspace -scheme App -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' archive -archivePath build/App.xcarchive",
+    "publish:ios:testflight": "npm run build && npm run clean:ios:build && npx cap sync ios && node scripts/patch-ios-bundle-id.js && node scripts/patch-ios-content-extension.js && cd ios/App && bundle install && bundle exec fastlane ios testflight --env testflight",
     "run:android:emulator": "npm run build && npx cap sync android && cd android && ./gradlew :app:installDebug && adb shell am start -n com.reteno.sample/.MainActivity",
     "add:plugin": "npm install \"file:/Users/serhiiporaiko/projects/Yalantis/reteno-cordova/cordova-plugin-reteno-0.0.1.tgz\"",
     "ng": "ng",
@@ -74,7 +74,8 @@
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.0.0",
     "ts-node": "^8.3.0",
-    "typescript": "~5.8.3"
+    "typescript": "~5.8.3",
+    "xcode": "^3.0.1"
   },
   "description": "An Ionic project"
 }

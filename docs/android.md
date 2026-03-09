@@ -8,12 +8,6 @@
 cordova plugin add cordova-plugin-reteno --variable SDK_ACCESS_KEY=YOUR_KEY
 ```
 
-Optional: enable Reteno Android Debug Mode (Reteno SDK 2.7.0+):
-
-```sh
-cordova plugin add cordova-plugin-reteno --variable SDK_ACCESS_KEY=YOUR_KEY --variable RETENO_DEBUG_MODE=true
-```
-
 ### Configure via config.xml (Cordova)
 
 If you prefer to keep the access key in your Cordova app config (instead of passing `--variable` during installation), configure it as **plugin variables** in `config.xml`:
@@ -23,12 +17,6 @@ If you prefer to keep the access key in your Cordova app config (instead of pass
   <plugin name="cordova-plugin-reteno" spec="cordova-plugin-reteno">
     <!-- Reteno SDK access key (required) -->
     <variable name="SDK_ACCESS_KEY" value="YOUR_KEY" />
-
-    <!-- Optional: enable Reteno debug mode on Android -->
-    <variable name="RETENO_DEBUG_MODE" value="true" />
-
-    <!-- Optional: Reteno Android SDK (FCM) version override -->
-    <variable name="ANDROID_RETENO_FCM_VERSION" value="2.9.0" />
   </plugin>
 </widget>
 ```
@@ -39,29 +27,9 @@ Notes:
 - Changing plugin variables often requires reinstalling the plugin or re-adding the platform:
   - `cordova plugin rm cordova-plugin-reteno && cordova plugin add ...`
   - or `cordova platform rm android && cordova platform add android`
-
-Notes:
-
-- Debug mode is intended for test devices/developer accounts.
 ```
 
 2. Reteno dependency is added automatically by the plugin via its Gradle hook.
-
-   If you need a different Reteno SDK version, you can override it:
-   - During plugin installation:
-
-     ```sh
-     cordova plugin add cordova-plugin-reteno --variable ANDROID_RETENO_FCM_VERSION=2.9.0
-     ```
-
-   - Or from your Android project (for example in `platforms/android/build.gradle`):
-
-   ```groovy
-   // Example: always take the latest 2.x (dynamic versions can reduce reproducibility)
-   ext.retenoFcmVersion = '2.+'
-   // or pin an exact version:
-   // ext.retenoFcmVersion = '2.8.9'
-   ```
 
 3. Android 13+ (and `targetSdkVersion >= 33`) requires notification runtime permission. The plugin injects the manifest permission (`POST_NOTIFICATIONS`), but you still must request it at runtime in your app.
 
@@ -99,11 +67,9 @@ If you need advanced Reteno configuration (custom `RetenoConfig`, custom device 
 5. Set up Firebase for Cloud Messaging (create Firebase project, add `google-services.json`, etc):
    [link](https://docs.reteno.com/reference/setting-up-your-firebase-application-for-firebase-cloud-messaging).
 
-## Push notification listeners (SDK 2.8.9+; new listener API in 2.9.0)
+## Push notification listeners
 
-The Android SDK 2.9.0 introduces new listener-based callbacks for push events. The plugin supports
-Android SDK **2.8.9+**; on 2.8.9 it falls back to legacy broadcast receivers, while 2.9.0+ uses
-listener APIs where available.
+The plugin uses the listener-based API (`EventListener` / `Procedure`) for all push events.
 
 - `setOnRetenoPushDismissedListener(listener)` — called when a push notification is dismissed (swiped away).
 - `setOnRetenoCustomPushReceivedListener(listener)` — called when a custom push notification is received.
@@ -182,6 +148,20 @@ See Reteno docs:
 
 ### Deeplinks in push payloads
 
-Reteno push notifications can include deeplinks. To handle them in a Cordova/Ionic app,
-install a deeplink plugin (for example, one that supports custom URL schemes or Android App Links)
-and wire it to open the link from the push payload.
+Reteno push notifications on Android can include deeplinks.
+
+In a native Android app, you can usually route those links with your own `Intent` handling, Android App Links, or custom URL schemes.
+
+For Cordova/Ionic/Capacitor apps, deeplink routing usually requires a separate app-level solution. This plugin does not provide a full deeplink router by itself, so if you need custom navigation from push links, use a dedicated deeplink integration, for example:
+
+- Branch.io
+- a custom URL scheme plugin
+- an Android App Links / Universal Links plugin
+
+Typical setup for hybrid apps:
+
+1. Configure your app to support the required link type (custom scheme or Android App Links).
+2. Install and configure your deeplink provider/router (for example, Branch.io) in the app project.
+3. Route the tapped push link into that provider/router so the app opens the correct webview route or native screen.
+
+In practice, Reteno can deliver the link in the push payload, but opening the correct destination inside a hybrid app is still handled by your deeplink integration layer.

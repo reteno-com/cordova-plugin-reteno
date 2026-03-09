@@ -74,11 +74,18 @@ function ensureExtensionPodTarget(podfilePath, appName, extensionName, retenoVer
   }
 
   // Insert nested extension target into the main app target.
+  // Uses greedy match so NSE is always inserted before the outermost closing `end`,
+  // never accidentally nested inside a pre-existing NCE block.
   if (next.includes(`target '${appName}' do`) && !next.includes(`target '${extensionName}' do`)) {
-    next = next.replace(
-      new RegExp(`(target '${appName}' do[\\s\\S]*?)(\\nend\\n?)`),
-      `$1\n${nestedBlock}$2`
-    );
+    const mainTargetRegex = new RegExp(`(target '${appName}' do[\\s\\S]*)(\\nend[\\s]*)$`);
+    const match = next.match(mainTargetRegex);
+    if (match) {
+      next =
+        next.slice(0, match.index) +
+        match[1] +
+        `\n${nestedBlock}` +
+        match[2];
+    }
   }
 
   if (next !== current) {
@@ -87,6 +94,120 @@ function ensureExtensionPodTarget(podfilePath, appName, extensionName, retenoVer
   }
 
   return false;
+}
+
+/**
+ * Adds `pod 'FirebaseMessaging'` to the main app target in the Podfile.
+ * Idempotent — skips if already present.
+ */
+function ensureFirebaseMessagingPod(podfilePath, appName) {
+  const current = readFileIfExists(podfilePath);
+  if (!current) return false;
+
+  const mainTargetRegex = new RegExp(`(target '${appName}' do\\n)([\\s\\S]*)(\\nend[\\s]*)$`);
+  const match = current.match(mainTargetRegex);
+  if (!match) return false;
+
+  const targetHeader = match[1];
+  const targetBody = match[2];
+  const targetFooter = match[3];
+
+  if (targetBody.includes("pod 'FirebaseMessaging'")) return false;
+
+  const next =
+    current.slice(0, match.index) +
+    targetHeader +
+    `  pod 'FirebaseMessaging'\n` +
+    targetBody +
+    targetFooter;
+  if (next === current) return false;
+
+  fs.writeFileSync(podfilePath, next, 'utf8');
+  return true;
+}
+
+/**
+ * Adds a pod target for the Notification Content Extension.
+ * Uses a greedy match so it inserts BEFORE the outer closing `end` of the main
+ * app target (not inside a previously-added nested NSE target block).
+ */
+function ensureContentExtensionPodTarget(podfilePath, appName, contentExtensionName, retenoVersion) {
+  const current = readFileIfExists(podfilePath);
+  if (!current) return false;
+  if (current.includes(`target '${contentExtensionName}' do`)) return false;
+
+  const nestedBlock =
+    `\n  target '${contentExtensionName}' do\n` +
+    `    inherit! :search_paths\n` +
+    `    pod 'Reteno', '${retenoVersion}'\n` +
+    `  end`;
+
+  // Greedy match: $1 captures everything inside the main app target (including any nested
+  // NSE block) and $2 captures the final outer `end` so NCE is always at the outermost level.
+  const mainTargetRegex = new RegExp(`(target '${appName}' do[\\s\\S]*)(\\nend[\\s]*)$`);
+  const match = current.match(mainTargetRegex);
+  if (!match) return false;
+
+  const next =
+    current.slice(0, match.index) +
+    match[1] +
+    nestedBlock +
+    match[2];
+
+  if (next !== current) {
+    fs.writeFileSync(podfilePath, next, 'utf8');
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Ensures Podfile has a post_install hook that disables ObjC Swift header
+ * generation for Reteno pod target. This avoids simulator dependency scanner
+ * failures when modulemap points to a missing Reteno-Swift.h.
+ */
+function ensureRetenoSwiftHeaderSetting(podfilePath) {
+  const current = readFileIfExists(podfilePath);
+  if (!current) return false;
+
+  // Already configured.
+  if (current.includes("target.name == 'Reteno'") && current.includes('SWIFT_INSTALL_OBJC_HEADER')) {
+    return false;
+  }
+
+  const snippet =
+`post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    next unless target.name == 'Reteno'
+    target.build_configurations.each do |config|
+      config.build_settings['SWIFT_INSTALL_OBJC_HEADER'] = 'NO'
+    end
+  end
+end
+`;
+
+  let next = current;
+
+  // If post_install exists, inject only Reteno block into it.
+  if (/post_install\s+do\s+\|installer\|/.test(current)) {
+    next = current.replace(
+      /(post_install\s+do\s+\|installer\|\n)/,
+      `$1  installer.pods_project.targets.each do |target|\n` +
+      `    next unless target.name == 'Reteno'\n` +
+      `    target.build_configurations.each do |config|\n` +
+      `      config.build_settings['SWIFT_INSTALL_OBJC_HEADER'] = 'NO'\n` +
+      `    end\n` +
+      `  end\n`
+    );
+  } else {
+    // No post_install: append one.
+    next = `${current.trimEnd()}\n\n${snippet}`;
+  }
+
+  if (next === current) return false;
+  fs.writeFileSync(podfilePath, next, 'utf8');
+  return true;
 }
 
 function nonCommentKeys(section) {
@@ -146,6 +267,24 @@ function hasFilePath(project, filePath) {
   return Boolean(project.hasFile(filePath));
 }
 
+/**
+ * Sets runOnlyForDeploymentPostprocessing = 0 on the "Embed App Extensions"
+ * PBXCopyFilesBuildPhase so that extensions are always embedded, not only
+ * when installing. This corresponds to unchecking "Copy only when installing"
+ * in Xcode's Build Phases UI.
+ */
+function disableEmbedCopyOnlyWhenInstalling(project) {
+  const phases = project.hash.project.objects.PBXCopyFilesBuildPhase || {};
+  nonCommentKeys(phases).forEach((key) => {
+    const phase = phases[key];
+    if (!phase) return;
+    const commentKey = `${key}_comment`;
+    if (phases[commentKey] === 'Embed App Extensions' || phase.name === '"Embed App Extensions"') {
+      phase.runOnlyForDeploymentPostprocessing = 0;
+    }
+  });
+}
+
 function findTargetByName(project, targetName) {
   const targets = project.pbxNativeTargetSection();
   const normalizedName = unquote(targetName);
@@ -185,6 +324,15 @@ function ensureBuildPhase(project, targetUuid, buildPhaseType, comment, optionsO
 function unquote(value) {
   if (typeof value !== 'string') return value;
   return value.replace(/^"(.*)"$/, '$1');
+}
+
+function getConfigXmlPreference(appRoot, name) {
+  const configPath = path.join(appRoot, 'config.xml');
+  const content = readFileIfExists(configPath);
+  if (!content) return null;
+  const regex = new RegExp(`<preference\\s+name=["']${name}["']\\s+value=["']([^"']+)["']`, 'i');
+  const match = content.match(regex);
+  return match ? match[1] : null;
 }
 
 function main() {
@@ -233,7 +381,9 @@ function main() {
   project.parseSync();
 
   const appBundleId = unquote(project.getBuildProperty('PRODUCT_BUNDLE_IDENTIFIER', 'Release', appName)) || 'com.reteno.example-app';
-  const retenoVersion = process.env.IOS_RETENO_FCM_VERSION || '2.6.1';
+  const pluginXmlContent = readFileIfExists(path.join(appRoot, 'plugins', 'cordova-plugin-reteno', 'plugin.xml'));
+  const pluginXmlMatch = pluginXmlContent && pluginXmlContent.match(/<pod\s+name="Reteno"\s+spec="([^"]+)"/);
+  const retenoVersion = (pluginXmlMatch && pluginXmlMatch[1]) || '2.6.1';
   const iosDeploymentTarget = unquote(project.getBuildProperty('IPHONEOS_DEPLOYMENT_TARGET', 'Release', appName)) || '15.0';
   const extensionBundleId = `${appBundleId}.${extensionName}`;
   const appGroup = `group.${appBundleId}.reteno-local-storage`;
@@ -246,7 +396,6 @@ function main() {
       'Please run: npx cordova platform rm ios && npx cordova platform add ios && npx cordova prepare ios'
     );
   }
-
   ensureDir(extensionDir);
 
   const infoPlist = `<?xml version="1.0" encoding="UTF-8"?>
@@ -270,7 +419,7 @@ function main() {
   <key>CFBundleShortVersionString</key>
   <string>1.0.0</string>
   <key>CFBundleVersion</key>
-  <string>411</string>
+  <string>413</string>
   <key>NSExtension</key>
   <dict>
     <key>NSExtensionPointIdentifier</key>
@@ -372,11 +521,163 @@ class NotificationService: RetenoNotificationServiceExtension {}
     });
   }
 
+  // ─── Notification Content Extension (Images Carousel) ────────────────────────
+  const contentExtensionName = 'NotificationContentExtension';
+  const contentExtensionBundleId = `${appBundleId}.${contentExtensionName}`;
+  const contentExtensionRelDir = `${appName}/${contentExtensionName}`;
+  const contentExtensionDir = path.join(appDir, contentExtensionName);
+
+  ensureDir(contentExtensionDir);
+
+  const nceInfoPlist = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleDevelopmentRegion</key>
+  <string>$(DEVELOPMENT_LANGUAGE)</string>
+  <key>CFBundleDisplayName</key>
+  <string>${contentExtensionName}</string>
+  <key>CFBundleExecutable</key>
+  <string>$(EXECUTABLE_NAME)</string>
+  <key>CFBundleIdentifier</key>
+  <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+  <key>CFBundleInfoDictionaryVersion</key>
+  <string>6.0</string>
+  <key>CFBundleName</key>
+  <string>$(PRODUCT_NAME)</string>
+  <key>CFBundlePackageType</key>
+  <string>XPC!</string>
+  <key>CFBundleShortVersionString</key>
+  <string>1.0.0</string>
+  <key>CFBundleVersion</key>
+  <string>413</string>
+  <key>NSExtension</key>
+  <dict>
+    <key>NSExtensionAttributes</key>
+    <dict>
+      <key>UNNotificationExtensionCategory</key>
+      <string>ImageCarousel</string>
+      <key>UNNotificationExtensionInitialContentSizeRatio</key>
+      <real>0.5</real>
+      <key>UNNotificationExtensionUserInteractionEnabled</key>
+      <true/>
+    </dict>
+    <key>NSExtensionPointIdentifier</key>
+    <string>com.apple.usernotifications.content-extension</string>
+    <key>NSExtensionPrincipalClass</key>
+    <string>$(PRODUCT_MODULE_NAME).NotificationViewController</string>
+  </dict>
+</dict>
+</plist>
+`;
+
+  const notificationViewControllerSwift = `import Reteno
+
+final class NotificationViewController: RetenoCarouselNotificationViewController {}
+`;
+
+  ensureFile(path.join(contentExtensionDir, 'Info.plist'), nceInfoPlist);
+  ensureFile(path.join(contentExtensionDir, 'NotificationViewController.swift'), notificationViewControllerSwift);
+
+  // Reuse the same project object — no re-parse needed.
+  const projectAfterNse = project;
+
+  const existingNceTargets = findTargetsByName(projectAfterNse, contentExtensionName);
+  if (existingNceTargets.length > 1) {
+    throw new Error(
+      `Detected ${existingNceTargets.length} '${contentExtensionName}' targets in iOS project. ` +
+      'Please run: npx cordova platform rm ios && npx cordova platform add ios && npx cordova prepare ios'
+    );
+  }
+
+  let nceTargetUuid;
+  if (existingNceTargets.length === 1) {
+    nceTargetUuid = existingNceTargets[0].uuid;
+  } else {
+    const newNceTarget = projectAfterNse.addTarget(
+      contentExtensionName,
+      'app_extension',
+      contentExtensionRelDir,
+      contentExtensionBundleId
+    );
+    nceTargetUuid = newNceTarget.uuid;
+  }
+
+  ensureBuildPhase(projectAfterNse, nceTargetUuid, 'PBXSourcesBuildPhase', 'Sources');
+  ensureBuildPhase(projectAfterNse, nceTargetUuid, 'PBXFrameworksBuildPhase', 'Frameworks');
+  ensureBuildPhase(projectAfterNse, nceTargetUuid, 'PBXResourcesBuildPhase', 'Resources');
+
+  let nceGroupKey = projectAfterNse.findPBXGroupKey({ name: contentExtensionName });
+  if (!nceGroupKey) {
+    nceGroupKey = projectAfterNse.pbxCreateGroup(contentExtensionName, `${appName}/${contentExtensionName}`);
+    const rootGroupKey = projectAfterNse.findPBXGroupKey({ name: 'CustomTemplate' });
+    if (rootGroupKey) {
+      projectAfterNse.addToPbxGroup(nceGroupKey, rootGroupKey);
+    }
+  }
+
+  ensureExtensionGroupPath(projectAfterNse, nceGroupKey, appName, contentExtensionName);
+
+  const nceFileRefs = projectAfterNse.pbxFileReferenceSection();
+  const nceFileRemap = {
+    [`${contentExtensionName}/NotificationViewController.swift`]: 'NotificationViewController.swift',
+    [`${contentExtensionName}/Info.plist`]: 'Info.plist',
+  };
+  nonCommentKeys(nceFileRefs).forEach((key) => {
+    const ref = nceFileRefs[key];
+    if (!ref || typeof ref.path !== 'string') return;
+    const rawPath = unquote(ref.path);
+    const fixedPath = nceFileRemap[rawPath];
+    if (!fixedPath) return;
+    ref.path = `"${fixedPath}"`;
+    ref.name = `"${fixedPath}"`;
+  });
+
+  if (
+    !hasFilePath(projectAfterNse, `${contentExtensionName}/NotificationViewController.swift`) &&
+    !hasFilePath(projectAfterNse, 'NotificationViewController.swift')
+  ) {
+    projectAfterNse.addSourceFile(
+      'NotificationViewController.swift',
+      { target: nceTargetUuid },
+      nceGroupKey
+    );
+  }
+
+  if (
+    !hasFilePath(projectAfterNse, `${contentExtensionName}/Info.plist`) &&
+    !hasFilePath(projectAfterNse, 'Info.plist')
+  ) {
+    projectAfterNse.addFile('Info.plist', nceGroupKey);
+  }
+
+  setTargetBuildSettings(projectAfterNse, nceTargetUuid, {
+    PRODUCT_BUNDLE_IDENTIFIER: `"${contentExtensionBundleId}"`,
+    INFOPLIST_FILE: `"${contentExtensionRelDir}/Info.plist"`,
+    SWIFT_OBJC_BRIDGING_HEADER: '""',
+    SWIFT_VERSION: '5.0',
+    IPHONEOS_DEPLOYMENT_TARGET: iosDeploymentTarget,
+    DEVELOPMENT_TEAM: '"X9JJR3XKX7"',
+    CODE_SIGN_STYLE: 'Automatic',
+    TARGETED_DEVICE_FAMILY: '"1,2"'
+  });
+
+  disableEmbedCopyOnlyWhenInstalling(project);
+
+  // Single write for all changes (NSE + NCE applied to same project object).
   fs.writeFileSync(projectPath, project.writeSync(), 'utf8');
 
   ensureExtensionPodTarget(podfilePath, appName, extensionName, retenoVersion, iosDeploymentTarget);
+  ensureContentExtensionPodTarget(podfilePath, appName, contentExtensionName, retenoVersion);
+  const tokenMode = getConfigXmlPreference(appRoot, 'IOS_DEVICE_TOKEN_HANDLING_MODE');
+  if (tokenMode === 'manual') {
+    ensureFirebaseMessagingPod(podfilePath, appName);
+  }
+  ensureRetenoSwiftHeaderSetting(podfilePath);
+  // ─────────────────────────────────────────────────────────────────────────────
 
   log(`iOS NotificationServiceExtension ensured for ${appName}.`);
+  log(`iOS NotificationContentExtension (Images Carousel) ensured for ${appName}.`);
 }
 
 main();

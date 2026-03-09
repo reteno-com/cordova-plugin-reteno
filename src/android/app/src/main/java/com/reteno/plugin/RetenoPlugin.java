@@ -51,15 +51,14 @@ import com.reteno.core.features.appinbox.AppInboxStatus;
 import android.util.Pair;
 import com.reteno.push.RetenoNotificationService;
 import com.reteno.push.RetenoNotifications;
+import com.reteno.push.events.InAppCustomData;
+import com.reteno.core.util.Procedure;
 import com.reteno.core.features.recommendation.GetRecommendationResponseCallback;
 
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeParseException;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -70,14 +69,8 @@ public class RetenoPlugin extends CordovaPlugin {
   private static final int REQ_CODE_POST_NOTIFICATIONS = 10001;
   private static final String PERMISSION_POST_NOTIFICATIONS = "android.permission.POST_NOTIFICATIONS";
   private static final String SDK_ACCESS_KEY_META = "com.reteno.SDK_ACCESS_KEY";
-  private static final String DEBUG_MODE_META = "com.reteno.plugin.DEBUG_MODE";
-  private static final String DEBUG_MODE_PREF = "RETENO_DEBUG_MODE";
 
   private static volatile RetenoPlugin activeInstance;
-  private static volatile boolean useListenerPushReceived = false;
-  private static volatile boolean useListenerNotificationClicked = false;
-  private static volatile boolean useListenerInAppCustomData = false;
-  private static volatile boolean useListenerCustomPush = false;
 
   private CallbackContext notificationPermissionCallback;
   private CallbackContext appInboxMessagesCountCallback;
@@ -85,12 +78,11 @@ public class RetenoPlugin extends CordovaPlugin {
   private JSONObject initialNotification;
   private volatile boolean initialized = false;
 
-  // Listeners for SDK 2.9.0+ events (null when running on 2.8.x)
-  private Object pushReceivedListener;
-  private Object notificationClickedListener;
-  private Object inAppCustomDataListener;
-  private Object pushDismissedListener;
-  private Object customPushListener;
+  private Procedure<Bundle> pushReceivedListener;
+  private Procedure<Bundle> notificationClickedListener;
+  private Procedure<InAppCustomData> inAppCustomDataListener;
+  private Procedure<Bundle> pushDismissedListener;
+  private Procedure<Bundle> customPushListener;
   private volatile boolean notificationListenersRegistered = false;
 
   @Override
@@ -133,20 +125,50 @@ public class RetenoPlugin extends CordovaPlugin {
     }
   }
 
-  public static boolean shouldUseListenerPushReceived() {
-    return useListenerPushReceived;
-  }
+  /**
+   * If the bundle contains action button data (es_action_button == true),
+   * emit a "reteno-push-button-clicked" event with structured payload
+   * matching the iOS format: { actionId, link, customData, userInfo }.
+   */
+  public static void emitPushButtonClickedIfActionButton(Bundle bundle) {
+    if (bundle == null) {
+      return;
+    }
+    if (!bundle.getBoolean("es_action_button", false)) {
+      return;
+    }
 
-  public static boolean shouldUseListenerNotificationClicked() {
-    return useListenerNotificationClicked;
-  }
+    try {
+      JSONObject payload = new JSONObject();
 
-  public static boolean shouldUseListenerInAppCustomData() {
-    return useListenerInAppCustomData;
-  }
+      String actionId = bundle.getString("es_btn_action_id");
+      if (actionId != null) {
+        payload.put("actionId", actionId);
+      }
 
-  public static boolean shouldUseListenerCustomPush() {
-    return useListenerCustomPush;
+      String link = bundle.getString("es_btn_action_link_unwrapped");
+      if (link == null) {
+        link = bundle.getString("es_btn_action_link_wrapped");
+      }
+      if (link != null) {
+        payload.put("link", link);
+      }
+
+      String customDataStr = bundle.getString("es_btn_action_custom_data");
+      if (customDataStr != null && !customDataStr.isEmpty()) {
+        try {
+          payload.put("customData", new JSONObject(customDataStr));
+        } catch (JSONException e) {
+          payload.put("customData", customDataStr);
+        }
+      }
+
+      payload.put("userInfo", RetenoUtil.bundleToJson(bundle));
+
+      emitJsEvent("reteno-push-button-clicked", payload);
+    } catch (Exception ignored) {
+      // Best-effort serialization.
+    }
   }
 
   @Override
@@ -485,6 +507,14 @@ public class RetenoPlugin extends CordovaPlugin {
       return true;
     }
 
+    // On Android, action button clicks are automatically detected from the
+    // notification-clicked bundle (es_action_button flag). No separate native
+    // setup is required, so we simply acknowledge the call.
+    if ("setNotificationActionHandler".equals(action)) {
+      callbackContext.success(1);
+      return true;
+    }
+
     return false;
   }
 
@@ -519,8 +549,7 @@ public class RetenoPlugin extends CordovaPlugin {
         return;
       }
 
-      Boolean debugOverride = readBooleanFromOptions(options, "debugMode", "debug");
-      boolean debugMode = debugOverride != null ? debugOverride.booleanValue() : readDebugModeEnabled();
+      boolean debugMode = options != null && options.optBoolean("isDebugMode", false);
 
       boolean pauseInAppMessages = options != null && options.optBoolean("pauseInAppMessages", false);
       boolean pausePushInAppMessages = options != null && options.optBoolean("pausePushInAppMessages", false);
@@ -563,8 +592,8 @@ public class RetenoPlugin extends CordovaPlugin {
         return;
       }
 
-      initialized = true;
       registerNotificationListeners();
+      initialized = true;
       callbackContext.success(1);
     } catch (Exception e) {
       callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
@@ -572,246 +601,151 @@ public class RetenoPlugin extends CordovaPlugin {
   }
 
   /**
-   * Register listener-based notification events available in SDK 2.9.0+.
-   * Wrapped in try-catch so the plugin stays compatible with SDK 2.8.x
-   * where these APIs do not exist.
+   * Register notification event listeners using the SDK 2.9.1 EventListener API.
+   * Each listener is a direct {@link Procedure} implementation — no reflection needed.
    */
   private void registerNotificationListeners() {
     if (notificationListenersRegistered) {
       return;
     }
-
     notificationListenersRegistered = true;
 
-    // Push received (new listener approach in 2.9.0)
     try {
-      pushReceivedListener = createProcedureListener("reteno-push-received");
-      if (pushReceivedListener != null) {
-        addNotificationListener("getReceived", pushReceivedListener);
-        useListenerPushReceived = true;
-      }
-    } catch (Exception ignored) {
-      pushReceivedListener = null;
-    }
+      // Push received
+      pushReceivedListener = new Procedure<Bundle>() {
+        @Override public void execute(Bundle bundle) {
+          emitJsEvent("reteno-push-received", RetenoUtil.bundleToJson(bundle));
+        }
+      };
+      RetenoNotifications.getReceived().addListener(pushReceivedListener);
 
-    // Notification clicked (new listener approach in 2.9.0)
-    try {
-      notificationClickedListener = createProcedureListener("reteno-notification-clicked");
-      if (notificationClickedListener != null) {
-        addNotificationListener("getClick", notificationClickedListener);
-        useListenerNotificationClicked = true;
-      }
-    } catch (Exception ignored) {
-      notificationClickedListener = null;
-    }
+      // Notification clicked (+ action-button detection)
+      notificationClickedListener = new Procedure<Bundle>() {
+        @Override public void execute(Bundle bundle) {
+          emitJsEvent("reteno-notification-clicked", RetenoUtil.bundleToJson(bundle));
+          emitPushButtonClickedIfActionButton(bundle);
+        }
+      };
+      RetenoNotifications.getClick().addListener(notificationClickedListener);
 
-    // In-app custom data (new listener approach in 2.9.0)
-    try {
-      inAppCustomDataListener = createInAppCustomDataListener();
-      if (inAppCustomDataListener != null) {
-        addNotificationListener("getInAppCustomDataReceived", inAppCustomDataListener);
-        useListenerInAppCustomData = true;
-      }
-    } catch (Exception ignored) {
-      inAppCustomDataListener = null;
-    }
+      // In-app custom data
+      inAppCustomDataListener = new Procedure<InAppCustomData>() {
+        @Override public void execute(InAppCustomData data) {
+          emitInAppCustomDataEvent(data);
+        }
+      };
+      RetenoNotifications.getInAppCustomDataReceived().addListener(inAppCustomDataListener);
 
-    // Push dismissed / swiped (new in 2.9.0)
-    try {
-      pushDismissedListener = createProcedureListener("reteno-push-dismissed");
-      if (pushDismissedListener != null) {
-        addNotificationListener("getClose", pushDismissedListener);
-      }
-    } catch (Exception ignored) {
-      pushDismissedListener = null;
-    }
+      // Push dismissed / swiped
+      pushDismissedListener = new Procedure<Bundle>() {
+        @Override public void execute(Bundle bundle) {
+          emitJsEvent("reteno-push-dismissed", RetenoUtil.bundleToJson(bundle));
+        }
+      };
+      RetenoNotifications.getClose().addListener(pushDismissedListener);
 
-    // Custom push received (new in 2.9.0)
-    try {
-      customPushListener = createProcedureListener("reteno-custom-push-received");
-      if (customPushListener != null) {
-        addNotificationListener("getCustom", customPushListener);
-        useListenerCustomPush = true;
-      }
-    } catch (Exception ignored) {
-      customPushListener = null;
+      // Custom push received
+      customPushListener = new Procedure<Bundle>() {
+        @Override public void execute(Bundle bundle) {
+          emitJsEvent("reteno-custom-push-received", RetenoUtil.bundleToJson(bundle));
+        }
+      };
+      RetenoNotifications.getCustom().addListener(customPushListener);
+    } catch (RuntimeException e) {
+      unregisterNotificationListeners();
+      throw e;
     }
   }
 
   private void unregisterNotificationListeners() {
     notificationListenersRegistered = false;
-    useListenerPushReceived = false;
-    useListenerNotificationClicked = false;
-    useListenerInAppCustomData = false;
-    useListenerCustomPush = false;
-    try {
-      if (pushReceivedListener != null) {
-        removeNotificationListener("getReceived", pushReceivedListener);
-        pushReceivedListener = null;
-      }
-    } catch (Exception ignored) {
-      // ignore
-    }
-    try {
-      if (notificationClickedListener != null) {
-        removeNotificationListener("getClick", notificationClickedListener);
-        notificationClickedListener = null;
-      }
-    } catch (Exception ignored) {
-      // ignore
-    }
-    try {
-      if (inAppCustomDataListener != null) {
-        removeNotificationListener("getInAppCustomDataReceived", inAppCustomDataListener);
-        inAppCustomDataListener = null;
-      }
-    } catch (Exception ignored) {
-      // ignore
-    }
-    try {
-      if (pushDismissedListener != null) {
-        removeNotificationListener("getClose", pushDismissedListener);
-        pushDismissedListener = null;
-      }
-    } catch (Exception ignored) {
-      // ignore
-    }
-    try {
-      if (customPushListener != null) {
-        removeNotificationListener("getCustom", customPushListener);
-        customPushListener = null;
-      }
-    } catch (Exception ignored) {
-      // ignore
-    }
+
+    pushReceivedListener = safeRemoveReceivedListener(pushReceivedListener);
+    notificationClickedListener = safeRemoveClickListener(notificationClickedListener);
+    inAppCustomDataListener = safeRemoveInAppCustomDataListener(inAppCustomDataListener);
+    pushDismissedListener = safeRemoveCloseListener(pushDismissedListener);
+    customPushListener = safeRemoveCustomListener(customPushListener);
   }
 
-  private Object createProcedureListener(final String eventName) {
-    Class<?> procedureClass = resolveProcedureClass();
-    if (procedureClass == null) {
-      return null;
-    }
-    return Proxy.newProxyInstance(
-      procedureClass.getClassLoader(),
-      new Class<?>[] { procedureClass },
-      new InvocationHandler() {
-        @Override
-        public Object invoke(Object proxy, Method method, Object[] args) {
-          if ("execute".equals(method.getName()) && args != null && args.length > 0) {
-            Object payload = args[0];
-            if (payload instanceof Bundle) {
-              emitJsEvent(eventName, RetenoUtil.bundleToJson((Bundle) payload));
-            }
-          }
-          return null;
-        }
+  private Procedure<Bundle> safeRemoveReceivedListener(Procedure<Bundle> listener) {
+    if (listener != null) {
+      try {
+        RetenoNotifications.getReceived().removeListener(listener);
+      } catch (Exception ignored) {
+        // Best-effort cleanup.
       }
-    );
+    }
+    return null;
   }
 
-  private Object createInAppCustomDataListener() {
-    Class<?> procedureClass = resolveProcedureClass();
-    if (procedureClass == null) {
-      return null;
-    }
-    return Proxy.newProxyInstance(
-      procedureClass.getClassLoader(),
-      new Class<?>[] { procedureClass },
-      new InvocationHandler() {
-        @Override
-        public Object invoke(Object proxy, Method method, Object[] args) {
-          if ("execute".equals(method.getName()) && args != null && args.length > 0) {
-            emitInAppCustomDataEvent(args[0]);
-          }
-          return null;
-        }
+  private Procedure<Bundle> safeRemoveClickListener(Procedure<Bundle> listener) {
+    if (listener != null) {
+      try {
+        RetenoNotifications.getClick().removeListener(listener);
+      } catch (Exception ignored) {
+        // Best-effort cleanup.
       }
-    );
+    }
+    return null;
   }
 
-  private void addNotificationListener(String getterName, Object listener) throws Exception {
-    Class<?> procedureClass = resolveProcedureClass();
-    if (procedureClass == null) {
-      return;
+  private Procedure<InAppCustomData> safeRemoveInAppCustomDataListener(Procedure<InAppCustomData> listener) {
+    if (listener != null) {
+      try {
+        RetenoNotifications.getInAppCustomDataReceived().removeListener(listener);
+      } catch (Exception ignored) {
+        // Best-effort cleanup.
+      }
     }
-    Class<?> notificationsClass = Class.forName("com.reteno.push.RetenoNotifications");
-    Method getter = notificationsClass.getMethod(getterName);
-    Object channel = getter.invoke(null);
-    Method addListener = channel.getClass().getMethod("addListener", procedureClass);
-    addListener.invoke(channel, listener);
+    return null;
   }
 
-  private void removeNotificationListener(String getterName, Object listener) throws Exception {
-    Class<?> procedureClass = resolveProcedureClass();
-    if (procedureClass == null) {
-      return;
+  private Procedure<Bundle> safeRemoveCloseListener(Procedure<Bundle> listener) {
+    if (listener != null) {
+      try {
+        RetenoNotifications.getClose().removeListener(listener);
+      } catch (Exception ignored) {
+        // Best-effort cleanup.
+      }
     }
-    Class<?> notificationsClass = Class.forName("com.reteno.push.RetenoNotifications");
-    Method getter = notificationsClass.getMethod(getterName);
-    Object channel = getter.invoke(null);
-    Method removeListener = channel.getClass().getMethod("removeListener", procedureClass);
-    removeListener.invoke(channel, listener);
+    return null;
   }
 
-  private Class<?> resolveProcedureClass() {
-    try {
-      return Class.forName("com.reteno.core.util.Procedure");
-    } catch (ClassNotFoundException ignored) {
-      // fall back to older package if present
+  private Procedure<Bundle> safeRemoveCustomListener(Procedure<Bundle> listener) {
+    if (listener != null) {
+      try {
+        RetenoNotifications.getCustom().removeListener(listener);
+      } catch (Exception ignored) {
+        // Best-effort cleanup.
+      }
     }
-    try {
-      return Class.forName("com.reteno.core._commoninterface.Procedure");
-    } catch (ClassNotFoundException ignored) {
-      return null;
-    }
+    return null;
   }
 
-  private void emitInAppCustomDataEvent(Object payload) {
+  private void emitInAppCustomDataEvent(InAppCustomData payload) {
     if (payload == null) {
       return;
     }
     try {
-      Class<?> payloadClass = payload.getClass();
-      Method getUrl = payloadClass.getMethod("getUrl");
-      Method getSource = payloadClass.getMethod("getSource");
-      Method getInAppId = payloadClass.getMethod("getInAppId");
-      Method getData = payloadClass.getMethod("getData");
-
-      Object url = getUrl.invoke(payload);
-      Object source = getSource.invoke(payload);
-      Object inAppId = getInAppId.invoke(payload);
-      Object data = getData.invoke(payload);
-
       JSONObject json = new JSONObject();
+      String url = payload.getUrl();
       if (url != null) {
-        json.put("url", url.toString());
+        json.put("url", url);
       }
-      if (source != null) {
-        json.put("inapp_source", source.toString());
-      }
-      if (inAppId != null) {
-        json.put("inapp_id", inAppId.toString());
-      }
-      if (data instanceof Map) {
+      json.put("inapp_source", payload.getSource());
+      json.put("inapp_id", payload.getInAppId());
+
+      Map<String, String> data = payload.getData();
+      if (data != null && !data.isEmpty()) {
         JSONObject dataJson = new JSONObject();
-        for (Object entryObj : ((Map) data).entrySet()) {
-          Map.Entry entry = (Map.Entry) entryObj;
-          String key = String.valueOf(entry.getKey());
-          Object value = entry.getValue();
-          dataJson.put(key, RetenoUtil.bundleValueToJson(value));
+        for (Map.Entry<String, String> entry : data.entrySet()) {
+          dataJson.put(entry.getKey(), entry.getValue());
         }
         json.put("data", dataJson);
       }
       emitJsEvent("reteno-in-app-custom-data", json);
     } catch (Exception ignored) {
-      // Best-effort serialization; fall back to string.
-      try {
-        JSONObject json = new JSONObject();
-        json.put("value", String.valueOf(payload));
-        emitJsEvent("reteno-in-app-custom-data", json);
-      } catch (Exception ignored2) {
-        // ignore
-      }
+      // Best-effort serialization.
     }
   }
 
@@ -826,32 +760,6 @@ public class RetenoPlugin extends CordovaPlugin {
       if (!TextUtils.isEmpty(normalized)) {
         return normalized;
       }
-    }
-    return null;
-  }
-
-  private Boolean readBooleanFromOptions(JSONObject options, String... keys) {
-    if (options == null || keys == null) {
-      return null;
-    }
-    for (String key : keys) {
-      if (key == null || !options.has(key)) {
-        continue;
-      }
-      Object raw = options.opt(key);
-      if (raw == null || raw == JSONObject.NULL) {
-        continue;
-      }
-      if (raw instanceof Boolean) {
-        return (Boolean) raw;
-      }
-      if (raw instanceof Number) {
-        return ((Number) raw).intValue() != 0;
-      }
-      if (raw instanceof String) {
-        return parseBooleanLenient((String) raw, null);
-      }
-      return parseBooleanLenient(String.valueOf(raw), null);
     }
     return null;
   }
@@ -1339,76 +1247,6 @@ public class RetenoPlugin extends CordovaPlugin {
     return key;
   }
 
-  private boolean readDebugModeEnabled() {
-    try {
-      String pref = this.preferences != null ? this.preferences.getString(DEBUG_MODE_PREF, null) : null;
-      Boolean parsed = parseBooleanLenient(pref, "$RETENO_DEBUG_MODE");
-      if (parsed != null) {
-        return parsed.booleanValue();
-      }
-    } catch (Exception ignored) {
-      // ignore
-    }
-
-    Boolean fromManifest = readBooleanFromManifest(DEBUG_MODE_META, "$RETENO_DEBUG_MODE");
-    if (fromManifest != null) {
-      return fromManifest.booleanValue();
-    }
-
-    return false;
-  }
-
-  private Boolean readBooleanFromManifest(String metaName, String placeholder) {
-    try {
-      Context context = this.cordova.getActivity();
-      if (context == null) {
-        return null;
-      }
-      PackageManager pm = context.getPackageManager();
-      ApplicationInfo info = pm.getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
-      if (info == null || info.metaData == null || !info.metaData.containsKey(metaName)) {
-        return null;
-      }
-      Object raw = info.metaData.get(metaName);
-      if (raw == null) {
-        return null;
-      }
-      if (raw instanceof Boolean) {
-        return (Boolean) raw;
-      }
-      if (raw instanceof Integer) {
-        return ((Integer) raw).intValue() != 0;
-      }
-      if (raw instanceof String) {
-        return parseBooleanLenient((String) raw, placeholder);
-      }
-      return parseBooleanLenient(String.valueOf(raw), placeholder);
-    } catch (Exception ignored) {
-      return null;
-    }
-  }
-
-  private Boolean parseBooleanLenient(String raw, String placeholder) {
-    if (raw == null) {
-      return null;
-    }
-    String s = raw.trim();
-    if (s.length() == 0) {
-      return null;
-    }
-    if (placeholder != null && placeholder.equals(s)) {
-      return null;
-    }
-    if ("true".equalsIgnoreCase(s) || "1".equals(s) || "yes".equalsIgnoreCase(s)
-      || "y".equalsIgnoreCase(s) || "on".equalsIgnoreCase(s)) {
-      return true;
-    }
-    if ("false".equalsIgnoreCase(s) || "0".equals(s) || "no".equalsIgnoreCase(s)
-      || "n".equalsIgnoreCase(s) || "off".equalsIgnoreCase(s)) {
-      return false;
-    }
-    return null;
-  }
 
   private void updateDefaultNotificationChannel(JSONArray args, CallbackContext callbackContext) throws JSONException {
     if (args == null || args.length() == 0) {
@@ -2292,6 +2130,28 @@ public class RetenoPlugin extends CordovaPlugin {
     }
     if (raw instanceof String) {
       return parseBooleanLenient((String) raw, null);
+    }
+    return null;
+  }
+
+  private Boolean parseBooleanLenient(String raw, String placeholder) {
+    if (raw == null) {
+      return null;
+    }
+    String s = raw.trim();
+    if (s.length() == 0) {
+      return null;
+    }
+    if (placeholder != null && placeholder.equals(s)) {
+      return null;
+    }
+    if ("true".equalsIgnoreCase(s) || "1".equals(s) || "yes".equalsIgnoreCase(s)
+      || "y".equalsIgnoreCase(s) || "on".equalsIgnoreCase(s)) {
+      return true;
+    }
+    if ("false".equalsIgnoreCase(s) || "0".equals(s) || "no".equalsIgnoreCase(s)
+      || "n".equalsIgnoreCase(s) || "off".equalsIgnoreCase(s)) {
+      return false;
     }
     return null;
   }

@@ -47,14 +47,16 @@
       </ion-toggle>
     </ion-item>
 
-    <ion-item>
-      <ion-toggle
-        [checked]="isCustomDataEnabled"
-        (ionChange)="toggleCustomData($event.detail.checked)"
-      >
-        In-app custom data listener
-      </ion-toggle>
-    </ion-item>
+    @if (!isIos) {
+      <ion-item>
+        <ion-toggle
+          [checked]="isCustomDataEnabled"
+          (ionChange)="toggleCustomData($event.detail.checked)"
+        >
+          In-app custom data listener
+        </ion-toggle>
+      </ion-item>
+    }
   </ion-list>
 
   @if (lifecycleStatus) {
@@ -73,13 +75,13 @@
     </ion-list>
   }
 
-  @if (customDataStatus) {
+  @if (!isIos && customDataStatus) {
     <ion-text class="status">
       <p>{{ customDataStatus }}</p>
     </ion-text>
   }
 
-  @if (customDataEvents.length) {
+  @if (!isIos && customDataEvents.length) {
     <ion-list>
       @for (event of customDataEvents; track event.key) {
         <ion-item>

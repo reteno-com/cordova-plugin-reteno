@@ -85,7 +85,11 @@ export type LifecycleTrackingOptions =
 export type RetenoInitializeOptions = {
   pauseInAppMessages?: boolean;
   pausePushInAppMessages?: boolean;
+  inAppMessagesPauseBehaviour?: InAppPauseBehaviour;
+  isAutomaticScreenReportingEnabled?: boolean;
   lifecycleTrackingOptions?: LifecycleTrackingOptions;
+  /** Enables Reteno debug mode for near real-time event monitoring. Use only with test devices. */
+  isDebugMode?: boolean;
 };
 
 export type InAppPauseBehaviour = 'SKIP_IN_APPS' | 'POSTPONE_IN_APPS';
@@ -93,16 +97,23 @@ export type InAppPauseBehaviour = 'SKIP_IN_APPS' | 'POSTPONE_IN_APPS';
 export type InAppLifecycleEvent = 'beforeDisplay' | 'onDisplay' | 'beforeClose' | 'afterClose' | 'onError';
 
 export type InAppData = {
-  id: string;
+  id?: string;
+};
+
+export type InAppActionData = {
+  isCloseButtonClicked: boolean;
+  isButtonClicked: boolean;
+  isOpenUrlClicked: boolean;
 };
 
 export type InAppCloseData = {
-  id: string;
+  id?: string;//android only
   closeAction: string;
+  action?: InAppActionData;
 };
 
 export type InAppErrorData = {
-  id: string;
+  id?: string;
   errorMessage: string;
 };
 
@@ -112,6 +123,8 @@ export type InAppLifecyclePayload = {
 };
 
 export type InAppLifecycleListener = (payload: InAppLifecyclePayload) => void;
+
+export type InAppStatusHandler = InAppLifecycleListener;
 
 export type NotificationChannelConfig = {
   name: string;
@@ -369,24 +382,48 @@ export type RetenoInAppCustomDataListener = (payload: RetenoInAppCustomDataPaylo
 
 /**
  * Payload received when a push notification is dismissed (swiped away).
- * Available in Reteno Android SDK 2.9.0+.
  */
 export type RetenoPushDismissedPayload = Record<string, unknown>;
 
 /**
  * Listener function for push notification dismissed (swipe) events.
- * Available in Reteno Android SDK 2.9.0+.
  */
 export type RetenoPushDismissedListener = (payload: RetenoPushDismissedPayload) => void;
 
 /**
  * Payload received when a custom push notification is received.
- * Available in Reteno Android SDK 2.9.0+.
  */
 export type RetenoCustomPushReceivedPayload = Record<string, unknown>;
 
 /**
  * Listener function for custom push notification received events.
- * Available in Reteno Android SDK 2.9.0+.
  */
 export type RetenoCustomPushReceivedListener = (payload: RetenoCustomPushReceivedPayload) => void;
+
+/**
+ * Payload received when a push notification action button is clicked.
+ * Contains actionId, link, customData and the original userInfo.
+ *
+ * - iOS: up to 4 buttons per notification.
+ * - Android: up to 3 buttons per notification.
+ */
+export type RetenoPushButtonClickedPayload = {
+  /** The unique identifier of the action button. */
+  actionId: string;
+  /** The URL or deeplink associated with the button, if any. */
+  link?: string | null;
+  /**
+   * Additional custom data associated with the button.
+   * Typically a parsed JSON object. On Android, falls back to a raw string
+   * if the value cannot be parsed as JSON.
+   */
+  customData?: Record<string, unknown> | string | null;
+  /** The original notification userInfo / bundle. */
+  userInfo?: Record<string, unknown>;
+};
+
+/**
+ * Listener function for push notification action button click events.
+ * Available on iOS and Android.
+ */
+export type RetenoPushButtonClickedListener = (payload: RetenoPushButtonClickedPayload) => void;

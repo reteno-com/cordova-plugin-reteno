@@ -128,6 +128,17 @@ function __callWithAutoInit(action, args, success, error) {
   };
 
   var RetenoPluginFunctions = {
+    /*
+        options: {
+          accessKey?: string,
+          pauseInAppMessages?: boolean,
+          pausePushInAppMessages?: boolean,
+          inAppMessagesPauseBehaviour?: 'SKIP_IN_APPS' | 'POSTPONE_IN_APPS',
+          isAutomaticScreenReportingEnabled?: boolean,
+          isDebugMode?: boolean,
+          lifecycleTrackingOptions?: { appLifecycleEnabled?: boolean, pushSubscriptionEnabled?: boolean, sessionEventsEnabled?: boolean }
+        }
+    */
     init: function (arg0, success, error) {
       // Back-compat: init(success, error)
       if (typeof arg0 === 'function') {
@@ -291,7 +302,7 @@ function __callWithAutoInit(action, args, success, error) {
       document.removeEventListener('reteno-in-app-custom-data', listener);
     },
 
-    // SDK 2.9.0+: push notification dismissed (swiped away)
+    // Push notification dismissed (swiped away)
     setOnRetenoPushDismissedListener: function (arg0, arg1) {
       var listener = typeof arg0 === 'function' ? arg0 : arg1;
       if (typeof listener !== 'function') return;
@@ -303,7 +314,7 @@ function __callWithAutoInit(action, args, success, error) {
       document.removeEventListener('reteno-push-dismissed', listener);
     },
 
-    // SDK 2.9.0+: custom push notification received
+    // Custom push notification received
     setOnRetenoCustomPushReceivedListener: function (arg0, arg1) {
       var listener = typeof arg0 === 'function' ? arg0 : arg1;
       if (typeof listener !== 'function') return;
@@ -315,12 +326,41 @@ function __callWithAutoInit(action, args, success, error) {
       document.removeEventListener('reteno-custom-push-received', listener);
     },
 
+    // Push notification action button clicked (iOS & Android)
+    setOnRetenoPushButtonClickedListener: function (arg0, arg1) {
+      var listener = typeof arg0 === 'function' ? arg0 : arg1;
+      if (typeof listener !== 'function') return;
+      document.addEventListener('reteno-push-button-clicked', listener);
+    },
+
+    removeOnRetenoPushButtonClickedListener: function (listener) {
+      if (typeof listener !== 'function') return;
+      document.removeEventListener('reteno-push-button-clicked', listener);
+    },
+
+    /*
+        payload: boolean | { enabled?: boolean, emitEvent?: boolean }
+        iOS: the native handler is installed when both `enabled` (default: true)
+        and `emitEvent` are true. So both { enabled: true, emitEvent: true }
+        and { emitEvent: true } install the handler.
+        Any call where enabled is false OR emitEvent is not true clears
+        the native handler (sets it to nil):
+          false, null, true, { enabled: true }, { enabled: false, emitEvent: true }
+        Android: no-op — action button clicks are automatically detected
+        from the notification-clicked bundle.
+        */
+    setNotificationActionHandler: function (arg0, success, error) {
+      return __callWithExec('setNotificationActionHandler', [arg0], success, error);
+    },
+
     setOnInAppLifecycleCallback: function (arg0, arg1) {
       var listener = typeof arg0 === 'function' ? arg0 : arg1;
-      if (listener === null) {
+      if (arg0 === null || listener === null) {
         return __callWithAutoInit('setInAppLifecycleCallback', [null]);
       }
-      if (typeof listener !== 'function') return;
+      if (typeof listener !== 'function') {
+        return Promise.reject(new Error('setOnInAppLifecycleCallback: expected a function or null'));
+      }
       document.addEventListener('reteno-in-app-lifecycle', listener);
       return __callWithAutoInit('setInAppLifecycleCallback', []);
     },
@@ -330,6 +370,50 @@ function __callWithAutoInit(action, args, success, error) {
         */
     setDeviceToken: function (arg0, success, error) {
       return __callWithAutoInit('setDeviceToken', [arg0], success, error);
+    },
+
+    /*
+        iOS only. Requires all three conditions:
+        1. IOS_DEVICE_TOKEN_HANDLING_MODE is 'manual' (this is the plugin default)
+        2. 'FirebaseMessaging' pod installed
+        3. GoogleService-Info.plist added to the app target
+
+        When IOS_DEVICE_TOKEN_HANDLING_MODE is 'manual', the plugin calls
+        FirebaseApp.configure() automatically and subscribes to FCM token updates,
+        forwarding them to Reteno. setFCMToken() is a manual fallback to trigger
+        token delivery explicitly (e.g. for debugging or after permission grant).
+        Returns the FCM token string on success.
+        */
+    setFCMToken: function (success, error) {
+      if (!__isIosPlatform()) {
+        var p = Promise.reject(new Error('setFCMToken is only available on iOS'));
+        if (typeof error === 'function') p.catch(error);
+        return p;
+      }
+
+      var p;
+      if (__retenoState.initialized) {
+        p = __callWithExec('setFCMToken', []);
+      } else if (__retenoState.initPromise) {
+        p = __retenoState.initPromise.then(function () {
+          return __promiseExec('setFCMToken', []);
+        });
+      } else {
+        p = Promise.reject(
+          new Error("setFCMToken requires Reteno to be initialized first. Ensure IOS_DEVICE_TOKEN_HANDLING_MODE is 'manual' (default).")
+        );
+      }
+
+      if (__isFn(success) || __isFn(error)) {
+        p.then(function (res) {
+          if (__isFn(success)) success(res);
+          return res;
+        }).catch(function (err) {
+          if (__isFn(error)) error(err);
+          throw err;
+        });
+      }
+      return p;
     },
 
     /*
@@ -417,9 +501,7 @@ function __callWithAutoInit(action, args, success, error) {
     },
 
     requestNotificationPermission: function (success, error) {
-      // If Reteno isn't initialized yet, permission can still be requested,
-      // but Reteno's internal status update will fail until init().
-      return __callWithExec('requestNotificationPermission', [], success, error);
+      return __callWithAutoInit('requestNotificationPermission', [], success, error);
     },
 
     /*

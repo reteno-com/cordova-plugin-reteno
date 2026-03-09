@@ -1,23 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
     package="com.reteno.plugin">
 
-    <application>
-        <receiver
-            android:name="com.reteno.plugin.RetenoPushReceiver"
-            android:enabled="true"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="com.reteno.custom-push" />
-            </intent-filter>
-        </receiver>
-
-        <!-- Reteno notification clicked receiver: handles user taps on push notifications -->
-        <receiver
-            android:name="com.reteno.plugin.RetenoNotificationClickedReceiver"
-            android:enabled="true"
-            android:exported="true" />
-    </application>
+    <application />
 
 </manifest>

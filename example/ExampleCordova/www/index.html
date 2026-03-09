@@ -76,6 +76,15 @@
                             <span>sessionEventsEnabled</span>
                         </label>
                     </div>
+
+                    <div id="retenoInitScreenReportingRow" class="reteno-section">
+                        <label class="toggle-row">
+                            <span class="toggle-label">isAutomaticScreenReportingEnabled (iOS)</span>
+                            <input id="retenoInitScreenReporting" class="toggle-input" type="checkbox" disabled>
+                            <span class="toggle-ui" aria-hidden="true"></span>
+                        </label>
+                    </div>
+
                 </div>
 
                 <div class="demo-nav" aria-label="Force push data">
@@ -302,7 +311,7 @@
                     <h2>Notifications</h2>
                 </div>
 
-                <div class="reteno-form" aria-label="Reteno notification channel form">
+                <div id="retenoAndroidNotificationChannelForm" class="reteno-form" aria-label="Reteno notification channel form">
                     <h2>Reteno: updateDefaultNotificationChannel</h2>
 
                     <label class="reteno-label" for="retenoNotificationName">Channel name</label>
@@ -345,15 +354,21 @@
                         <span class="toggle-ui" aria-hidden="true"></span>
                     </label>
 
-                    <label class="toggle-row">
-                        <span class="toggle-label">setOnRetenoPushDismissedListener (2.9.0+)</span>
+                    <label id="retenoPushDismissedListenerRow" class="toggle-row">
+                        <span class="toggle-label">setOnRetenoPushDismissedListener (2.9.1+)</span>
                         <input id="retenoPushDismissedListenerToggle" class="toggle-input" type="checkbox">
                         <span class="toggle-ui" aria-hidden="true"></span>
                     </label>
 
-                    <label class="toggle-row">
-                        <span class="toggle-label">setOnRetenoCustomPushReceivedListener (2.9.0+)</span>
+                    <label id="retenoCustomPushReceivedListenerRow" class="toggle-row">
+                        <span class="toggle-label">setOnRetenoCustomPushReceivedListener (2.9.1+)</span>
                         <input id="retenoCustomPushReceivedListenerToggle" class="toggle-input" type="checkbox">
+                        <span class="toggle-ui" aria-hidden="true"></span>
+                    </label>
+
+                    <label class="toggle-row" id="retenoPushButtonClickedListenerRow">
+                        <span class="toggle-label">setOnRetenoPushButtonClickedListener</span>
+                        <input id="retenoPushButtonClickedListenerToggle" class="toggle-input" type="checkbox">
                         <span class="toggle-ui" aria-hidden="true"></span>
                     </label>
 
@@ -361,10 +376,12 @@
                     <pre id="retenoNotificationClickedEvent" class="reteno-status" aria-live="polite"></pre>
                     <pre id="retenoPushDismissedEvent" class="reteno-status" aria-live="polite"></pre>
                     <pre id="retenoCustomPushReceivedEvent" class="reteno-status" aria-live="polite"></pre>
+                    <pre id="retenoPushButtonClickedEvent" class="reteno-status" aria-live="polite"></pre>
                     <ul id="retenoPushReceivedEventList" class="reteno-event-list" aria-label="Push received events"></ul>
                     <ul id="retenoNotificationClickedEventList" class="reteno-event-list" aria-label="Notification clicked events"></ul>
                     <ul id="retenoPushDismissedEventList" class="reteno-event-list" aria-label="Push dismissed events"></ul>
                     <ul id="retenoCustomPushReceivedEventList" class="reteno-event-list" aria-label="Custom push received events"></ul>
+                    <ul id="retenoPushButtonClickedEventList" class="reteno-event-list" aria-label="Push button clicked events"></ul>
                 </div>
 
                 <div id="retenoIosNotificationHandlers" class="reteno-form" aria-label="Reteno iOS notification handlers">
@@ -435,7 +452,7 @@
                         <span class="toggle-ui" aria-hidden="true"></span>
                     </label>
 
-                    <label class="toggle-row">
+                    <label id="retenoInAppCustomDataRow" class="toggle-row">
                         <span class="toggle-label">setOnInAppMessageCustomDataReceivedListener</span>
                         <input id="retenoInAppCustomDataToggle" class="toggle-input" type="checkbox">
                         <span class="toggle-ui" aria-hidden="true"></span>

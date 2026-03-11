@@ -12,6 +12,7 @@ PODS:
     - Capacitor
   - CordovaPlugins (8.0.0):
     - CapacitorCordova
+    - FirebaseMessaging
     - Reteno (= 2.6.1)
   - FirebaseCore (12.10.0):
     - FirebaseCoreInternal (~> 12.10.0)
@@ -114,7 +115,7 @@ SPEC CHECKSUMS:
   CapacitorHaptics: 2079d9fa04c5a71e18663b4722323c304c58245c
   CapacitorKeyboard: d7868c079a4d5277a3deca27a10a488fcbbb8b69
   CapacitorStatusBar: 312e2e67928dfe9514c4a8916a1fd610552f5f35
-  CordovaPlugins: be7d36d1293aea29274e234d29f952e625e0fb73
+  CordovaPlugins: 0096029f8e0b88d99aaf83dc0aab6d877f80e22a
   FirebaseCore: f4428e22415ea3b3eca652c2098413dabf2a23a9
   FirebaseCoreInternal: e7bbaeb00ab73011298f35ed223aa7371e212948
   FirebaseInstallations: 047343aa91fd6a1ebfa3eb374ddecf36a8aaddfd

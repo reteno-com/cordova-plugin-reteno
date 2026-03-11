@@ -150,23 +150,77 @@ platform :ios do
       force_legacy_encryption = true
     end
 
+    app_identifiers = ENV.fetch("MATCH_APP_IDENTIFIER").split(",").map(&:strip)
+    match_type = ENV.fetch("MATCH_TYPE", "appstore")
+
     match(
       api_key: api_key,
       readonly: match_readonly,
       git_url: ENV.fetch("MATCH_GIT_URL"),
       git_branch: ENV.fetch("MATCH_GIT_BRANCH", "main"),
-      type: ENV.fetch("MATCH_TYPE", "appstore"),
-      app_identifier: ENV.fetch("MATCH_APP_IDENTIFIER").split(","),
+      type: match_type,
+      app_identifier: app_identifiers,
       team_id: ENV["FASTLANE_TEAM_ID"],
       force_legacy_encryption: force_legacy_encryption
     )
 
     cocoapods(clean_install: true) if File.exist?("Podfile")
 
-    export_options = {
-      provisioningProfiles: lane_context[SharedValues::MATCH_PROVISIONING_PROFILE_MAPPING]
-    }
     team_id = ENV["FASTLANE_TEAM_ID"].to_s.strip
+
+    # Get profile names from match env vars (includes timestamp suffix).
+    # match sets sigh_<bundle_id>_<type>_profile-name after downloading.
+    profile_mapping = {}
+    app_identifiers.each do |bundle_id|
+      profile_name = ENV["sigh_#{bundle_id}_#{match_type}_profile-name"]
+      UI.user_error!("No profile name found for #{bundle_id} (env: sigh_#{bundle_id}_#{match_type}_profile-name)") if profile_name.nil?
+      profile_mapping[bundle_id] = profile_name
+    end
+
+    # Map bundle IDs to Xcode target names for per-target signing config.
+    main_bundle_id = ENV.fetch("APP_IDENTIFIER").split(",").first.strip
+    app_identifiers.each do |bundle_id|
+      profile_name = profile_mapping[bundle_id]
+      target_name = if bundle_id == main_bundle_id
+                      "App"
+                    else
+                      bundle_id.sub("#{main_bundle_id}.", "")
+                    end
+
+      update_code_signing_settings(
+        use_automatic_signing: false,
+        path: "App.xcodeproj",
+        team_id: team_id,
+        targets: [target_name],
+        profile_name: profile_name,
+        code_sign_identity: "Apple Distribution"
+      )
+    end
+
+    # Write ExportOptions.plist directly to bypass gym's auto-detection
+    # which fails when multiple profiles exist for the same bundle ID.
+    export_method = ENV.fetch("GYM_EXPORT_METHOD", "app-store")
+    export_plist_path = File.join(Dir.tmpdir, "ExportOptions-#{Process.pid}.plist")
+    profiles_xml = profile_mapping.map { |bid, pn| "<key>#{bid}</key><string>#{pn}</string>" }.join("\n        ")
+    File.write(export_plist_path, <<~PLIST)
+      <?xml version="1.0" encoding="UTF-8"?>
+      <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+      <plist version="1.0">
+      <dict>
+        <key>method</key>
+        <string>#{export_method}</string>
+        <key>teamID</key>
+        <string>#{team_id}</string>
+        <key>signingStyle</key>
+        <string>manual</string>
+        <key>provisioningProfiles</key>
+        <dict>
+          #{profiles_xml}
+        </dict>
+      </dict>
+      </plist>
+    PLIST
+
     xcargs = []
     xcargs << "DEVELOPMENT_TEAM=#{team_id}" unless team_id.empty?
 
@@ -174,12 +228,11 @@ platform :ios do
       workspace: ENV.fetch("GYM_WORKSPACE"),
       scheme: ENV.fetch("GYM_SCHEME"),
       configuration: ENV.fetch("GYM_CONFIGURATION", "Release"),
-      export_method: ENV.fetch("GYM_EXPORT_METHOD", "app-store"),
+      export_method: export_method,
       export_team_id: (team_id.empty? ? nil : team_id),
-      skip_codesigning: (ENV["GYM_SKIP_CODESIGNING"] || "true") == "true",
       include_bitcode: (ENV["GYM_INCLUDE_BITCODE"] || "false") == "true",
       xcargs: xcargs.join(" "),
-      export_options: export_options,
+      export_options: export_plist_path,
       derived_data_path: ENV["CI_DERIVED_DATA_PATH"],
       output_directory: ENV.fetch("CI_OUTPUT_DIRECTORY", "./build"),
       clean: true

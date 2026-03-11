@@ -1,14 +1,38 @@
 import UIKit
 import Capacitor
+import FirebaseMessaging
+import Reteno
 
 @UIApplicationMain
-class AppDelegate: UIResponder, UIApplicationDelegate {
+class AppDelegate: UIResponder, UIApplicationDelegate, MessagingDelegate {
 
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization after application launch.
+        Messaging.messaging().delegate = self
         return true
+    }
+
+    // MARK: - Remote notification token
+
+    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        let apnsToken = deviceToken.map { String(format: "%02.2hhx", $0) }.joined()
+        print("[PushDebug] APNS didRegister, token=\(apnsToken)")
+        Messaging.messaging().setAPNSToken(deviceToken, type: .unknown)
+        // Keep Capacitor notification bridge behavior.
+        NotificationCenter.default.post(name: .capacitorDidRegisterForRemoteNotifications, object: deviceToken)
+    }
+
+    func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        NotificationCenter.default.post(name: .capacitorDidFailToRegisterForRemoteNotifications, object: error)
+    }
+
+    // MARK: - Firebase Messaging
+
+    public func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
+        guard let fcmToken, !fcmToken.isEmpty else { return }
+        print("FCM token:", fcmToken)
+        Reteno.userNotificationService.processRemoteNotificationsToken(fcmToken)
     }
 
     func applicationWillResignActive(_ application: UIApplication) {

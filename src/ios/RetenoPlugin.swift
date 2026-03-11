@@ -17,7 +17,6 @@ class RetenoPlugin: CDVPlugin {
   private static var hasSwizzledAPNs = false
   private static var latestAPNsToken: Data?
   private static var latestFCMToken: String?
-  private static let fcmTokenReadyNotification = Notification.Name("RetenoPluginFCMTokenReady")
   #endif
 
   override func pluginInitialize() {
@@ -177,55 +176,8 @@ class RetenoPlugin: CDVPlugin {
 
   private func handleFCMTokenUpdate(_ token: String) {
     RetenoPlugin.latestFCMToken = token
-    NotificationCenter.default.post(
-      name: RetenoPlugin.fcmTokenReadyNotification,
-      object: nil,
-      userInfo: ["token": token]
-    )
     if isManualTokenMode {
       Reteno.userNotificationService.processRemoteNotificationsToken(token)
-    }
-  }
-
-  private func currentFCMTokenIfAvailable() -> String? {
-    if let token = RetenoPlugin.latestFCMToken, !token.isEmpty {
-      return token
-    }
-    if let token = messagingIfAvailable()?.fcmToken, !token.isEmpty {
-      RetenoPlugin.latestFCMToken = token
-      return token
-    }
-    return nil
-  }
-
-  private func waitForFCMToken(completion: @escaping (String?) -> Void) {
-    if let token = currentFCMTokenIfAvailable() {
-      completion(token)
-      return
-    }
-
-    ensureAPNsRegistrationIfNeeded()
-
-    var readyObserver: NSObjectProtocol?
-    func cleanup() {
-      if let readyObserver {
-        NotificationCenter.default.removeObserver(readyObserver)
-      }
-    }
-
-    readyObserver = NotificationCenter.default.addObserver(
-      forName: RetenoPlugin.fcmTokenReadyNotification,
-      object: nil,
-      queue: .main
-    ) { notification in
-      cleanup()
-      let token = notification.userInfo?["token"] as? String
-      completion(token ?? self.currentFCMTokenIfAvailable())
-    }
-
-    if let token = currentFCMTokenIfAvailable() {
-      cleanup()
-      completion(token)
     }
   }
 
@@ -279,27 +231,6 @@ class RetenoPlugin: CDVPlugin {
     }
 
     RetenoPlugin.hasSwizzledAPNs = true
-  }
-
-  private func hasAPNsTokenAvailable() -> Bool {
-    if FirebaseApp.app() != nil, Messaging.messaging().apnsToken != nil {
-      return true
-    }
-    return RetenoPlugin.latestAPNsToken != nil
-  }
-
-  private func syncCachedAPNsTokenToMessagingIfNeeded() {
-    guard let messaging = messagingIfConfigured() else { return }
-    if messaging.apnsToken == nil, let token = RetenoPlugin.latestAPNsToken {
-      messaging.apnsToken = token
-    }
-  }
-
-  private func ensureAPNsRegistrationIfNeeded() {
-    guard !hasAPNsTokenAvailable() else { return }
-    DispatchQueue.main.async {
-      UIApplication.shared.registerForRemoteNotifications()
-    }
   }
 
   #endif

@@ -194,7 +194,7 @@ await retenosdk.setDeviceToken(token);
 If your app retrieves tokens natively, here are the two common options and how they map to the plugin:
 
 - APNs: get `deviceToken` in `didRegisterForRemoteNotificationsWithDeviceToken`, convert to hex string, then forward it to JS and call `retenosdk.setDeviceToken(tokenString)`.
-- FCM (Firebase Messaging): use the dedicated iOS Firebase flow below. `IOS_DEVICE_TOKEN_HANDLING_MODE` defaults to `manual`, so the plugin can forward FCM tokens automatically after `init()`, and `setFCMToken()` is available as a manual fallback.
+- FCM (Firebase Messaging): use the dedicated iOS Firebase flow below. `IOS_DEVICE_TOKEN_HANDLING_MODE` defaults to `manual`, so the plugin can forward FCM tokens automatically after `init()`.
 
 ## Using FCM (Firebase Cloud Messaging) on iOS
 
@@ -218,7 +218,7 @@ Then run:
 cd platforms/ios && pod install
 ```
 
-> If `FirebaseMessaging` is not installed, `setFCMToken()` will return an error and `init()` will log a warning instead of crashing.
+> If `FirebaseMessaging` is not installed, `init()` will log a warning instead of crashing.
 
 ### 2. Add `GoogleService-Info.plist`
 
@@ -250,23 +250,8 @@ Only set `automatic` when you intentionally want APNS-only token handling by the
 
 When `IOS_DEVICE_TOKEN_HANDLING_MODE` is `manual` **and** Firebase is configured (either already configured by the app or auto-configured because `GoogleService-Info.plist` is present), the plugin automatically:
 
-1. Subscribes to `MessagingRegistrationTokenRefreshed` — every future FCM token rotation is forwarded to Reteno immediately.
+1. Subscribes to Firebase Messaging delegate token updates — every future FCM token rotation is forwarded to Reteno immediately.
 2. Tries to forward the already-cached FCM token on warm starts.
-
-You do **not** need to call `setFCMToken()` manually in this flow.
-
-### 5. Manual fallback: `setFCMToken()`
-
-If you need to explicitly trigger token delivery (e.g. for debugging or after a permission grant), call:
-
-```js
-const token = await retenosdk.setFCMToken();
-console.log('FCM token forwarded to Reteno:', token);
-```
-
-This call fails with an error if:
-- `FirebaseApp.configure()` has not been called (`GoogleService-Info.plist` missing or configure not called).
-- The FCM token is not yet available (APNS token has not been received yet — ensure `registerForRemoteNotifications` has been called).
 
 ## In-App Status Handler (iOS)
 

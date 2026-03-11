@@ -372,48 +372,24 @@ function __callWithAutoInit(action, args, success, error) {
       return __callWithAutoInit('setDeviceToken', [arg0], success, error);
     },
 
-    /*
-        iOS only. Requires all three conditions:
-        1. IOS_DEVICE_TOKEN_HANDLING_MODE is 'manual' (this is the plugin default)
-        2. 'FirebaseMessaging' pod installed
-        3. GoogleService-Info.plist added to the app target
-
-        When IOS_DEVICE_TOKEN_HANDLING_MODE is 'manual', the plugin calls
-        FirebaseApp.configure() automatically and subscribes to FCM token updates,
-        forwarding them to Reteno. setFCMToken() is a manual fallback to trigger
-        token delivery explicitly (e.g. for debugging or after permission grant).
-        Returns the FCM token string on success.
-        */
-    setFCMToken: function (success, error) {
+    getPushPermissionStatus: function (success, error) {
       if (!__isIosPlatform()) {
-        var p = Promise.reject(new Error('setFCMToken is only available on iOS'));
-        if (typeof error === 'function') p.catch(error);
+        var p = Promise.resolve({
+          authorizationStatus: 'unsupported',
+          isAuthorized: false,
+        });
+        if (__isFn(success) || __isFn(error)) {
+          p.then(function (res) {
+            if (__isFn(success)) success(res);
+            return res;
+          }).catch(function (err) {
+            if (__isFn(error)) error(err);
+            throw err;
+          });
+        }
         return p;
       }
-
-      var p;
-      if (__retenoState.initialized) {
-        p = __callWithExec('setFCMToken', []);
-      } else if (__retenoState.initPromise) {
-        p = __retenoState.initPromise.then(function () {
-          return __promiseExec('setFCMToken', []);
-        });
-      } else {
-        p = Promise.reject(
-          new Error("setFCMToken requires Reteno to be initialized first. Ensure IOS_DEVICE_TOKEN_HANDLING_MODE is 'manual' (default).")
-        );
-      }
-
-      if (__isFn(success) || __isFn(error)) {
-        p.then(function (res) {
-          if (__isFn(success)) success(res);
-          return res;
-        }).catch(function (err) {
-          if (__isFn(error)) error(err);
-          throw err;
-        });
-      }
-      return p;
+      return __callWithExec('getPushPermissionStatus', [], success, error);
     },
 
     /*

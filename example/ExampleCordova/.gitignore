@@ -29,3 +29,6 @@ vendor/
 # Firebase
 google-services.json
 GoogleService-Info.plist
+
+# fastlane / TestFlight
+fastlane/.env.testflight

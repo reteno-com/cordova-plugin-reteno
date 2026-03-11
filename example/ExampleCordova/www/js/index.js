@@ -608,7 +608,6 @@ function onDeviceReady() {
     var inAppCustomDataHandler = null;
     var lastRecommendationProductIds = [];
     var demoInitialized = false;
-
     function logScreenView(screenName) {
         var sdk = getRetenoSdk();
         if (!sdk || typeof sdk.logScreenView !== 'function') {
@@ -702,29 +701,48 @@ function onDeviceReady() {
             });
     }
 
+    function ensureFcmTokenSynced() {
+        var sdk = getRetenoSdk();
+        if (!isIos || !sdk || typeof sdk.forcePushData !== 'function') {
+            return Promise.resolve();
+        }
+        return sdk.forcePushData().catch(function (err) {
+            console.warn('forcePushData after permission request: WARN', err);
+        });
+    }
+
+    function forcePushDataSafely(contextLabel) {
+        var sdk = getRetenoSdk();
+        if (!sdk || typeof sdk.forcePushData !== 'function') {
+            return Promise.resolve();
+        }
+        return sdk.forcePushData().catch(function (err) {
+            console.warn('forcePushData: WARN (' + contextLabel + ')', err);
+        });
+    }
+
     setInitOptionsVisible(true);
 
     ensureInit()
         .then(function () {
             var sdk = getRetenoSdk();
             if (sdk && typeof sdk.requestNotificationPermission === 'function') {
-                return sdk.requestNotificationPermission().catch(function (err) {
-                    console.warn('requestNotificationPermission: WARN', err);
-                });
-            }
-        })
-        .then(function () {
-            if (cordova && cordova.platformId === 'ios') {
-                var sdk = getRetenoSdk();
-                if (sdk && typeof sdk.setFCMToken === 'function') {
-                    return sdk.setFCMToken()
-                        .then(function (token) {
-                            console.log('setFCMToken: OK', token);
-                        })
-                        .catch(function (err) {
-                            console.warn('setFCMToken: WARN', err);
-                        });
-                }
+                return sdk.requestNotificationPermission()
+                    .catch(function (err) {
+                        console.warn('requestNotificationPermission: WARN', err);
+                    })
+                    .then(function () {
+                        if (isIos && sdk && typeof sdk.setWillPresentNotificationOptions === 'function') {
+                            return sdk.setWillPresentNotificationOptions({
+                                options: ['badge', 'sound', 'banner']
+                            }).catch(function (err) {
+                                console.warn('setWillPresentNotificationOptions: WARN', err);
+                            });
+                        }
+                    })
+                    .then(function () {
+                        return ensureFcmTokenSynced();
+                    });
             }
         })
         .catch(function (err) {
@@ -860,6 +878,7 @@ function onDeviceReady() {
                     sdk.setAnonymousUserAttributes(userAttributes)
                         .then(function () {
                             setStatus('setAnonymousUserAttributes: success');
+                            return forcePushDataSafely('after setAnonymousUserAttributes');
                         })
                         .catch(function (err) {
                             setStatus(
@@ -891,6 +910,7 @@ function onDeviceReady() {
                                 return;
                             }
                             setStatus('setMultiAccountUserAttributes: success');
+                            return forcePushDataSafely('after setMultiAccountUserAttributes');
                         })
                         .catch(function (err) {
                             setStatus(
@@ -911,6 +931,7 @@ function onDeviceReady() {
                     })
                         .then(function () {
                             setStatus('setUserAttributes: success');
+                            return forcePushDataSafely('after setUserAttributes');
                         })
                         .catch(function (err) {
                             setStatus('setUserAttributes: error: ' + (err && err.message ? err.message : String(err)));

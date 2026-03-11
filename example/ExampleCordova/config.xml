@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<widget id="com.reteno.sample" version="0.0.15" ios-CFBundleIdentifier="com.reteno.example-app" ios-CFBundleShortVersionString="1.0.0" ios-CFBundleVersion="419" android-versionCode="15" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+<widget id="com.reteno.sample" version="0.0.15" ios-CFBundleIdentifier="com.reteno.example-app" ios-CFBundleShortVersionString="1.0.0" ios-CFBundleVersion="461" android-versionCode="15" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
     <name>ExampleCordova</name>
     <description>Sample Apache Cordova App</description>
     <author email="dev@cordova.apache.org" href="https://cordova.apache.org">
@@ -13,6 +13,11 @@
         <false/>
     </edit-config>
     <hook type="after_prepare" src="scripts/patch-ios-notification-extension.js" />
+    <plugin name="cordova-plugin-app-version" spec="^0.1.14" />
+    <plugin name="cordova-plugin-reteno" spec="file:../../cordova-plugin-reteno-0.0.1.tgz">
+        <variable name="SDK_ACCESS_KEY" value="630A66AF-C1D3-4F2A-ACC1-0D51C38D2B05" />
+        <variable name="IOS_DEVICE_TOKEN_HANDLING_MODE" value="manual" />
+    </plugin>
     <allow-intent href="http://*/*" />
     <allow-intent href="https://*/*" />
 </widget>

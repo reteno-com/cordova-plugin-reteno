@@ -1,0 +1,42 @@
+<app-header title="Reteno – App lifecycle"></app-header>
+
+<ion-content [fullscreen]="true">
+  <form [formGroup]="form">
+    <ion-list>
+      <ion-item-divider>
+        <ion-label>Lifecycle tracking options</ion-label>
+      </ion-item-divider>
+
+      <ion-item>
+        <ion-label>App lifecycle events</ion-label>
+        <ion-checkbox slot="end" formControlName="appLifecycleEnabled"></ion-checkbox>
+      </ion-item>
+
+      <ion-item>
+        <ion-label>Push subscription events</ion-label>
+        <ion-checkbox slot="end" formControlName="pushSubscriptionEnabled"></ion-checkbox>
+      </ion-item>
+
+      <ion-item>
+        <ion-label>Session events</ion-label>
+        <ion-checkbox slot="end" formControlName="sessionEventsEnabled"></ion-checkbox>
+      </ion-item>
+    </ion-list>
+
+    <ion-button expand="block" (click)="save()">
+      Save
+    </ion-button>
+    <ion-button expand="block" color="medium" (click)="setAll()">
+      Use LifecycleTrackingOptions.ALL
+    </ion-button>
+    <ion-button expand="block" color="medium" (click)="setNone()">
+      Use LifecycleTrackingOptions.NONE
+    </ion-button>
+  </form>
+
+  @if (status) {
+    <ion-text class="status">
+      <p>{{ status }}</p>
+    </ion-text>
+  }
+</ion-content>

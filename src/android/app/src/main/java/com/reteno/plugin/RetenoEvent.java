@@ -23,15 +23,8 @@ public class RetenoEvent {
     for (int i = 0; i < countView; i++) {
       JSONObject field = (JSONObject) inputParameters.get(i);
 
-      String name = null;
-      String value = null;
-
-      if (field.getString("name") != null) {
-        name = field.getString("name");
-      }
-      if (field.getString("value") != null) {
-        value = field.getString("value");
-      }
+      String name = RetenoUtil.getStringOrNull(field.optString("name", null));
+      String value = RetenoUtil.getStringOrNull(field.optString("value", null));
 
       if (name != null) {
         list.add(new Parameter(name, value));
@@ -40,11 +33,10 @@ public class RetenoEvent {
     return list;
   }
 
-  //ReadableMap payload
   public static Event buildEventFromPayload(JSONObject payload) throws Exception {
-    String eventName = RetenoUtil.getStringOrNull(payload.getString("eventName"));
-    String stringDate = payload.getString("date");
-    JSONArray inputParameters = payload.getJSONArray("parameters");
+    String eventName = RetenoUtil.getStringOrNull(payload.optString("eventName", null));
+    String stringDate = RetenoUtil.getStringOrNull(payload.optString("date", null));
+    JSONArray inputParameters = payload.optJSONArray("parameters");
 
     List<Parameter> parameters = null;
 
@@ -54,12 +46,10 @@ public class RetenoEvent {
       throw new Exception("logEvent: missing 'eventName' parameter!");
     }
 
-    if (stringDate != null) {
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      if (stringDate != null) {
         date = ZonedDateTime.parse(stringDate);
-      }
-    } else {
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      } else {
         date = ZonedDateTime.now();
       }
     }

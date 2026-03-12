@@ -1,0 +1,295 @@
+require "openssl"
+require "tmpdir"
+
+default_platform(:ios)
+
+platform :ios do
+  project_root = File.expand_path("..", __dir__)
+  match_readonly = (ENV["MATCH_READONLY"] || "true").to_s == "true"
+
+  private_lane :openssl_supports_match_v2_encryption do
+    begin
+      cipher = OpenSSL::Cipher.new("aes-256-gcm")
+      cipher.encrypt
+      cipher.key = "\0" * 32
+      cipher.iv = "\0" * 12
+      cipher.auth_data = "\0" * 24
+      true
+    rescue StandardError
+      false
+    end
+  end
+
+  private_lane :resolve_project_path do |options|
+    path = options.fetch(:path).to_s
+    next path if path.start_with?("/")
+    File.expand_path(path, project_root)
+  end
+
+  private_lane :set_plist_build_number do |options|
+    plist_path = options.fetch(:plist_path)
+    build_number = options.fetch(:build_number).to_s
+
+    # Avoid depending on optional fastlane actions; update plist directly.
+    sh("/usr/libexec/PlistBuddy -c \"Set :CFBundleVersion #{build_number}\" \"#{plist_path}\" || /usr/libexec/PlistBuddy -c \"Add :CFBundleVersion string #{build_number}\" \"#{plist_path}\"")
+  end
+
+  private_lane :set_plist_short_version do |options|
+    plist_path = options.fetch(:plist_path)
+    short_version = options.fetch(:short_version).to_s
+
+    sh("/usr/libexec/PlistBuddy -c \"Set :CFBundleShortVersionString #{short_version}\" \"#{plist_path}\" || /usr/libexec/PlistBuddy -c \"Add :CFBundleShortVersionString string #{short_version}\" \"#{plist_path}\"")
+  end
+
+  # cordova-ios keeps effective app versions in project.pbxproj build settings.
+  private_lane :set_pbxproj_build_settings do |options|
+    pbxproj_path = options.fetch(:pbxproj_path)
+    settings = options.fetch(:settings) # { "KEY" => "value" }
+    next unless File.exist?(pbxproj_path)
+
+    content = File.read(pbxproj_path)
+    changed = false
+    settings.each do |key, value|
+      updated = content.gsub(/#{Regexp.escape(key)}\s*=\s*[^;]+;/, "#{key} = #{value};")
+      if updated != content
+        content = updated
+        changed = true
+      end
+    end
+    File.write(pbxproj_path, content) if changed
+  end
+
+  private_lane :maybe_set_build_number do
+    build_number = ENV["BUILD_NUMBER"]
+    next if build_number.nil? || build_number.strip.empty?
+
+    build_number = build_number.strip
+
+    # Cordova generates iOS sources into platforms/ios.
+    # Update app + extension plists (avoid touching build artifacts and Pods).
+    ios_root = File.join(project_root, "platforms", "ios")
+    candidates = Dir.glob(File.join(ios_root, "**", "*Info.plist")) +
+                 Dir.glob(File.join(ios_root, "**", "*-Info.plist"))
+    plists = candidates.uniq.select do |p|
+      next false if p.include?("/Pods/")
+      next false if p.include?("/CordovaLib/")
+      next false if p.include?("/build/")
+      File.file?(p)
+    end
+
+    UI.user_error!("No Info.plist files found under platforms/ios to set BUILD_NUMBER") if plists.empty?
+
+    plists.each do |plist_path|
+      next unless (File.read(plist_path) rescue "").include?("CFBundleVersion")
+
+      set_plist_build_number(
+        plist_path: plist_path,
+        build_number: build_number
+      )
+    end
+
+    pbxproj_path = File.join(ios_root, "App.xcodeproj", "project.pbxproj")
+    set_pbxproj_build_settings(
+      pbxproj_path: pbxproj_path,
+      settings: { "CURRENT_PROJECT_VERSION" => build_number }
+    )
+  end
+
+  private_lane :detect_short_version do
+    env_version = ENV["APP_VERSION"].to_s.strip
+    next env_version unless env_version.empty?
+
+    package_json_path = File.join(project_root, "package.json")
+    next nil unless File.exist?(package_json_path)
+
+    begin
+      require "json"
+      pkg = JSON.parse(File.read(package_json_path))
+      pkg["version"].to_s.strip
+    rescue StandardError
+      nil
+    end
+  end
+
+  private_lane :maybe_set_short_version do
+    short_version = detect_short_version
+    next if short_version.nil? || short_version.empty?
+
+    ios_root = File.join(project_root, "platforms", "ios")
+    candidates = Dir.glob(File.join(ios_root, "**", "*Info.plist")) +
+                 Dir.glob(File.join(ios_root, "**", "*-Info.plist"))
+    plists = candidates.uniq.select do |p|
+      next false if p.include?("/Pods/")
+      next false if p.include?("/CordovaLib/")
+      next false if p.include?("/build/")
+      File.file?(p)
+    end
+
+    UI.user_error!("No Info.plist files found under platforms/ios to set APP_VERSION") if plists.empty?
+
+    plists.each do |plist_path|
+      next unless (File.read(plist_path) rescue "").include?("CFBundleShortVersionString")
+
+      set_plist_short_version(
+        plist_path: plist_path,
+        short_version: short_version
+      )
+    end
+
+    pbxproj_path = File.join(ios_root, "App.xcodeproj", "project.pbxproj")
+    set_pbxproj_build_settings(
+      pbxproj_path: pbxproj_path,
+      settings: { "MARKETING_VERSION" => short_version }
+    )
+  end
+
+  private_lane :load_app_store_connect_api_key do
+    key_id = ENV.fetch("APP_STORE_CONNECT_API_KEY_KEY_ID").strip
+    issuer_id = ENV.fetch("APP_STORE_CONNECT_API_KEY_ISSUER_ID").strip
+    in_house = (ENV["APP_STORE_CONNECT_API_KEY_IN_HOUSE"] || "false").to_s == "true"
+
+    key_path = ENV["APP_STORE_CONNECT_API_KEY_PATH"].to_s.strip
+    key_path = nil if key_path.empty?
+
+    repo_url = ENV["APP_STORE_CONNECT_API_KEY_GIT_REPO_URL"].to_s.strip
+    repo_url = nil if repo_url.empty?
+    repo_branch = (ENV["APP_STORE_CONNECT_API_KEY_GIT_REPO_BRANCH"] || "main").strip
+    if key_path.nil? && repo_url
+      tmp_dir = File.join(Dir.tmpdir, "fastlane_appstore_api_key_#{Process.pid}")
+      sh("rm -rf \"#{tmp_dir}\"")
+      sh("git clone --depth 1 --branch \"#{repo_branch}\" \"#{repo_url}\" \"#{tmp_dir}\"")
+
+      candidates = [
+        File.join(tmp_dir, "AuthKey_#{key_id}.p8"),
+        File.join(tmp_dir, "#{key_id}.p8")
+      ]
+
+      key_path = candidates.find { |p| File.exist?(p) }
+      if key_path.nil?
+        p8s = Dir.glob(File.join(tmp_dir, "**", "*.p8"))
+        UI.user_error!("Couldn't find .p8 key in repo #{repo_url}. Expected AuthKey_#{key_id}.p8") if p8s.empty?
+        key_path = p8s.first
+        UI.important("Using first .p8 found at #{key_path} (set APP_STORE_CONNECT_API_KEY_PATH to be explicit)")
+      end
+    end
+
+    UI.user_error!("Set APP_STORE_CONNECT_API_KEY_PATH or APP_STORE_CONNECT_API_KEY_GIT_REPO_URL") if key_path.nil? || key_path.empty?
+
+    app_store_connect_api_key(
+      key_id: key_id,
+      issuer_id: issuer_id,
+      key_filepath: key_path,
+      in_house: in_house
+    )
+  end
+
+  desc "Build and upload to TestFlight (Cordova iOS platform must exist)"
+  lane :testflight do
+    setup_ci
+
+    maybe_set_short_version
+    maybe_set_build_number
+
+    api_key = load_app_store_connect_api_key
+    ENV.delete("APP_STORE_CONNECT_API_KEY_PATH") if ENV["APP_STORE_CONNECT_API_KEY_PATH"].to_s.strip.empty?
+    ENV["MATCH_PASSWORD"] = ENV["MATCH_PASSWORD"].to_s.strip unless ENV["MATCH_PASSWORD"].nil?
+    force_legacy_encryption = (ENV["MATCH_FORCE_LEGACY_ENCRYPTION"] || "false").to_s == "true"
+    if !force_legacy_encryption && !openssl_supports_match_v2_encryption
+      UI.important("OpenSSL on this machine does not support Match v2 encryption; falling back to legacy encryption. Set MATCH_FORCE_LEGACY_ENCRYPTION=true to make this explicit.")
+      force_legacy_encryption = true
+    end
+
+    app_identifiers = ENV.fetch("MATCH_APP_IDENTIFIER").split(",").map(&:strip)
+    match_type = ENV.fetch("MATCH_TYPE", "appstore")
+
+    match(
+      api_key: api_key,
+      readonly: match_readonly,
+      git_url: ENV.fetch("MATCH_GIT_URL"),
+      git_branch: ENV.fetch("MATCH_GIT_BRANCH", "main"),
+      type: match_type,
+      app_identifier: app_identifiers,
+      team_id: ENV["FASTLANE_TEAM_ID"],
+      force_legacy_encryption: force_legacy_encryption
+    )
+
+    team_id = ENV["FASTLANE_TEAM_ID"].to_s.strip
+    project_path = resolve_project_path(path: "platforms/ios/App.xcodeproj")
+
+    # Get profile names from match env vars (includes timestamp suffix).
+    # match sets sigh_<bundle_id>_<type>_profile-name after downloading.
+    profile_mapping = {}
+    app_identifiers.each do |bundle_id|
+      profile_name = ENV["sigh_#{bundle_id}_#{match_type}_profile-name"]
+      UI.user_error!("No profile name found for #{bundle_id} (env: sigh_#{bundle_id}_#{match_type}_profile-name)") if profile_name.nil?
+      profile_mapping[bundle_id] = profile_name
+    end
+
+    # Map bundle IDs to Xcode target names for per-target signing config.
+    main_bundle_id = ENV.fetch("APP_IDENTIFIER").split(",").first.strip
+    app_identifiers.each do |bundle_id|
+      profile_name = profile_mapping[bundle_id]
+      target_name = if bundle_id == main_bundle_id
+                      "App"
+                    else
+                      bundle_id.sub("#{main_bundle_id}.", "")
+                    end
+
+      update_code_signing_settings(
+        use_automatic_signing: false,
+        path: project_path,
+        team_id: team_id,
+        targets: [target_name],
+        profile_name: profile_name,
+        code_sign_identity: "Apple Distribution"
+      )
+    end
+
+    # Write ExportOptions.plist directly to bypass gym's auto-detection
+    # which fails when multiple profiles exist for the same bundle ID.
+    export_method = ENV.fetch("GYM_EXPORT_METHOD", "app-store")
+    export_plist_path = File.join(Dir.tmpdir, "ExportOptions-#{Process.pid}.plist")
+    profiles_xml = profile_mapping.map { |bid, pn| "<key>#{bid}</key><string>#{pn}</string>" }.join("\n        ")
+    File.write(export_plist_path, <<~PLIST)
+      <?xml version="1.0" encoding="UTF-8"?>
+      <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+      <plist version="1.0">
+      <dict>
+        <key>method</key>
+        <string>#{export_method}</string>
+        <key>teamID</key>
+        <string>#{team_id}</string>
+        <key>signingStyle</key>
+        <string>manual</string>
+        <key>provisioningProfiles</key>
+        <dict>
+          #{profiles_xml}
+        </dict>
+      </dict>
+      </plist>
+    PLIST
+
+    xcargs = []
+    xcargs << "DEVELOPMENT_TEAM=#{team_id}" unless team_id.empty?
+
+    gym(
+      workspace: resolve_project_path(path: ENV.fetch("GYM_WORKSPACE")),
+      scheme: ENV.fetch("GYM_SCHEME"),
+      configuration: ENV.fetch("GYM_CONFIGURATION", "Release"),
+      export_method: export_method,
+      export_team_id: (team_id.empty? ? nil : team_id),
+      include_bitcode: (ENV["GYM_INCLUDE_BITCODE"] || "false") == "true",
+      xcargs: xcargs.join(" "),
+      export_options: export_plist_path,
+      derived_data_path: resolve_project_path(path: ENV.fetch("CI_DERIVED_DATA_PATH", "./build/DerivedData")),
+      output_directory: resolve_project_path(path: ENV.fetch("CI_OUTPUT_DIRECTORY", "./build")),
+      clean: true
+    )
+
+    upload_to_testflight(
+      api_key: api_key,
+      app_identifier: ENV.fetch("APP_IDENTIFIER").split(",").first.strip,
+      skip_waiting_for_build_processing: true
+    )
+  end
+end

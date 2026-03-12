@@ -1,0 +1,209 @@
+<app-header title="Reteno – Notifications"></app-header>
+
+<ion-content [fullscreen]="true">
+  @if (!isIos) {
+    <form [formGroup]="form">
+      <ion-list>
+        <ion-item>
+          <ion-input
+            label="Channel name"
+            labelPlacement="stacked"
+            formControlName="name"
+            placeholder="Updates"
+          ></ion-input>
+        </ion-item>
+
+        <ion-item>
+          <ion-input
+            label="Channel description"
+            labelPlacement="stacked"
+            formControlName="description"
+            placeholder="General updates and announcements"
+          ></ion-input>
+        </ion-item>
+      </ion-list>
+
+      <ion-button expand="block" [disabled]="form.invalid" (click)="apply()">
+        Apply
+      </ion-button>
+    </form>
+  }
+
+<ion-list>
+  <ion-item>
+    <ion-toggle
+      [checked]="isPushListenerEnabled"
+      (ionChange)="togglePushListener($event.detail.checked)"
+    >
+      Push received listener
+    </ion-toggle>
+  </ion-item>
+
+  <ion-item>
+    <ion-toggle
+      [checked]="isNotificationClickListenerEnabled"
+      (ionChange)="toggleNotificationClickListener($event.detail.checked)"
+    >
+      Notification clicked listener
+    </ion-toggle>
+  </ion-item>
+
+  @if (!isIos) {
+    <ion-item>
+      <ion-toggle
+        [checked]="isPushDismissedListenerEnabled"
+        (ionChange)="togglePushDismissedListener($event.detail.checked)"
+      >
+        Push dismissed listener (2.9.1+)
+      </ion-toggle>
+    </ion-item>
+
+    <ion-item>
+      <ion-toggle
+        [checked]="isCustomPushReceivedListenerEnabled"
+        (ionChange)="toggleCustomPushReceivedListener($event.detail.checked)"
+      >
+        Custom push received listener (2.9.1+)
+      </ion-toggle>
+    </ion-item>
+  }
+
+  <ion-item>
+    <ion-toggle
+      [checked]="isPushButtonClickedListenerEnabled"
+      (ionChange)="togglePushButtonClickedListener($event.detail.checked)"
+    >
+      Push button clicked listener
+    </ion-toggle>
+  </ion-item>
+</ion-list>
+
+@if (isIos) {
+  <ion-list>
+    <ion-item>
+      <ion-toggle
+        [checked]="isWillPresentEnabled"
+        (ionChange)="toggleWillPresent($event.detail.checked)"
+      >
+        setWillPresentNotificationOptions
+      </ion-toggle>
+    </ion-item>
+    <ion-item>
+      <ion-toggle
+        [checked]="isWillPresentEmitEnabled"
+        (ionChange)="toggleWillPresentEmit($event.detail.checked)"
+      >
+        emit reteno-push-received
+      </ion-toggle>
+    </ion-item>
+    <ion-item>
+      <ion-toggle
+        [checked]="isDidReceiveEnabled"
+        (ionChange)="toggleDidReceive($event.detail.checked)"
+      >
+        setDidReceiveNotificationResponseHandler
+      </ion-toggle>
+    </ion-item>
+    <ion-item>
+      <ion-toggle
+        [checked]="isDidReceiveEmitEnabled"
+        (ionChange)="toggleDidReceiveEmit($event.detail.checked)"
+      >
+        emit reteno-notification-clicked
+      </ion-toggle>
+    </ion-item>
+  </ion-list>
+}
+
+@if (pushListenerStatus) {
+  <ion-text class="status">
+    <p>{{ pushListenerStatus }}</p>
+  </ion-text>
+}
+
+@if (pushReceivedEvents.length) {
+  <ion-list>
+    @for (event of pushReceivedEvents; track event.key) {
+      <ion-item>
+        <ion-label>{{ event.text }}</ion-label>
+      </ion-item>
+    }
+  </ion-list>
+}
+
+@if (clickListenerStatus) {
+  <ion-text class="status">
+    <p>{{ clickListenerStatus }}</p>
+  </ion-text>
+}
+
+@if (notificationClickedEvents.length) {
+  <ion-list>
+    @for (event of notificationClickedEvents; track event.key) {
+      <ion-item>
+        <ion-label>{{ event.text }}</ion-label>
+      </ion-item>
+    }
+  </ion-list>
+}
+
+@if (!isIos && pushDismissedListenerStatus) {
+  <ion-text class="status">
+    <p>{{ pushDismissedListenerStatus }}</p>
+  </ion-text>
+}
+
+@if (!isIos && pushDismissedEvents.length) {
+  <ion-list>
+    @for (event of pushDismissedEvents; track event.key) {
+      <ion-item>
+        <ion-label>{{ event.text }}</ion-label>
+      </ion-item>
+    }
+  </ion-list>
+}
+
+@if (!isIos && customPushReceivedListenerStatus) {
+  <ion-text class="status">
+    <p>{{ customPushReceivedListenerStatus }}</p>
+  </ion-text>
+}
+
+@if (!isIos && customPushReceivedEvents.length) {
+  <ion-list>
+    @for (event of customPushReceivedEvents; track event.key) {
+      <ion-item>
+        <ion-label>{{ event.text }}</ion-label>
+      </ion-item>
+    }
+  </ion-list>
+}
+
+@if (pushButtonClickedListenerStatus) {
+  <ion-text class="status">
+    <p>{{ pushButtonClickedListenerStatus }}</p>
+  </ion-text>
+}
+
+@if (pushButtonClickedEvents.length) {
+  <ion-list>
+    @for (event of pushButtonClickedEvents; track event.key) {
+      <ion-item>
+        <ion-label>{{ event.text }}</ion-label>
+      </ion-item>
+    }
+  </ion-list>
+}
+
+@if (status) {
+  <ion-text class="status">
+    <p>{{ status }}</p>
+  </ion-text>
+}
+
+@if (iosNotificationStatus && isIos) {
+  <ion-text class="status">
+    <p>{{ iosNotificationStatus }}</p>
+  </ion-text>
+}
+</ion-content>

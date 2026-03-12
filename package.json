@@ -3,10 +3,37 @@
   "version": "0.0.1",
   "description": "The Reteno Cordova Plugin for Mobile Customer Engagement and Analytics solutions",
   "types": "./types/index.ts",
+  "files": [
+    "docs/",
+    "scripts/",
+    "src/android/reteno.gradle",
+    "src/android/build.gradle",
+    "src/android/settings.gradle",
+    "src/android/gradle.properties",
+    "src/android/app/build.gradle",
+    "src/android/app/proguard-rules.pro",
+    "src/android/app/src/main/",
+    "src/ios/",
+    "types/",
+    "www/",
+    "plugin.xml",
+    "package.json",
+    "README*",
+    "LICENSE*"
+  ],
+  "scripts": {
+    "lint": "eslint \"www/**/*.js\"",
+    "lint:fix": "eslint --fix \"www/**/*.js\"",
+    "format": "prettier --write \"{www,types,docs}/**/*.{js,ts,md,json,xml}\"",
+    "format:check": "prettier --check \"{www,types,docs}/**/*.{js,ts,md,json,xml}\"",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "pack:dry": "npm pack --dry-run"
+  },
   "cordova": {
     "id": "cordova-plugin-reteno",
     "platforms": [
-      "android"
+      "android",
+      "ios"
     ]
   },
   "keywords": [
@@ -16,7 +43,12 @@
   ],
   "author": "",
   "license": "MIT",
-  "dependencies": {
-    "@cordova/eslint-config": "^5.0.0"
+  "dependencies": {},
+  "devDependencies": {
+    "@cordova/eslint-config": "^5.0.0",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.3"
   }
 }

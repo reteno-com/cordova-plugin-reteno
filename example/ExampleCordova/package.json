@@ -1,11 +1,19 @@
 {
-  "name": "com.reteno.sample",
+  "name": "example-cordova",
   "displayName": "ExampleCordova",
   "version": "1.0.0",
   "description": "A sample Apache Cordova application that responds to the deviceready event.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build:android:debug": "cordova build android --debug",
+    "build:android:release": "cordova build android --release",
+    "build:ios:debug": "cordova build ios --debug -- --buildFlag=CODE_SIGNING_ALLOWED=NO --buildFlag=CODE_SIGNING_REQUIRED=NO --buildFlag=CODE_SIGN_IDENTITY=",
+    "build:ios:release": "cordova build ios --release -- --buildFlag=CODE_SIGNING_ALLOWED=NO --buildFlag=CODE_SIGNING_REQUIRED=NO --buildFlag=CODE_SIGN_IDENTITY=",
+    "run:android:emulator": "cordova run android --emulator",
+    "prepare:ios": "cordova prepare ios",
+    "publish:ios:testflight": "npm run prepare:ios && bundle install && bundle exec fastlane ios testflight --env testflight",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "add:plugin": "cordova plugin add \"file:/Users/serhiiporaiko/projects/Yalantis/reteno-cordova/cordova-plugin-reteno-0.0.1.tgz\" --variable SDK_ACCESS_KEY=630A66AF-C1D3-4F2A-ACC1-0D51C38D2B05 --variable IOS_DEVICE_TOKEN_HANDLING_MODE=manual"
   },
   "keywords": [
     "ecosystem:cordova"
@@ -13,13 +21,23 @@
   "author": "Apache Cordova Team",
   "license": "Apache-2.0",
   "devDependencies": {
-    "cordova-android": "^12.0.0",
-    "cordova-ios": "^6.3.0"
+    "cordova": "^13.0.0",
+    "cordova-android": "^14.0.1",
+    "cordova-ios": "^8.0.1",
+    "cordova-plugin-app-version": "^0.1.14",
+    "cordova-plugin-reteno": "file:../../cordova-plugin-reteno-0.0.1.tgz"
   },
   "cordova": {
     "platforms": [
       "android",
       "ios"
-    ]
+    ],
+    "plugins": {
+      "cordova-plugin-app-version": {},
+      "cordova-plugin-reteno": {
+        "SDK_ACCESS_KEY": "630A66AF-C1D3-4F2A-ACC1-0D51C38D2B05",
+        "IOS_DEVICE_TOKEN_HANDLING_MODE": "manual"
+      }
+    }
   }
 }

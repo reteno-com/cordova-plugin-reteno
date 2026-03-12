@@ -1,0 +1,38 @@
+# If `files` in package.json is present, npm mostly uses that whitelist.
+# Keep this file anyway for extra safety when packing/publishing.
+
+# Dependencies
+node_modules/
+
+# Examples / demos
+example/
+
+# Tooling configs
+.eslintrc.*
+.prettierrc.*
+.prettierignore
+tsconfig*.json
+
+# VCS
+.git/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS/editor
+.DS_Store
+.idea/
+.vscode/
+
+# Android IDE / tests (not needed for plugin consumers)
+src/android/.idea/
+src/android/app/src/androidTest/
+src/android/app/src/test/
+
+# Lockfiles (not needed for consumers of a published plugin)
+package-lock.json
+pnpm-lock.yaml
+yarn.lock

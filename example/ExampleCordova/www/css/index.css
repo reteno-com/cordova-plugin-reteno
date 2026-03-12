@@ -37,28 +37,287 @@ body {
     width:100%;
 }
 
+.app-version {
+    position:fixed;
+    top:calc(env(safe-area-inset-top, 0px) + 10px);
+    right:12px;
+    z-index:10;
+    padding:4px 8px;
+    border-radius:999px;
+    background:rgba(0,0,0,0.65);
+    color:#fff;
+    font-size:10px;
+    letter-spacing:0.4px;
+    text-transform:none;
+    pointer-events:none;
+}
+
 /* Portrait layout (default) */
 .app {
     background:url(../img/logo.png) no-repeat center top; /* 170px x 200px */
-    position:absolute;             /* position in the center of the screen */
-    left:50%;
-    top:50%;
-    height:50px;                   /* text area height */
-    width:225px;                   /* text area width */
+    position:relative;
+    left:auto;
+    top:auto;
+    height:auto;
+    width:min(92vw, 420px);
     text-align:center;
-    padding:180px 0px 0px 0px;     /* image height is 200px (bottom 20px are overlapped with text) */
-    margin:-115px 0px 0px -112px;  /* offset vertical: half of image height and text area height */
-                                   /* offset horizontal: half of text area width */
+    padding:180px 16px 24px 16px;
+    margin:24px auto;
+    box-sizing:border-box;
 }
 
 /* Landscape layout (with min-width) */
 @media screen and (min-aspect-ratio: 1/1) and (min-width:400px) {
     .app {
         background-position:left center;
-        padding:75px 0px 75px 170px;  /* padding-top + padding-bottom + text area = image height */
-        margin:-90px 0px 0px -198px;  /* offset vertical: half of image height */
-                                      /* offset horizontal: half of image width and text area width */
+        padding:75px 16px 24px 186px;
+        margin:24px auto;
     }
+}
+
+.demo-nav {
+    margin-top:16px;
+    padding:12px;
+    border-radius:8px;
+    background:rgba(255,255,255,0.85);
+    text-align:left;
+    text-transform:none;
+    -webkit-user-select:text;
+    user-select:text;
+}
+
+.demo-nav h2 {
+    margin:0 0 6px 0;
+    font-size:14px;
+    font-weight:600;
+}
+
+.demo-nav-note {
+    margin:0;
+    font-size:11px;
+    color:#333;
+}
+
+.form-options {
+    margin:10px 0 12px 0;
+    padding:10px;
+    border-radius:6px;
+    background:rgba(0,0,0,0.04);
+    text-transform:none;
+}
+
+.checkbox-row {
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:11px;
+    color:#333;
+    margin-bottom:6px;
+}
+
+.checkbox-row:last-child {
+    margin-bottom:0;
+}
+
+.toggle-row {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    font-size:11px;
+    color:#333;
+    margin-bottom:8px;
+}
+
+.toggle-row:last-child {
+    margin-bottom:0;
+}
+
+.toggle-label {
+    flex:1 1 auto;
+}
+
+.toggle-input {
+    position:absolute;
+    opacity:0;
+    pointer-events:none;
+}
+
+.toggle-ui {
+    position:relative;
+    flex:0 0 auto;
+    width:36px;
+    height:20px;
+    border-radius:999px;
+    background:rgba(0,0,0,0.2);
+    transition:background 0.2s ease;
+}
+
+.toggle-ui::after {
+    content:"";
+    position:absolute;
+    top:2px;
+    left:2px;
+    width:16px;
+    height:16px;
+    border-radius:50%;
+    background:#fff;
+    transition:transform 0.2s ease;
+    box-shadow:0 1px 2px rgba(0,0,0,0.2);
+}
+
+.toggle-input:checked + .toggle-ui {
+    background:#4B946A;
+}
+
+.toggle-input:checked + .toggle-ui::after {
+    transform:translateX(16px);
+}
+
+.field-hidden {
+    display:none;
+}
+
+.page {
+    display:none;
+}
+
+.page.is-active {
+    display:block;
+}
+
+.page-header {
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:10px;
+}
+
+.nav-button {
+    width:100%;
+    margin-top:8px;
+    padding:10px;
+    border-radius:6px;
+    border:0;
+    background:#4B946A;
+    color:#fff;
+    font-size:12px;
+}
+
+.back-button {
+    border:0;
+    padding:6px 10px;
+    border-radius:6px;
+    background:#e2e2e2;
+    color:#111;
+    font-size:11px;
+}
+
+.reteno-form {
+    margin-top:16px;
+    padding:12px;
+    border-radius:8px;
+    background:rgba(255,255,255,0.85);
+    text-align:left;
+    text-transform:none;
+    -webkit-user-select:text;
+    user-select:text;
+}
+
+.reteno-form h2 {
+    margin:0 0 10px 0;
+    font-size:14px;
+    font-weight:600;
+}
+
+.reteno-section {
+    margin-top:12px;
+    padding-top:10px;
+    border-top:1px solid rgba(0,0,0,0.08);
+}
+
+.reteno-section-title {
+    font-size:11px;
+    font-weight:600;
+    color:#333;
+    margin:0 0 6px 0;
+}
+
+.reteno-grid {
+    display:grid;
+    grid-template-columns: 1fr;
+    gap:10px;
+}
+
+@media screen and (min-width: 420px) {
+    .reteno-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+.reteno-label {
+    display:block;
+    margin:10px 0 6px 0;
+    font-size:11px;
+    color:#333;
+}
+
+.reteno-input,
+.reteno-textarea {
+    width:100%;
+    box-sizing:border-box;
+    padding:8px;
+    border-radius:6px;
+    border:1px solid rgba(0,0,0,0.25);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size:12px;
+    background:#fff;
+    color:#111;
+}
+
+.reteno-textarea {
+    resize:vertical;
+}
+
+.reteno-button {
+    width:100%;
+    margin-top:12px;
+    padding:10px;
+    border-radius:6px;
+    border:0;
+    background:#4B946A;
+    color:#fff;
+    font-size:12px;
+}
+
+.reteno-button.secondary {
+    background:#4f6b8f;
+}
+
+.reteno-status {
+    margin:12px 0 0 0;
+    padding:10px;
+    background:rgba(0,0,0,0.05);
+    border-radius:6px;
+    font-size:11px;
+    white-space:pre-wrap;
+    word-break:break-word;
+    min-height:24px;
+}
+
+.reteno-event-list {
+    margin:8px 0 0 0;
+    padding:0;
+    list-style:none;
+}
+
+.reteno-event-list li {
+    margin-top:6px;
+    padding:8px;
+    background:rgba(0,0,0,0.04);
+    border-radius:6px;
+    font-size:11px;
+    word-break:break-word;
 }
 
 h1 {
@@ -95,16 +354,4 @@ h1 {
     from { opacity: 1.0; }
     50% { opacity: 0.4; }
     to { opacity: 1.0; }
-}
-
-.blink {
-    animation:fade 3000ms infinite;
-    -webkit-animation:fade 3000ms infinite;
-}
-
-
-@media screen and (prefers-color-scheme: dark) {
-    body {
-        background-image:linear-gradient(to bottom, #585858 0%, #1B1B1B 51%);
-    }
 }

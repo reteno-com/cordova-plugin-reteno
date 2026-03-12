@@ -1,0 +1,10 @@
+node_modules/
+example/
+src/android/
+src/ios/
+**/*.png
+**/*.jpg
+**/*.jpeg
+**/*.webp
+**/*.ico
+**/*.svg

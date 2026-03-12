@@ -1,6 +1,6 @@
 require_relative '../../node_modules/@capacitor/ios/scripts/pods_helpers'
 
-platform :ios, '13.0'
+platform :ios, '15.0'
 use_frameworks!
 
 # workaround to avoid Xcode caching of Pods that requires
@@ -16,15 +16,32 @@ def capacitor_pods
   pod 'CapacitorKeyboard', :path => '../../node_modules/@capacitor/keyboard'
   pod 'CapacitorStatusBar', :path => '../../node_modules/@capacitor/status-bar'
   pod 'CordovaPlugins', :path => '../capacitor-cordova-ios-plugins'
-  pod 'CordovaPluginsStatic', :path => '../capacitor-cordova-ios-plugins'
-  pod 'CordovaPluginsResources', :path => '../capacitor-cordova-ios-plugins'
 end
 
 target 'App' do
   capacitor_pods
   # Add your Pods here
+  pod 'FirebaseMessaging'
+
+  target 'NotificationServiceExtension' do
+    inherit! :search_paths
+    pod 'Reteno', '2.6.1'
+  end
+
+  target 'NotificationContentExtension' do
+    inherit! :search_paths
+    pod 'Reteno', '2.6.1'
+  end
 end
 
 post_install do |installer|
+  # RETENO_NCE_FRAMEWORKS_START
+  Dir.glob(File.join(installer.sandbox.root, 'Target Support Files', 'Pods-NotificationContentExtension', '*.xcconfig')).each do |path|
+    content = File.read(path)
+    next if content.include?('UserNotificationsUI')
+    content = content.gsub(/^(OTHER_LDFLAGS\s*=\s*.*)$/) { |m| "#{m} -framework \"UserNotificationsUI\"" }
+    File.write(path, content)
+  end
+  # RETENO_NCE_FRAMEWORKS_END
   assertDeploymentTarget(installer)
 end

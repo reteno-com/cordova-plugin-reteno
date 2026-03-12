@@ -1,8 +1,20 @@
-import { Component, NgZone, OnInit, inject } from '@angular/core';
+import { Component, NgZone, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AppHeaderComponent } from '../shared/app-header/app-header.component';
 import { IonicModule, Platform } from '@ionic/angular';
 import { RetenoService } from '../services/reteno.service';
+
+type NotificationsUiState = {
+  isPushListenerEnabled: boolean;
+  isNotificationClickListenerEnabled: boolean;
+  isPushDismissedListenerEnabled: boolean;
+  isCustomPushReceivedListenerEnabled: boolean;
+  isPushButtonClickedListenerEnabled: boolean;
+  isWillPresentEnabled: boolean;
+  isWillPresentEmitEnabled: boolean;
+  isDidReceiveEnabled: boolean;
+  isDidReceiveEmitEnabled: boolean;
+};
 
 @Component({
   selector: 'app-notifications',
@@ -10,7 +22,7 @@ import { RetenoService } from '../services/reteno.service';
   styleUrls: ['notifications.page.scss'],
   imports: [IonicModule, ReactiveFormsModule, AppHeaderComponent],
 })
-export class NotificationsPage implements OnInit {
+export class NotificationsPage implements OnInit, OnDestroy {
   status: string | null = null;
   pushListenerStatus: string | null = null;
   clickListenerStatus: string | null = null;
@@ -58,6 +70,73 @@ export class NotificationsPage implements OnInit {
 
   ngOnInit(): void {
     this.isIos = this.platform.is('ios');
+    const savedState = this.reteno.getPageState<NotificationsUiState>('notifications', {
+      isPushListenerEnabled: false,
+      isNotificationClickListenerEnabled: false,
+      isPushDismissedListenerEnabled: false,
+      isCustomPushReceivedListenerEnabled: false,
+      isPushButtonClickedListenerEnabled: false,
+      isWillPresentEnabled: false,
+      isWillPresentEmitEnabled: false,
+      isDidReceiveEnabled: false,
+      isDidReceiveEmitEnabled: false,
+    });
+
+    if (savedState.isPushListenerEnabled) {
+      this.togglePushListener(true);
+    }
+    if (savedState.isNotificationClickListenerEnabled) {
+      this.toggleNotificationClickListener(true);
+    }
+    if (!this.isIos && savedState.isPushDismissedListenerEnabled) {
+      this.togglePushDismissedListener(true);
+    }
+    if (!this.isIos && savedState.isCustomPushReceivedListenerEnabled) {
+      this.toggleCustomPushReceivedListener(true);
+    }
+    if (savedState.isPushButtonClickedListenerEnabled) {
+      this.togglePushButtonClickedListener(true);
+    }
+    if (this.isIos) {
+      this.isWillPresentEnabled = savedState.isWillPresentEnabled;
+      this.isWillPresentEmitEnabled = savedState.isWillPresentEmitEnabled;
+      this.isDidReceiveEnabled = savedState.isDidReceiveEnabled;
+      this.isDidReceiveEmitEnabled = savedState.isDidReceiveEmitEnabled;
+      this.applyWillPresent({
+        enabled: this.isWillPresentEnabled,
+        emit: this.isWillPresentEmitEnabled,
+      });
+      this.applyDidReceive({
+        enabled: this.isDidReceiveEnabled,
+        emit: this.isDidReceiveEmitEnabled,
+      });
+    }
+  }
+
+  ngOnDestroy(): void {
+    if (this.pushListenerHandler) {
+      this.reteno.removeOnRetenoPushReceivedListener(this.pushListenerHandler);
+      this.pushListenerHandler = null;
+    }
+    if (this.clickListenerHandler) {
+      this.reteno.removeOnRetenoNotificationClickedListener(this.clickListenerHandler);
+      this.clickListenerHandler = null;
+    }
+    if (this.pushDismissedListenerHandler) {
+      this.reteno.removeOnRetenoPushDismissedListener(this.pushDismissedListenerHandler);
+      this.pushDismissedListenerHandler = null;
+    }
+    if (this.customPushReceivedListenerHandler) {
+      this.reteno.removeOnRetenoCustomPushReceivedListener(this.customPushReceivedListenerHandler);
+      this.customPushReceivedListenerHandler = null;
+    }
+    if (this.pushButtonClickedListenerHandler) {
+      this.reteno.removeOnRetenoPushButtonClickedListener(this.pushButtonClickedListenerHandler);
+      this.pushButtonClickedListenerHandler = null;
+      this.reteno.setNotificationActionHandler(false).catch(() => {
+        // Ignore cleanup errors while leaving page.
+      });
+    }
   }
 
   // Screen view is tracked globally in AppComponent.
@@ -85,6 +164,7 @@ export class NotificationsPage implements OnInit {
   }
 
   togglePushListener(enabled: boolean) {
+    this.reteno.setPageState<NotificationsUiState>('notifications', { isPushListenerEnabled: enabled });
     if (enabled && !this.pushListenerHandler) {
       this.pushListenerStatus = 'Listening for push received events...';
       this.pushListenerHandler = this.reteno.setOnRetenoPushReceivedListener((payload) => {
@@ -107,6 +187,7 @@ export class NotificationsPage implements OnInit {
   }
 
   toggleNotificationClickListener(enabled: boolean) {
+    this.reteno.setPageState<NotificationsUiState>('notifications', { isNotificationClickListenerEnabled: enabled });
     if (enabled && !this.clickListenerHandler) {
       this.clickListenerStatus = 'Listening for notification click events...';
       this.clickListenerHandler = this.reteno.setOnRetenoNotificationClickedListener((payload) => {
@@ -129,6 +210,7 @@ export class NotificationsPage implements OnInit {
   }
 
   togglePushDismissedListener(enabled: boolean) {
+    this.reteno.setPageState<NotificationsUiState>('notifications', { isPushDismissedListenerEnabled: enabled });
     if (enabled && !this.pushDismissedListenerHandler) {
       this.pushDismissedListenerStatus = 'Listening for push dismissed events...';
       this.pushDismissedListenerHandler = this.reteno.setOnRetenoPushDismissedListener((payload) => {
@@ -150,6 +232,9 @@ export class NotificationsPage implements OnInit {
   }
 
   toggleCustomPushReceivedListener(enabled: boolean) {
+    this.reteno.setPageState<NotificationsUiState>('notifications', {
+      isCustomPushReceivedListenerEnabled: enabled,
+    });
     if (enabled && !this.customPushReceivedListenerHandler) {
       this.customPushReceivedListenerStatus = 'Listening for custom push received events...';
       this.customPushReceivedListenerHandler = this.reteno.setOnRetenoCustomPushReceivedListener((payload) => {
@@ -173,54 +258,93 @@ export class NotificationsPage implements OnInit {
   togglePushButtonClickedListener(enabled: boolean) {
     if (enabled && !this.pushButtonClickedListenerHandler) {
       this.pushButtonClickedListenerStatus = 'Listening for push button clicked events...';
-      // Enable native action handler with event emission
-      this.reteno.setNotificationActionHandler({ enabled: true, emitEvent: true }).catch((err) => {
-        // eslint-disable-next-line no-console
-        console.error('setNotificationActionHandler: ERROR', err);
-      });
-      this.pushButtonClickedListenerHandler = this.reteno.setOnRetenoPushButtonClickedListener((payload) => {
-        this.zone.run(() => {
-          const message = this.buildEventMessage('Push button clicked', payload);
-          this.addEvent(this.pushButtonClickedEvents, 'Push button clicked', payload, message);
+      this.reteno
+        .setNotificationActionHandler({ enabled: true, emitEvent: true })
+        .then(() => {
+          this.pushButtonClickedListenerHandler = this.reteno.setOnRetenoPushButtonClickedListener((payload) => {
+            this.zone.run(() => {
+              const message = this.buildEventMessage('Push button clicked', payload);
+              this.addEvent(this.pushButtonClickedEvents, 'Push button clicked', payload, message);
+            });
+          });
+          this.isPushButtonClickedListenerEnabled = true;
+          this.reteno.setPageState<NotificationsUiState>('notifications', {
+            isPushButtonClickedListenerEnabled: true,
+          });
+        })
+        .catch((err) => {
+          this.isPushButtonClickedListenerEnabled = false;
+          this.reteno.setPageState<NotificationsUiState>('notifications', {
+            isPushButtonClickedListenerEnabled: false,
+          });
+          this.pushButtonClickedListenerStatus = 'setNotificationActionHandler: ERROR (see console)';
+          // eslint-disable-next-line no-console
+          console.error('setNotificationActionHandler: ERROR', err);
         });
-      });
-      this.isPushButtonClickedListenerEnabled = true;
       return;
     }
 
     if (!enabled && this.pushButtonClickedListenerHandler) {
-      this.reteno.removeOnRetenoPushButtonClickedListener(this.pushButtonClickedListenerHandler);
-      this.pushButtonClickedListenerHandler = null;
-      this.isPushButtonClickedListenerEnabled = false;
-      this.pushButtonClickedListenerStatus = 'Push button clicked listener removed.';
-      // Disable native action handler
-      this.reteno.setNotificationActionHandler(false).catch((err) => {
-        // eslint-disable-next-line no-console
-        console.error('setNotificationActionHandler: ERROR', err);
-      });
+      const currentHandler = this.pushButtonClickedListenerHandler;
+      this.reteno
+        .setNotificationActionHandler(false)
+        .then(() => {
+          this.reteno.removeOnRetenoPushButtonClickedListener(currentHandler);
+          this.pushButtonClickedListenerHandler = null;
+          this.isPushButtonClickedListenerEnabled = false;
+          this.reteno.setPageState<NotificationsUiState>('notifications', {
+            isPushButtonClickedListenerEnabled: false,
+          });
+          this.pushButtonClickedListenerStatus = 'Push button clicked listener removed.';
+        })
+        .catch((err) => {
+          this.isPushButtonClickedListenerEnabled = true;
+          this.reteno.setPageState<NotificationsUiState>('notifications', {
+            isPushButtonClickedListenerEnabled: true,
+          });
+          this.pushButtonClickedListenerStatus = 'setNotificationActionHandler: ERROR (see console)';
+          // eslint-disable-next-line no-console
+          console.error('setNotificationActionHandler: ERROR', err);
+        });
     }
   }
   toggleWillPresent(enabled: boolean) {
+    const previous = {
+      enabled: this.isWillPresentEnabled,
+      emit: this.isWillPresentEmitEnabled,
+    };
     this.isWillPresentEnabled = enabled;
-    this.applyWillPresent();
+    this.applyWillPresent(previous);
   }
 
   toggleWillPresentEmit(enabled: boolean) {
+    const previous = {
+      enabled: this.isWillPresentEnabled,
+      emit: this.isWillPresentEmitEnabled,
+    };
     this.isWillPresentEmitEnabled = enabled;
-    this.applyWillPresent();
+    this.applyWillPresent(previous);
   }
 
   toggleDidReceive(enabled: boolean) {
+    const previous = {
+      enabled: this.isDidReceiveEnabled,
+      emit: this.isDidReceiveEmitEnabled,
+    };
     this.isDidReceiveEnabled = enabled;
-    this.applyDidReceive();
+    this.applyDidReceive(previous);
   }
 
   toggleDidReceiveEmit(enabled: boolean) {
+    const previous = {
+      enabled: this.isDidReceiveEnabled,
+      emit: this.isDidReceiveEmitEnabled,
+    };
     this.isDidReceiveEmitEnabled = enabled;
-    this.applyDidReceive();
+    this.applyDidReceive(previous);
   }
 
-  private applyWillPresent() {
+  private applyWillPresent(previous: { enabled: boolean; emit: boolean }) {
     const payload = this.isWillPresentEnabled
       ? { options: ['badge', 'sound', 'banner'], emitEvent: this.isWillPresentEmitEnabled }
       : null;
@@ -228,28 +352,40 @@ export class NotificationsPage implements OnInit {
     this.reteno
       .setWillPresentNotificationOptions(payload)
       .then(() => {
+        this.reteno.setPageState<NotificationsUiState>('notifications', {
+          isWillPresentEnabled: this.isWillPresentEnabled,
+          isWillPresentEmitEnabled: this.isWillPresentEmitEnabled,
+        });
         this.iosNotificationStatus = this.isWillPresentEnabled
           ? 'setWillPresentNotificationOptions: enabled'
           : 'setWillPresentNotificationOptions: removed';
       })
       .catch((err) => {
+        this.isWillPresentEnabled = previous.enabled;
+        this.isWillPresentEmitEnabled = previous.emit;
         this.iosNotificationStatus = 'setWillPresentNotificationOptions: ERROR (see console)';
         // eslint-disable-next-line no-console
         console.error('setWillPresentNotificationOptions: ERROR', err);
       });
   }
 
-  private applyDidReceive() {
+  private applyDidReceive(previous: { enabled: boolean; emit: boolean }) {
     const payload = { enabled: this.isDidReceiveEnabled, emitEvent: this.isDidReceiveEmitEnabled };
     this.iosNotificationStatus = 'setDidReceiveNotificationResponseHandler: applying...';
     this.reteno
       .setDidReceiveNotificationResponseHandler(payload)
       .then(() => {
+        this.reteno.setPageState<NotificationsUiState>('notifications', {
+          isDidReceiveEnabled: this.isDidReceiveEnabled,
+          isDidReceiveEmitEnabled: this.isDidReceiveEmitEnabled,
+        });
         this.iosNotificationStatus = this.isDidReceiveEnabled
           ? 'setDidReceiveNotificationResponseHandler: enabled'
           : 'setDidReceiveNotificationResponseHandler: removed';
       })
       .catch((err) => {
+        this.isDidReceiveEnabled = previous.enabled;
+        this.isDidReceiveEmitEnabled = previous.emit;
         this.iosNotificationStatus = 'setDidReceiveNotificationResponseHandler: ERROR (see console)';
         // eslint-disable-next-line no-console
         console.error('setDidReceiveNotificationResponseHandler: ERROR', err);

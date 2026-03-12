@@ -10,6 +10,8 @@ export type LifecycleTrackingOptions =
   | 'NONE'
   | string;
 
+type PageUiState = Record<string, unknown>;
+
 declare global {
   interface Window {
     retenosdk?: {
@@ -132,6 +134,7 @@ declare global {
 export class RetenoService {
   private initialized = false;
   private initPromise: Promise<unknown> | null = null;
+  private uiState: Record<string, PageUiState> = {};
   private initOptions: {
     pauseInAppMessages: boolean;
     pausePushInAppMessages: boolean;
@@ -217,6 +220,22 @@ export class RetenoService {
       isAutomaticScreenReportingEnabled: this.initOptions.isAutomaticScreenReportingEnabled,
       isDebugMode: this.initOptions.isDebugMode,
       lifecycleTrackingOptions: { ...this.initOptions.lifecycleTrackingOptions },
+    };
+  }
+
+  getPageState<T extends PageUiState>(pageKey: string, defaults: T): T {
+    const raw = this.uiState[pageKey];
+    if (!raw) {
+      return { ...defaults };
+    }
+    return { ...defaults, ...(raw as Partial<T>) };
+  }
+
+  setPageState<T extends PageUiState>(pageKey: string, patch: Partial<T>): void {
+    const current = this.uiState[pageKey] ?? {};
+    this.uiState[pageKey] = {
+      ...current,
+      ...patch,
     };
   }
 

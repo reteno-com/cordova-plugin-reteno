@@ -1,4 +1,4 @@
-import { Component, NgZone, OnInit, inject } from '@angular/core';
+import { Component, NgZone, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { IonicModule, Platform } from '@ionic/angular';
 import { AppHeaderComponent } from '../shared/app-header/app-header.component';
@@ -9,13 +9,19 @@ type EventView = {
   text: string;
 };
 
+type InAppUiState = {
+  isPaused: boolean;
+  isLifecycleEnabled: boolean;
+  isCustomDataEnabled: boolean;
+};
+
 @Component({
   selector: 'app-in-app',
   templateUrl: 'in-app.page.html',
   styleUrls: ['in-app.page.scss'],
   imports: [IonicModule, ReactiveFormsModule, AppHeaderComponent],
 })
-export class InAppPage implements OnInit {
+export class InAppPage implements OnInit, OnDestroy {
   pauseStatus: string | null = null;
   behaviourStatus: string | null = null;
   lifecycleStatus: string | null = null;
@@ -44,6 +50,35 @@ export class InAppPage implements OnInit {
 
   ngOnInit(): void {
     this.isIos = this.platform.is('ios');
+    const savedState = this.reteno.getPageState<InAppUiState>('inApp', {
+      isPaused: false,
+      isLifecycleEnabled: false,
+      isCustomDataEnabled: false,
+    });
+    this.isPaused = savedState.isPaused;
+    this.isLifecycleEnabled = savedState.isLifecycleEnabled;
+    this.isCustomDataEnabled = savedState.isCustomDataEnabled;
+
+    if (savedState.isPaused) {
+      this.togglePause(true);
+    }
+    if (savedState.isLifecycleEnabled) {
+      this.toggleLifecycle(true);
+    }
+    if (!this.isIos && savedState.isCustomDataEnabled) {
+      this.toggleCustomData(true);
+    }
+  }
+
+  ngOnDestroy(): void {
+    if (this.lifecycleHandler) {
+      this.reteno.removeOnInAppLifecycleCallback(this.lifecycleHandler);
+      this.lifecycleHandler = null;
+    }
+    if (this.customDataHandler) {
+      this.reteno.removeOnInAppMessageCustomDataReceivedListener(this.customDataHandler);
+      this.customDataHandler = null;
+    }
   }
 
   // Screen view is tracked globally in AppComponent.
@@ -54,10 +89,12 @@ export class InAppPage implements OnInit {
     this.reteno
       .pauseInAppMessages(enabled)
       .then(() => {
+        this.reteno.setPageState<InAppUiState>('inApp', { isPaused: enabled });
         this.pauseStatus = enabled ? 'pauseInAppMessages: paused' : 'pauseInAppMessages: resumed';
       })
       .catch((err) => {
         this.isPaused = !enabled;
+        this.reteno.setPageState<InAppUiState>('inApp', { isPaused: !enabled });
         this.pauseStatus = 'pauseInAppMessages: ERROR (see console)';
         // eslint-disable-next-line no-console
         console.error('pauseInAppMessages: ERROR', err);
@@ -94,6 +131,7 @@ export class InAppPage implements OnInit {
         });
       });
       this.isLifecycleEnabled = true;
+      this.reteno.setPageState<InAppUiState>('inApp', { isLifecycleEnabled: true });
       return;
     }
 
@@ -101,6 +139,7 @@ export class InAppPage implements OnInit {
       this.reteno.removeOnInAppLifecycleCallback(this.lifecycleHandler);
       this.lifecycleHandler = null;
       this.isLifecycleEnabled = false;
+      this.reteno.setPageState<InAppUiState>('inApp', { isLifecycleEnabled: false });
       this.lifecycleStatus = 'In-app lifecycle listener removed.';
     }
   }
@@ -115,6 +154,7 @@ export class InAppPage implements OnInit {
         });
       });
       this.isCustomDataEnabled = true;
+      this.reteno.setPageState<InAppUiState>('inApp', { isCustomDataEnabled: true });
       return;
     }
 
@@ -122,6 +162,7 @@ export class InAppPage implements OnInit {
       this.reteno.removeOnInAppMessageCustomDataReceivedListener(this.customDataHandler);
       this.customDataHandler = null;
       this.isCustomDataEnabled = false;
+      this.reteno.setPageState<InAppUiState>('inApp', { isCustomDataEnabled: false });
       this.customDataStatus = 'In-app custom data listener removed.';
     }
   }

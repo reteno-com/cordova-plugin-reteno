@@ -20,10 +20,8 @@ export class MainPage implements OnInit {
   initLifecycleSession = true;
   initScreenReporting = false;
   initialized = false;
-  isIos = false;
 
   ngOnInit(): void {
-    this.isIos = this.platform.is('ios');
     this.syncInitOptions();
     this.initReteno();
   }
@@ -40,21 +38,9 @@ export class MainPage implements OnInit {
           .catch((err) => {
             // eslint-disable-next-line no-console
             console.warn('requestNotificationPermission: WARN', err);
-          });
-      })
-      .then(() => {
-        if (this.isIos) {
-          return this.reteno.setFCMToken()
-            .then((token: unknown) => {
-              // eslint-disable-next-line no-console
-              console.log('setFCMToken: OK', token);
-            })
-            .catch((err: unknown) => {
-              // eslint-disable-next-line no-console
-              console.warn('setFCMToken: WARN', err);
-            });
-        }
-        return Promise.resolve();
+          })
+          .then(() => this.enableForegroundNotificationPresentation())
+          .then(() => this.ensureFcmTokenSynced());
       })
       .catch((err) => {
         // eslint-disable-next-line no-console
@@ -81,6 +67,26 @@ export class MainPage implements OnInit {
       .catch((err) => {
         // eslint-disable-next-line no-console
         console.error('forcePushData: ERROR', err);
+      });
+  }
+
+  private ensureFcmTokenSynced(): Promise<void> {
+    return this.reteno.forcePushData().catch((err) => {
+      // eslint-disable-next-line no-console
+      console.warn('forcePushData after permission request: WARN', err);
+    });
+  }
+
+  private enableForegroundNotificationPresentation(): Promise<void> {
+    if (!this.platform.is('ios')) {
+      return Promise.resolve();
+    }
+
+    return this.reteno
+      .setWillPresentNotificationOptions({ options: ['badge', 'sound', 'banner'] })
+      .catch((err) => {
+        // eslint-disable-next-line no-console
+        console.warn('setWillPresentNotificationOptions: WARN', err);
       });
   }
 

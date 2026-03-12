@@ -1,7 +1,8 @@
 
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
+import { Subscription } from 'rxjs';
 import { AppHeaderComponent } from '../shared/app-header/app-header.component';
 import { RetenoService } from '../services/reteno.service';
 
@@ -11,10 +12,11 @@ import { RetenoService } from '../services/reteno.service';
     styleUrls: ['home.page.scss'],
     imports: [IonicModule, ReactiveFormsModule, AppHeaderComponent]
 })
-export class HomePage implements OnInit {
+export class HomePage implements OnInit, OnDestroy {
   status: string | null = null;
   isAnonymous = false;
   private lastMultiAccountUserId: string | null = null;
+  private userModeSubs: Subscription[] = [];
 
   private readonly formBuilder = inject(FormBuilder);
   private readonly reteno = inject(RetenoService);
@@ -41,14 +43,18 @@ export class HomePage implements OnInit {
   });
 
   ngOnInit(): void {
-    this.form.controls.multiAccount.valueChanges.subscribe(() => {
+    this.userModeSubs.push(this.form.controls.multiAccount.valueChanges.subscribe(() => {
       this.updateUserMode('multi');
-    });
-    this.form.controls.anonymousUser.valueChanges.subscribe(() => {
+    }));
+    this.userModeSubs.push(this.form.controls.anonymousUser.valueChanges.subscribe(() => {
       this.updateUserMode('anonymous');
-    });
-
+    }));
     this.updateUserMode();
+  }
+
+  ngOnDestroy(): void {
+    this.userModeSubs.forEach((sub) => sub.unsubscribe());
+    this.userModeSubs = [];
   }
 
   sendForm() {

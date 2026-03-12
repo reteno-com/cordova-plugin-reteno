@@ -2,6 +2,7 @@ import Foundation
 import UIKit
 import UserNotifications
 import Reteno
+import ObjectiveC.runtime
 #if canImport(FirebaseMessaging)
 import FirebaseCore
 import FirebaseMessaging
@@ -13,11 +14,18 @@ class RetenoPlugin: CDVPlugin {
   private var inboxCountCallbackId: String?
   private var isManualTokenMode = false
   #if canImport(FirebaseMessaging)
-  private var fcmTokenObserver: NSObjectProtocol?
+  private static var hasSwizzledAPNs = false
+  private static var latestAPNsToken: Data?
+  private static var latestFCMToken: String?
   #endif
 
   override func pluginInitialize() {
     RetenoPlugin.activeInstance = self
+    #if canImport(FirebaseMessaging)
+    if let messaging = messagingIfAvailable() {
+      messaging.delegate = self
+    }
+    #endif
   }
 
   override func onAppTerminate() {
@@ -25,10 +33,7 @@ class RetenoPlugin: CDVPlugin {
       RetenoPlugin.activeInstance = nil
     }
     #if canImport(FirebaseMessaging)
-    if let observer = fcmTokenObserver {
-      NotificationCenter.default.removeObserver(observer)
-      fcmTokenObserver = nil
-    }
+    messagingIfConfigured()?.delegate = nil
     #endif
     super.onAppTerminate()
   }
@@ -115,6 +120,7 @@ class RetenoPlugin: CDVPlugin {
       #if canImport(FirebaseMessaging)
       if deviceTokenMode == .manual {
         if self.configureFirebaseIfPossible() {
+          self.installAPNsRegistrationBridgeIfNeeded()
           self.startFCMTokenObservation()
         } else {
           NSLog("[RetenoPlugin] WARNING: IOS_DEVICE_TOKEN_HANDLING_MODE is 'manual' but Firebase could not be configured. Check that GoogleService-Info.plist is present in the main app target.")
@@ -148,31 +154,85 @@ class RetenoPlugin: CDVPlugin {
     return FirebaseApp.app() != nil
   }
 
-  private func startFCMTokenObservation() {
-    // Remove any previous observer to avoid duplicates on re-init
-    if let existing = fcmTokenObserver {
-      NotificationCenter.default.removeObserver(existing)
-    }
-
-    // Subscribe to every future token refresh
-    fcmTokenObserver = NotificationCenter.default.addObserver(
-      forName: Notification.Name.MessagingRegistrationTokenRefreshed,
-      object: nil,
-      queue: nil
-    ) { [weak self] _ in
-      self?.forwardCurrentFCMTokenToReteno()
-    }
-
-    // Try to forward an already-available token (warm start / token cached by Firebase)
-    forwardCurrentFCMTokenToReteno()
+  private func messagingIfConfigured() -> Messaging? {
+    guard FirebaseApp.app() != nil else { return nil }
+    return Messaging.messaging()
   }
 
-  private func forwardCurrentFCMTokenToReteno() {
-    Messaging.messaging().token { token, error in
-      guard let token = token, !token.isEmpty, error == nil else { return }
+  private func messagingIfAvailable() -> Messaging? {
+    if FirebaseApp.app() == nil {
+      _ = configureFirebaseIfPossible()
+    }
+    return messagingIfConfigured()
+  }
+
+  private func startFCMTokenObservation() {
+    guard let messaging = messagingIfAvailable() else { return }
+    messaging.delegate = self
+    if let token = messaging.fcmToken, !token.isEmpty {
+      handleFCMTokenUpdate(token)
+    }
+  }
+
+  private func handleFCMTokenUpdate(_ token: String) {
+    RetenoPlugin.latestFCMToken = token
+    if isManualTokenMode {
       Reteno.userNotificationService.processRemoteNotificationsToken(token)
     }
   }
+
+  private func installAPNsRegistrationBridgeIfNeeded() {
+    guard !RetenoPlugin.hasSwizzledAPNs else { return }
+    guard let appDelegate = UIApplication.shared.delegate else { return }
+
+    let appDelegateClass: AnyClass = type(of: appDelegate)
+    let didRegisterSelector = #selector(UIApplicationDelegate.application(_:didRegisterForRemoteNotificationsWithDeviceToken:))
+    let didRegisterMethodTypeEncoding = "v@:@@"
+    let didFailSelector = #selector(UIApplicationDelegate.application(_:didFailToRegisterForRemoteNotificationsWithError:))
+    let didFailMethodTypeEncoding = "v@:@@"
+
+    typealias OriginalDidRegister = @convention(c) (AnyObject, Selector, UIApplication, Data) -> Void
+    let originalDidRegisterMethod = class_getInstanceMethod(appDelegateClass, didRegisterSelector)
+    let originalDidRegisterImp = originalDidRegisterMethod.map { method_getImplementation($0) }
+
+    let didRegisterSwizzledBlock: @convention(block) (AnyObject, UIApplication, Data) -> Void = { target, application, deviceToken in
+      RetenoPlugin.latestAPNsToken = deviceToken
+      if FirebaseApp.app() != nil {
+        Messaging.messaging().apnsToken = deviceToken
+      }
+
+      if let originalDidRegisterImp {
+        let original = unsafeBitCast(originalDidRegisterImp, to: OriginalDidRegister.self)
+        original(target, didRegisterSelector, application, deviceToken)
+      }
+    }
+
+    let didRegisterSwizzledImp = imp_implementationWithBlock(didRegisterSwizzledBlock)
+    let didRegisterAdded = class_addMethod(appDelegateClass, didRegisterSelector, didRegisterSwizzledImp, didRegisterMethodTypeEncoding)
+    if !didRegisterAdded {
+      class_replaceMethod(appDelegateClass, didRegisterSelector, didRegisterSwizzledImp, didRegisterMethodTypeEncoding)
+    }
+
+    typealias OriginalDidFail = @convention(c) (AnyObject, Selector, UIApplication, Error) -> Void
+    let originalDidFailMethod = class_getInstanceMethod(appDelegateClass, didFailSelector)
+    let originalDidFailImp = originalDidFailMethod.map { method_getImplementation($0) }
+
+    let didFailSwizzledBlock: @convention(block) (AnyObject, UIApplication, Error) -> Void = { target, application, error in
+      if let originalDidFailImp {
+        let original = unsafeBitCast(originalDidFailImp, to: OriginalDidFail.self)
+        original(target, didFailSelector, application, error)
+      }
+    }
+
+    let didFailSwizzledImp = imp_implementationWithBlock(didFailSwizzledBlock)
+    let didFailAdded = class_addMethod(appDelegateClass, didFailSelector, didFailSwizzledImp, didFailMethodTypeEncoding)
+    if !didFailAdded {
+      class_replaceMethod(appDelegateClass, didFailSelector, didFailSwizzledImp, didFailMethodTypeEncoding)
+    }
+
+    RetenoPlugin.hasSwizzledAPNs = true
+  }
+
   #endif
 
   @objc(requestNotificationPermission:)
@@ -185,6 +245,43 @@ class RetenoPlugin: CDVPlugin {
       let result = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: 1)
       self.commandDelegate.send(result, callbackId: command.callbackId)
     }
+  }
+
+  @objc(getPushPermissionStatus:)
+  func getPushPermissionStatus(_ command: CDVInvokedUrlCommand) {
+    UNUserNotificationCenter.current().getNotificationSettings { [weak self] settings in
+      guard let self = self else { return }
+
+      let status = RetenoPlugin.authorizationStatusString(settings.authorizationStatus)
+      let payload: [String: Any] = [
+        "authorizationStatus": status,
+        "isAuthorized": settings.authorizationStatus == .authorized ||
+          settings.authorizationStatus == .provisional ||
+          settings.authorizationStatus == .ephemeral,
+        "alertSetting": RetenoPlugin.notificationSettingString(settings.alertSetting),
+        "badgeSetting": RetenoPlugin.notificationSettingString(settings.badgeSetting),
+        "soundSetting": RetenoPlugin.notificationSettingString(settings.soundSetting)
+      ]
+
+      let result = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: payload)
+      self.commandDelegate.send(result, callbackId: command.callbackId)
+    }
+  }
+
+  @objc(getInitialNotification:)
+  func getInitialNotification(_ command: CDVInvokedUrlCommand) {
+    var payload: [String: Any] = [:]
+
+    if let response = Reteno.userNotificationService.coldStartNotificationResponse {
+      let userInfo = response.notification.request.content.userInfo
+      if let normalized = RetenoPlugin.normalizeForJson(userInfo) as? [String: Any] {
+        payload = normalized
+      }
+      Reteno.userNotificationService.coldStartNotificationResponse = nil
+    }
+
+    let result = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: payload)
+    self.commandDelegate.send(result, callbackId: command.callbackId)
   }
 
   @objc(logEvent:)
@@ -351,55 +448,6 @@ class RetenoPlugin: CDVPlugin {
       let result = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: 1)
       self.commandDelegate.send(result, callbackId: command.callbackId)
     }
-  }
-
-  @objc(setFCMToken:)
-  func setFCMToken(_ command: CDVInvokedUrlCommand) {
-    guard isManualTokenMode else {
-      sendError(
-        "setFCMToken: IOS_DEVICE_TOKEN_HANDLING_MODE must be 'manual' (default).",
-        to: command
-      )
-      return
-    }
-
-    #if canImport(FirebaseMessaging)
-    guard FirebaseApp.app() != nil else {
-      sendError(
-        "setFCMToken: FirebaseApp is not configured. Make sure GoogleService-Info.plist is added to the app target.",
-        to: command
-      )
-      return
-    }
-
-    Messaging.messaging().token { [weak self] token, error in
-      guard let self = self else { return }
-
-      if let error = error {
-        let result = CDVPluginResult(status: CDVCommandStatus_ERROR, messageAs: error.localizedDescription)
-        self.commandDelegate.send(result, callbackId: command.callbackId)
-        return
-      }
-
-      guard let fcmToken = token, !fcmToken.isEmpty else {
-        let result = CDVPluginResult(
-          status: CDVCommandStatus_ERROR,
-          messageAs: "setFCMToken: FCM token is not available yet. Ensure GoogleService-Info.plist is added to the app target and APNS token has been received (registerForRemoteNotifications was called)."
-        )
-        self.commandDelegate.send(result, callbackId: command.callbackId)
-        return
-      }
-
-      Reteno.userNotificationService.processRemoteNotificationsToken(fcmToken)
-      let result = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: fcmToken)
-      self.commandDelegate.send(result, callbackId: command.callbackId)
-    }
-    #else
-    sendError(
-      "setFCMToken: FirebaseMessaging is not available. Add 'pod \"FirebaseMessaging\"' to your Podfile to enable FCM support.",
-      to: command
-    )
-    #endif
   }
 
   @objc(setWillPresentNotificationOptions:)
@@ -714,9 +762,10 @@ class RetenoPlugin: CDVPlugin {
     setupInboxCountSubscription()
 
     // Send NO_RESULT immediately to keep the callback alive
-    let noResult = CDVPluginResult(status: CDVCommandStatus_NO_RESULT)
-    noResult?.setKeepCallbackAs(true)
-    commandDelegate.send(noResult, callbackId: command.callbackId)
+    if let noResult = CDVPluginResult(status: CDVCommandStatus_NO_RESULT) as CDVPluginResult? {
+      noResult.setKeepCallbackAs(true)
+      commandDelegate.send(noResult, callbackId: command.callbackId)
+    }
   }
 
   @objc(unsubscribeMessagesCountChanged:)
@@ -733,9 +782,10 @@ class RetenoPlugin: CDVPlugin {
   private func setupInboxCountSubscription() {
     Reteno.inbox().onUnreadMessagesCountChanged = { [weak self] count in
       guard let self = self, let callbackId = self.inboxCountCallbackId else { return }
-      let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: count)
-      pluginResult?.setKeepCallbackAs(true)
-      self.commandDelegate.send(pluginResult, callbackId: callbackId)
+      if let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: count) as CDVPluginResult? {
+        pluginResult.setKeepCallbackAs(true)
+        self.commandDelegate.send(pluginResult, callbackId: callbackId)
+      }
     }
   }
 
@@ -1565,6 +1615,26 @@ class RetenoPlugin: CDVPlugin {
     instance.commandDelegate.evalJs(js)
   }
 
+  private static func authorizationStatusString(_ status: UNAuthorizationStatus) -> String {
+    switch status {
+    case .notDetermined: return "notDetermined"
+    case .denied: return "denied"
+    case .authorized: return "authorized"
+    case .provisional: return "provisional"
+    case .ephemeral: return "ephemeral"
+    @unknown default: return "unknown"
+    }
+  }
+
+  private static func notificationSettingString(_ setting: UNNotificationSetting) -> String {
+    switch setting {
+    case .notSupported: return "notSupported"
+    case .disabled: return "disabled"
+    case .enabled: return "enabled"
+    @unknown default: return "unknown"
+    }
+  }
+
   private static func normalizeForJson(_ value: Any) -> Any {
     switch value {
     case let dict as [AnyHashable: Any]:
@@ -1591,6 +1661,15 @@ class RetenoPlugin: CDVPlugin {
     }
   }
 }
+
+#if canImport(FirebaseMessaging)
+extension RetenoPlugin: MessagingDelegate {
+  func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
+    guard let fcmToken = fcmToken else { return }
+    handleFCMTokenUpdate(fcmToken)
+  }
+}
+#endif
 
 // MARK: - Ecommerce parse error
 

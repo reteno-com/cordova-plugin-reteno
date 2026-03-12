@@ -3,6 +3,7 @@
     <name>cordova-plugin-reteno</name>
     <engines>
         <engine name="cordova-android" version=">=12.0.0" />
+        <engine name="cordova-ios" version=">=8.0.0" />
     </engines>
     <preference name="SDK_ACCESS_KEY" default="MISSING" />
     <preference name="IOS_DEVICE_TOKEN_HANDLING_MODE" default="manual" />
@@ -58,6 +59,7 @@
   <podspec>
     <pods>
       <pod name="Reteno" spec="2.6.1" />
+      <pod name="FirebaseMessaging" />
     </pods>
   </podspec>
 

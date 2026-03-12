@@ -48,16 +48,14 @@
             sessionEventsEnabled
           </ion-toggle>
         </ion-item>
-        @if (isIos) {
-          <ion-item>
-            <ion-toggle
-              [checked]="false"
-              [disabled]="true"
-            >
-              isAutomaticScreenReportingEnabled (iOS)
-            </ion-toggle>
-          </ion-item>
-        }
+        <ion-item>
+          <ion-toggle
+            [checked]="false"
+            [disabled]="true"
+          >
+            isAutomaticScreenReportingEnabled (iOS)
+          </ion-toggle>
+        </ion-item>
       </ion-card-content>
     </ion-card>
   }

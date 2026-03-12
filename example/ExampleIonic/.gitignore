@@ -72,3 +72,6 @@ google-services.json
 android/app/google-services.json
 GoogleService-Info.plist
 ios/App/App/GoogleService-Info.plist
+
+# fastlane / TestFlight
+**/fastlane/.env.testflight

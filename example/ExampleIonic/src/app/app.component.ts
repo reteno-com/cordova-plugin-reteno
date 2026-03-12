@@ -22,6 +22,7 @@ export class AppComponent {
   ngOnInit(): void {
     this.platform.ready().then(() => {
       this.enableScreenTracking();
+      this.initPushNotifications();
     });
   }
 
@@ -58,6 +59,22 @@ export class AppComponent {
     this.reteno.logScreenView(screenName).catch(() => {
       // ignore
     });
+  }
+
+  private initPushNotifications(): void {
+    this.reteno.requestNotificationPermission()
+      .then(() => {
+        if (this.platform.is('ios')) {
+          return this.reteno.setWillPresentNotificationOptions({
+            options: ['badge', 'sound', 'banner'],
+          });
+        }
+        return undefined;
+      })
+      .catch((err) => {
+        // eslint-disable-next-line no-console
+        console.warn('initPushNotifications: WARN', err);
+      });
   }
 
   private getRetenoScreenName(fallbackUrl: string): string {

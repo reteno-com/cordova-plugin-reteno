@@ -10,6 +10,8 @@ export type LifecycleTrackingOptions =
   | 'NONE'
   | string;
 
+type PageUiState = Record<string, unknown>;
+
 declare global {
   interface Window {
     retenosdk?: {
@@ -51,7 +53,6 @@ declare global {
         error?: (err: unknown) => void
       ) => Promise<void>;
       setDeviceToken?: (token: string, success?: () => void, error?: (err: unknown) => void) => Promise<void>;
-      setFCMToken?: (success?: (token: unknown) => void, error?: (err: unknown) => void) => Promise<unknown>;
       setLifecycleTrackingOptions?: (
         options: unknown,
         success?: () => void,
@@ -64,6 +65,10 @@ declare global {
       ) => Promise<void>;
       forcePushData?: (success?: () => void, error?: (err: unknown) => void) => Promise<void>;
       requestNotificationPermission?: (
+        success?: (result: unknown) => void,
+        error?: (err: unknown) => void
+      ) => Promise<unknown>;
+      getPushPermissionStatus?: (
         success?: (result: unknown) => void,
         error?: (err: unknown) => void
       ) => Promise<unknown>;
@@ -129,6 +134,7 @@ declare global {
 export class RetenoService {
   private initialized = false;
   private initPromise: Promise<unknown> | null = null;
+  private uiState: Record<string, PageUiState> = {};
   private initOptions: {
     pauseInAppMessages: boolean;
     pausePushInAppMessages: boolean;
@@ -217,6 +223,22 @@ export class RetenoService {
     };
   }
 
+  getPageState<T extends PageUiState>(pageKey: string, defaults: T): T {
+    const raw = this.uiState[pageKey];
+    if (!raw) {
+      return { ...defaults };
+    }
+    return { ...defaults, ...(raw as Partial<T>) };
+  }
+
+  setPageState<T extends PageUiState>(pageKey: string, patch: Partial<T>): void {
+    const current = this.uiState[pageKey] ?? {};
+    this.uiState[pageKey] = {
+      ...current,
+      ...patch,
+    };
+  }
+
   private ensureInit(): Promise<unknown> {
     if (this.initialized) {
       return Promise.resolve();
@@ -226,16 +248,15 @@ export class RetenoService {
     }
     const sdk = window.retenosdk;
     if (!sdk?.init) {
-      return Promise.reject(new Error('retenosdk.init is not available'));
+      return Promise.reject(new Error('retenosdk is not available'));
     }
-    this.initPromise = sdk
-      .init({
-        pauseInAppMessages: this.initOptions.pauseInAppMessages,
-        pausePushInAppMessages: this.initOptions.pausePushInAppMessages,
-        isAutomaticScreenReportingEnabled: this.initOptions.isAutomaticScreenReportingEnabled,
-        isDebugMode: this.initOptions.isDebugMode,
-        lifecycleTrackingOptions: { ...this.initOptions.lifecycleTrackingOptions },
-      })
+    this.initPromise = sdk.init({
+      pauseInAppMessages: this.initOptions.pauseInAppMessages,
+      pausePushInAppMessages: this.initOptions.pausePushInAppMessages,
+      isAutomaticScreenReportingEnabled: this.initOptions.isAutomaticScreenReportingEnabled,
+      isDebugMode: this.initOptions.isDebugMode,
+      lifecycleTrackingOptions: { ...this.initOptions.lifecycleTrackingOptions },
+    })
       .then((res) => {
         this.initialized = true;
         this.initPromise = null;
@@ -305,27 +326,43 @@ export class RetenoService {
   }
 
   requestNotificationPermission(): Promise<unknown> {
-    const sdk = window.retenosdk;
-    if (!sdk?.requestNotificationPermission) {
-      return Promise.reject(new Error('retenosdk.requestNotificationPermission is not available'));
-    }
-    return sdk.requestNotificationPermission();
+    return this.withInit(() => {
+      const sdk = window.retenosdk;
+      if (!sdk?.requestNotificationPermission) {
+        return Promise.reject(new Error('retenosdk.requestNotificationPermission is not available'));
+      }
+      return sdk.requestNotificationPermission();
+    });
+  }
+
+  getPushPermissionStatus(): Promise<unknown> {
+    return this.withInit(() => {
+      const sdk = window.retenosdk;
+      if (!sdk?.getPushPermissionStatus) {
+        return Promise.reject(new Error('retenosdk.getPushPermissionStatus is not available'));
+      }
+      return sdk.getPushPermissionStatus();
+    });
   }
 
   setWillPresentNotificationOptions(payload: { options?: string[]; emitEvent?: boolean } | string[] | null): Promise<void> {
-    const sdk = window.retenosdk;
-    if (!sdk?.setWillPresentNotificationOptions) {
-      return Promise.reject(new Error('retenosdk.setWillPresentNotificationOptions is not available'));
-    }
-    return sdk.setWillPresentNotificationOptions(payload);
+    return this.withInit(() => {
+      const sdk = window.retenosdk;
+      if (!sdk?.setWillPresentNotificationOptions) {
+        return Promise.reject(new Error('retenosdk.setWillPresentNotificationOptions is not available'));
+      }
+      return sdk.setWillPresentNotificationOptions(payload);
+    });
   }
 
   setDidReceiveNotificationResponseHandler(payload: { enabled?: boolean; emitEvent?: boolean } | boolean | null): Promise<void> {
-    const sdk = window.retenosdk;
-    if (!sdk?.setDidReceiveNotificationResponseHandler) {
-      return Promise.reject(new Error('retenosdk.setDidReceiveNotificationResponseHandler is not available'));
-    }
-    return sdk.setDidReceiveNotificationResponseHandler(payload);
+    return this.withInit(() => {
+      const sdk = window.retenosdk;
+      if (!sdk?.setDidReceiveNotificationResponseHandler) {
+        return Promise.reject(new Error('retenosdk.setDidReceiveNotificationResponseHandler is not available'));
+      }
+      return sdk.setDidReceiveNotificationResponseHandler(payload);
+    });
   }
 
   setDeviceToken(token: string): Promise<void> {
@@ -335,16 +372,6 @@ export class RetenoService {
         return Promise.reject(new Error('retenosdk.setDeviceToken is not available'));
       }
       return sdk.setDeviceToken(token);
-    });
-  }
-
-  setFCMToken(): Promise<unknown> {
-    return this.withInit(() => {
-      const sdk = window.retenosdk;
-      if (!sdk?.setFCMToken) {
-        return Promise.reject(new Error('retenosdk.setFCMToken is not available'));
-      }
-      return sdk.setFCMToken();
     });
   }
 
@@ -727,11 +754,13 @@ export class RetenoService {
   }
 
   setNotificationActionHandler(payload: { enabled?: boolean; emitEvent?: boolean } | boolean | null): Promise<void> {
-    const sdk = window.retenosdk;
-    if (!sdk?.setNotificationActionHandler) {
-      return Promise.reject(new Error('retenosdk.setNotificationActionHandler is not available'));
-    }
-    return sdk.setNotificationActionHandler(payload);
+    return this.withInit(() => {
+      const sdk = window.retenosdk;
+      if (!sdk?.setNotificationActionHandler) {
+        return Promise.reject(new Error('retenosdk.setNotificationActionHandler is not available'));
+      }
+      return sdk.setNotificationActionHandler(payload);
+    });
   }
 
   setOnRetenoPushButtonClickedListener(listener: (payload: unknown) => void): (event: Event) => void {

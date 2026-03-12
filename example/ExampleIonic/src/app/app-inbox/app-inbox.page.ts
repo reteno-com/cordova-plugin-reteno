@@ -1,4 +1,4 @@
-import { Component, NgZone, OnInit, inject } from '@angular/core';
+import { Component, NgZone, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { AppHeaderComponent } from '../shared/app-header/app-header.component';
@@ -12,13 +12,17 @@ type InboxMessageView = {
   createdDate?: string;
 };
 
+type AppInboxUiState = {
+  isCountSubscribed: boolean;
+};
+
 @Component({
   selector: 'app-app-inbox',
   templateUrl: 'app-inbox.page.html',
   styleUrls: ['app-inbox.page.scss'],
   imports: [IonicModule, ReactiveFormsModule, AppHeaderComponent],
 })
-export class AppInboxPage implements OnInit {
+export class AppInboxPage implements OnInit, OnDestroy {
   status: string | null = null;
   countStatus: string | null = null;
   markStatus: string | null = null;
@@ -42,7 +46,23 @@ export class AppInboxPage implements OnInit {
     messageId: this.formBuilder.control<string>(''),
   });
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    const savedState = this.reteno.getPageState<AppInboxUiState>('appInbox', {
+      isCountSubscribed: false,
+    });
+    this.isCountSubscribed = savedState.isCountSubscribed;
+    if (savedState.isCountSubscribed) {
+      this.toggleCountSubscription(true);
+    }
+  }
+
+  ngOnDestroy(): void {
+    if (this.isCountSubscribed) {
+      this.reteno.unsubscribeMessagesCountChanged().catch(() => {
+        // Ignore unsubscribe failures while leaving page.
+      });
+    }
+  }
 
   // Screen view is tracked globally in AppComponent.
 
@@ -117,9 +137,11 @@ export class AppInboxPage implements OnInit {
         })
         .then(() => {
           this.isCountSubscribed = true;
+          this.reteno.setPageState<AppInboxUiState>('appInbox', { isCountSubscribed: true });
         })
         .catch((err) => {
           this.isCountSubscribed = false;
+          this.reteno.setPageState<AppInboxUiState>('appInbox', { isCountSubscribed: false });
           this.countStatus = 'subscribeOnMessagesCountChanged: ERROR (see console)';
           // eslint-disable-next-line no-console
           console.error('subscribeOnMessagesCountChanged: ERROR', err);
@@ -131,6 +153,7 @@ export class AppInboxPage implements OnInit {
       .unsubscribeMessagesCountChanged()
       .then(() => {
         this.isCountSubscribed = false;
+        this.reteno.setPageState<AppInboxUiState>('appInbox', { isCountSubscribed: false });
         this.countStatus = 'Unsubscribed from count updates.';
       })
       .catch((err) => {

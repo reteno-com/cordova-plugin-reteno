@@ -35,5 +35,13 @@ target 'App' do
 end
 
 post_install do |installer|
+  # RETENO_NCE_FRAMEWORKS_START
+  Dir.glob(File.join(installer.sandbox.root, 'Target Support Files', 'Pods-NotificationContentExtension', '*.xcconfig')).each do |path|
+    content = File.read(path)
+    next if content.include?('UserNotificationsUI')
+    content = content.gsub(/^(OTHER_LDFLAGS\s*=\s*.*)$/) { |m| "#{m} -framework \"UserNotificationsUI\"" }
+    File.write(path, content)
+  end
+  # RETENO_NCE_FRAMEWORKS_END
   assertDeploymentTarget(installer)
 end

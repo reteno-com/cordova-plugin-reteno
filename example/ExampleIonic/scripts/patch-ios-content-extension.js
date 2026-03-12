@@ -330,6 +330,48 @@ function ensureNcePodTarget(podfilePath, nceExtensionName, retenoVersion) {
   return false;
 }
 
+function ensureNCEUserNotificationsUIFramework(podfilePath) {
+  const current = readFileIfExists(podfilePath);
+  if (!current) return false;
+
+  const markerStart = '  # RETENO_NCE_FRAMEWORKS_START';
+  const markerEnd = '  # RETENO_NCE_FRAMEWORKS_END';
+  const block =
+`${markerStart}
+  Dir.glob(File.join(installer.sandbox.root, 'Target Support Files', 'Pods-NotificationContentExtension', '*.xcconfig')).each do |path|
+    content = File.read(path)
+    next if content.include?('UserNotificationsUI')
+    content = content.gsub(/^(OTHER_LDFLAGS\\s*=\\s*.*)$/) { |m| "#{m} -framework \\"UserNotificationsUI\\"" }
+    File.write(path, content)
+  end
+${markerEnd}
+`;
+
+  let next = current;
+
+  if (/post_install\s+do\s+\|installer\|/.test(next)) {
+    const hasMarkers = next.includes(markerStart) && next.includes(markerEnd);
+    if (hasMarkers) {
+      const markedBlockRegex = new RegExp(
+        `${markerStart.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[\\s\\S]*?${markerEnd.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`,
+        'm'
+      );
+      next = next.replace(markedBlockRegex, block.trimEnd());
+    } else {
+      next = next.replace(
+        /(post_install\s+do\s+\|installer\|\n)/,
+        `$1${block}`
+      );
+    }
+  } else {
+    next = `${next.trimEnd()}\n\npost_install do |installer|\n${block}end\n`;
+  }
+
+  if (next === current) return false;
+  fs.writeFileSync(podfilePath, next, 'utf8');
+  return true;
+}
+
 function main() {
   if (!fs.existsSync(PROJECT_PATH)) {
     log(`Xcode project not found at ${PROJECT_PATH}. Run 'npx cap sync ios' first.`);
@@ -371,7 +413,10 @@ function main() {
 \t\t<key>NSExtensionAttributes</key>
 \t\t<dict>
 \t\t\t<key>UNNotificationExtensionCategory</key>
-\t\t\t<string>ImageCarousel</string>
+\t\t\t<array>
+\t\t\t\t<string>ImageCarousel</string>
+\t\t\t\t<string>ImageGif</string>
+\t\t\t</array>
 \t\t\t<key>UNNotificationExtensionInitialContentSizeRatio</key>
 \t\t\t<real>0.5</real>
 \t\t\t<key>UNNotificationExtensionUserInteractionEnabled</key>
@@ -491,7 +536,8 @@ final class NotificationViewController: RetenoCarouselNotificationViewController
   log('Xcode project updated.');
 
   // ── Podfile ───────────────────────────────────────────────────────────────────
-  const podfileChanged = ensureNcePodTarget(PODFILE_PATH, EXTENSION_NAME, RETENO_VERSION);
+  let podfileChanged = ensureNcePodTarget(PODFILE_PATH, EXTENSION_NAME, RETENO_VERSION);
+  podfileChanged = ensureNCEUserNotificationsUIFramework(PODFILE_PATH) || podfileChanged;
   if (podfileChanged) {
     log('Podfile updated — run `pod install` inside ios/App/.');
   } else {

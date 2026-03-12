@@ -420,6 +420,53 @@ ${markerEnd}
   return true;
 }
 
+/**
+ * Ensures Podfile post_install hook links UserNotificationsUI.framework in
+ * the NotificationContentExtension aggregate pod target. Without it the
+ * extension crashes at launch with "Unable to find NSExtensionContextClass".
+ */
+function ensureNCEUserNotificationsUIFramework(podfilePath) {
+  const current = readFileIfExists(podfilePath);
+  if (!current) return false;
+
+  const markerStart = '  # RETENO_NCE_FRAMEWORKS_START';
+  const markerEnd = '  # RETENO_NCE_FRAMEWORKS_END';
+  const block =
+`${markerStart}
+  Dir.glob(File.join(installer.sandbox.root, 'Target Support Files', 'Pods-NotificationContentExtension', '*.xcconfig')).each do |path|
+    content = File.read(path)
+    next if content.include?('UserNotificationsUI')
+    content = content.gsub(/^(OTHER_LDFLAGS\\s*=\\s*.*)$/) { |m| "#{m} -framework \\"UserNotificationsUI\\"" }
+    File.write(path, content)
+  end
+${markerEnd}
+`;
+
+  let next = current;
+
+  if (/post_install\s+do\s+\|installer\|/.test(next)) {
+    const hasMarkers = next.includes(markerStart) && next.includes(markerEnd);
+    if (hasMarkers) {
+      const markedBlockRegex = new RegExp(
+        `${markerStart.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[\\s\\S]*?${markerEnd.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`,
+        'm'
+      );
+      next = next.replace(markedBlockRegex, block.trimEnd());
+    } else {
+      next = next.replace(
+        /(post_install\s+do\s+\|installer\|\n)/,
+        `$1${block}`
+      );
+    }
+  } else {
+    next = `${next.trimEnd()}\n\npost_install do |installer|\n${block}end\n`;
+  }
+
+  if (next === current) return false;
+  fs.writeFileSync(podfilePath, next, 'utf8');
+  return true;
+}
+
 function hasExtensionPodTargets(iosRoot) {
   const supportFilesDir = path.join(iosRoot, 'Pods', 'Target Support Files');
   const nseDir = path.join(supportFilesDir, 'Pods-NotificationServiceExtension');
@@ -1057,7 +1104,10 @@ class NotificationService: RetenoNotificationServiceExtension {}
     <key>NSExtensionAttributes</key>
     <dict>
       <key>UNNotificationExtensionCategory</key>
+      <array>
       <string>ImageCarousel</string>
+        <string>ImageGif</string>
+      </array>
       <key>UNNotificationExtensionInitialContentSizeRatio</key>
       <real>0.5</real>
       <key>UNNotificationExtensionUserInteractionEnabled</key>
@@ -1151,7 +1201,6 @@ final class NotificationViewController: RetenoCarouselNotificationViewController
   ) {
     projectAfterNse.addFile('Info.plist', nceGroupKey);
   }
-
   setTargetBuildSettings(projectAfterNse, nceTargetUuid, {
     PRODUCT_BUNDLE_IDENTIFIER: `"${contentExtensionBundleId}"`,
     INFOPLIST_FILE: `"${contentExtensionRelDir}/Info.plist"`,
@@ -1192,6 +1241,7 @@ final class NotificationViewController: RetenoCarouselNotificationViewController
     podfileChanged = ensureFirebaseMessagingPod(podfilePath, appName) || podfileChanged;
   }
   podfileChanged = ensureRetenoSwiftHeaderSetting(podfilePath) || podfileChanged;
+  podfileChanged = ensureNCEUserNotificationsUIFramework(podfilePath) || podfileChanged;
 
   // During `cordova build ios`, Cordova runs `pod install` before this after_prepare hook.
   // If we modified Podfile here (or extension aggregate pod targets are missing), rerun pod install.

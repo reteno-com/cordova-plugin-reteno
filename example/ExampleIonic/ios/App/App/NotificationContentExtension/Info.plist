@@ -19,13 +19,16 @@
 	<key>CFBundleShortVersionString</key>
 	<string>1.0.0</string>
 	<key>CFBundleVersion</key>
-	<string>464</string>
+	<string>472</string>
 	<key>NSExtension</key>
 	<dict>
 		<key>NSExtensionAttributes</key>
 		<dict>
 			<key>UNNotificationExtensionCategory</key>
-			<string>ImageCarousel</string>
+			<array>
+				<string>ImageCarousel</string>
+				<string>ImageGif</string>
+			</array>
 			<key>UNNotificationExtensionInitialContentSizeRatio</key>
 			<real>0.5</real>
 			<key>UNNotificationExtensionUserInteractionEnabled</key>

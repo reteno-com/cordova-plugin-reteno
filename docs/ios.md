@@ -139,6 +139,97 @@ In Xcode: **Main target → Build Phases → Embed App Extensions**. For **both*
 
 If this checkbox is left on, the extensions will not be embedded during Debug builds and carousel images will not appear.
 
+## Capacitor setup (iOS)
+
+Capacitor uses Cordova plugins through a compatibility layer, but **does not execute Cordova plugin hooks**. This means some automatic steps that work in Cordova must be done manually.
+
+### 1. Install the plugin
+
+```sh
+npm install cordova-plugin-reteno
+npx cap sync ios
+```
+
+### 2. Configure `SDK_ACCESS_KEY`
+
+In `capacitor.config.ts`, pass the access key through `cordova.preferences`:
+
+```ts
+import { CapacitorConfig } from '@capacitor/cli';
+
+const config: CapacitorConfig = {
+  // ...
+  cordova: {
+    preferences: {
+      SDK_ACCESS_KEY: 'YOUR_RETENO_ACCESS_KEY',
+      // Plugin default is 'manual'. Set explicitly only if you need to override.
+      IOS_DEVICE_TOKEN_HANDLING_MODE: 'manual',
+    },
+  },
+};
+```
+
+You can also pass the key explicitly in JS:
+
+```js
+await retenosdk.init({ accessKey: 'YOUR_RETENO_ACCESS_KEY' });
+```
+
+### 3. Podfile path
+
+In Capacitor projects the Podfile is located at `ios/App/Podfile` (not `platforms/ios/Podfile` as in Cordova).
+
+The plugin wires the `Reteno` pod into the main target automatically via `npx cap sync`. For extension targets (NSE, NCE), add the pods manually inside the main target block in `ios/App/Podfile`:
+
+```ruby
+target 'App' do
+  # ... existing pods (added by Capacitor) ...
+
+  target 'NotificationServiceExtension' do
+    inherit! :search_paths
+    pod 'Reteno', '2.6.1'
+  end
+
+  target 'NotificationContentExtension' do
+    inherit! :search_paths
+    pod 'Reteno', '2.6.1'
+  end
+end
+```
+
+Then run:
+
+```sh
+cd ios/App && pod install
+```
+
+### 4. Xcode project setup
+
+Open `ios/App/App.xcworkspace` in Xcode. The following steps are the same as for Cordova (see sections above):
+
+- Add Notification Service Extension (NSE) target
+- Add Notification Content Extension (NCE) target (if you need image carousel)
+- Enable App Groups for all targets
+- Uncheck "Copy only when installing" in Embed App Extensions
+
+### 5. Firebase setup (if using FCM)
+
+For Firebase push delivery, add `GoogleService-Info.plist` to the **main app target** in Xcode:
+
+1. Download `GoogleService-Info.plist` from [Firebase Console](https://console.firebase.google.com/).
+2. Open `ios/App/App.xcworkspace` in Xcode.
+3. Drag `GoogleService-Info.plist` into the App target.
+4. Add `pod 'FirebaseMessaging'` to `ios/App/Podfile` inside the main target, then run `pod install`.
+
+No `AppDelegate.swift` changes are required — the plugin auto-configures Firebase when `IOS_DEVICE_TOKEN_HANDLING_MODE` is `manual` (default).
+
+### 6. Initialize and request permission
+
+```js
+await retenosdk.init();
+await retenosdk.requestNotificationPermission();
+```
+
 ## Initialize the SDK in JS
 
 Call initialization once on app startup:
@@ -153,26 +244,7 @@ await retenosdk.init();
 await retenosdk.init({ accessKey: 'YOUR_RETENO_ACCESS_KEY' });
 ```
 
-**Capacitor**: Cordova plugin preferences are configured in `capacitor.config.ts` under `cordova.preferences`:
-
-```ts
-const config: CapacitorConfig = {
-  // ...
-  cordova: {
-    preferences: {
-      SDK_ACCESS_KEY: 'YOUR_RETENO_ACCESS_KEY',
-      // Plugin default is 'manual'. Set explicitly only if you need to override.
-      IOS_DEVICE_TOKEN_HANDLING_MODE: 'manual',
-    },
-  },
-};
-```
-
-Or pass the key explicitly in JS:
-
-```js
-await retenosdk.init({ accessKey: 'YOUR_RETENO_ACCESS_KEY' });
-```
+**Capacitor**: see [Capacitor setup (iOS)](#capacitor-setup-ios) above.
 
 ## Request Notification Permission
 
@@ -203,7 +275,7 @@ If your app uses Firebase for push delivery on iOS, follow the steps below to in
 ### 1. Add `FirebaseMessaging` pod to your Podfile
 
 The plugin does **not** add `FirebaseMessaging` automatically — it is an optional dependency.
-Add it manually to `platforms/ios/Podfile` inside the main app target:
+Add it manually to your Podfile (`platforms/ios/Podfile` for Cordova, `ios/App/Podfile` for Capacitor) inside the main app target:
 
 ```ruby
 target 'App' do
@@ -377,6 +449,7 @@ The plugin supports the main iOS methods described in Reteno docs:
 - `setAnonymousUserAttributes(...)` (without `phone`/`email`)
 - `setMultiAccountUserAttributes(...)`
 - `logEvent(...)`
+- `logEcommerceEvent(...)` — tracks ecommerce activity (product views, cart updates, orders, search requests). See [API docs](./api.md#logecommerceevent-examples).
 - `logScreenView(...)`
 - `forcePushData(...)`
 

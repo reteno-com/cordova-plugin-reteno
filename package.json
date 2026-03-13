@@ -12,7 +12,8 @@
     "src/android/gradle.properties",
     "src/android/app/build.gradle",
     "src/android/app/proguard-rules.pro",
-    "src/android/app/src/main/",
+    "src/android/app/src/main/AndroidManifest.xml",
+    "src/android/app/src/main/java/",
     "src/ios/",
     "types/",
     "www/",
@@ -41,7 +42,12 @@
     "cordova-android",    
     "cordova-ios"
   ],
-  "author": "",
+  "author": "mobile-sdk@reteno.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/reteno-com/cordova-plugin-reteno.git"
+  },
+  "homepage": "https://github.com/reteno-com/cordova-plugin-reteno#readme",
   "license": "MIT",
   "dependencies": {},
   "devDependencies": {

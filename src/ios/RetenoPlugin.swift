@@ -247,27 +247,6 @@ class RetenoPlugin: CDVPlugin {
     }
   }
 
-  @objc(getPushPermissionStatus:)
-  func getPushPermissionStatus(_ command: CDVInvokedUrlCommand) {
-    UNUserNotificationCenter.current().getNotificationSettings { [weak self] settings in
-      guard let self = self else { return }
-
-      let status = RetenoPlugin.authorizationStatusString(settings.authorizationStatus)
-      let payload: [String: Any] = [
-        "authorizationStatus": status,
-        "isAuthorized": settings.authorizationStatus == .authorized ||
-          settings.authorizationStatus == .provisional ||
-          settings.authorizationStatus == .ephemeral,
-        "alertSetting": RetenoPlugin.notificationSettingString(settings.alertSetting),
-        "badgeSetting": RetenoPlugin.notificationSettingString(settings.badgeSetting),
-        "soundSetting": RetenoPlugin.notificationSettingString(settings.soundSetting)
-      ]
-
-      let result = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: payload)
-      self.commandDelegate.send(result, callbackId: command.callbackId)
-    }
-  }
-
   @objc(getInitialNotification:)
   func getInitialNotification(_ command: CDVInvokedUrlCommand) {
     var payload: [String: Any] = [:]
@@ -1613,26 +1592,6 @@ class RetenoPlugin: CDVPlugin {
     let js = "cordova.fireDocumentEvent(\(quotedEventName), \(payloadJson));"
 
     instance.commandDelegate.evalJs(js)
-  }
-
-  private static func authorizationStatusString(_ status: UNAuthorizationStatus) -> String {
-    switch status {
-    case .notDetermined: return "notDetermined"
-    case .denied: return "denied"
-    case .authorized: return "authorized"
-    case .provisional: return "provisional"
-    case .ephemeral: return "ephemeral"
-    @unknown default: return "unknown"
-    }
-  }
-
-  private static func notificationSettingString(_ setting: UNNotificationSetting) -> String {
-    switch setting {
-    case .notSupported: return "notSupported"
-    case .disabled: return "disabled"
-    case .enabled: return "enabled"
-    @unknown default: return "unknown"
-    }
   }
 
   private static func normalizeForJson(_ value: Any) -> Any {

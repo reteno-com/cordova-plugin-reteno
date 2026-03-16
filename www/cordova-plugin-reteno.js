@@ -1,6 +1,4 @@
 var exec = require('cordova/exec');
-var channel = require('cordova/channel');
-var urlutil = require('cordova/urlutil');
 
 var PLUGIN_NAME = 'RetenoPlugin';
 
@@ -81,6 +79,13 @@ function __callWithAutoInit(action, args, success, error) {
   return p;
 }
 
+/*
+Legacy InAppBrowser-like scaffold (intentionally disabled).
+Kept commented to preserve previous implementation context.
+
+var channel = require('cordova/channel');
+var urlutil = require('cordova/urlutil');
+
 (function RetenoPlugin() {
   this.channels = {
     beforeload: channel.create('beforeload'),
@@ -126,8 +131,10 @@ function __callWithAutoInit(action, args, success, error) {
       }
     },
   };
+})();
+*/
 
-  var RetenoPluginFunctions = {
+var RetenoPluginFunctions = {
     /*
         options: {
           accessKey?: string,
@@ -599,5 +606,4 @@ function __callWithAutoInit(action, args, success, error) {
     },
   };
 
-  module.exports = RetenoPluginFunctions;
-})();
+module.exports = RetenoPluginFunctions;

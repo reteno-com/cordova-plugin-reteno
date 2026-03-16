@@ -543,7 +543,7 @@ public class RetenoPlugin extends CordovaPlugin {
       if (TextUtils.isEmpty(accessKey)) {
         callbackContext.error(
           "Missing SDK_ACCESS_KEY. Provide it when installing the Cordova plugin " +
-          "(e.g. --variable SDK_ACCESS_KEY=YOUR_KEY), pass it to retenosdk.init({accessKey: ...}), " +
+          "(e.g. --variable SDK_ACCESS_KEY=YOUR_KEY), pass it to RetenoPlugin.init({accessKey: ...}), " +
           "or set AndroidManifest meta-data 'com.reteno.SDK_ACCESS_KEY'."
         );
         return;
@@ -579,7 +579,7 @@ public class RetenoPlugin extends CordovaPlugin {
       if (existing == null) {
         callbackContext.error(
           "Reteno SDK instance is not available yet. Ensure AndroidX Startup is enabled and " +
-          "call retenosdk.init(...) after deviceready / Activity.onCreate()."
+          "call RetenoPlugin.init(...) after deviceready / Activity.onCreate()."
         );
         return;
       }
@@ -2364,7 +2364,7 @@ public class RetenoPlugin extends CordovaPlugin {
     }
 
     throw new IllegalStateException(
-      "Reteno SDK is not initialized. Ensure AndroidX Startup initializer is enabled and call retenosdk.init(...) " +
+      "Reteno SDK is not initialized. Ensure AndroidX Startup initializer is enabled and call RetenoPlugin.init(...) " +
       "after deviceready before using the plugin."
     );
   }

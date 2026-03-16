@@ -172,7 +172,7 @@ const config: CapacitorConfig = {
 You can also pass the key explicitly in JS:
 
 ```js
-await retenosdk.init({ accessKey: 'YOUR_RETENO_ACCESS_KEY' });
+await RetenoPlugin.init({ accessKey: 'YOUR_RETENO_ACCESS_KEY' });
 ```
 
 ### 3. Podfile path
@@ -226,8 +226,8 @@ No `AppDelegate.swift` changes are required — the plugin auto-configures Fireb
 ### 6. Initialize and request permission
 
 ```js
-await retenosdk.init();
-await retenosdk.requestNotificationPermission();
+await RetenoPlugin.init();
+await RetenoPlugin.requestNotificationPermission();
 ```
 
 ## Initialize the SDK in JS
@@ -235,13 +235,13 @@ await retenosdk.requestNotificationPermission();
 Call initialization once on app startup:
 
 ```js
-await retenosdk.init();
+await RetenoPlugin.init();
 ```
 
 **Cordova**: `SDK_ACCESS_KEY` is read from `config.xml` automatically. You can also pass it explicitly:
 
 ```js
-await retenosdk.init({ accessKey: 'YOUR_RETENO_ACCESS_KEY' });
+await RetenoPlugin.init({ accessKey: 'YOUR_RETENO_ACCESS_KEY' });
 ```
 
 **Capacitor**: see [Capacitor setup (iOS)](#capacitor-setup-ios) above.
@@ -252,7 +252,7 @@ iOS requires an explicit permission prompt before the app can receive push notif
 Call the plugin helper when it makes sense in your UX flow (usually after a user action):
 
 ```js
-await retenosdk.requestNotificationPermission();
+await RetenoPlugin.requestNotificationPermission();
 ```
 
 ## Provide Device Tokens to the SDK
@@ -260,12 +260,12 @@ await retenosdk.requestNotificationPermission();
 If another SDK/plugin obtains the device token (typically APNs on iOS), pass it to Reteno so it can register the device:
 
 ```js
-await retenosdk.setDeviceToken(token);
+await RetenoPlugin.setDeviceToken(token);
 ```
 
 If your app retrieves tokens natively, here are the two common options and how they map to the plugin:
 
-- APNs: get `deviceToken` in `didRegisterForRemoteNotificationsWithDeviceToken`, convert to hex string, then forward it to JS and call `retenosdk.setDeviceToken(tokenString)`.
+- APNs: get `deviceToken` in `didRegisterForRemoteNotificationsWithDeviceToken`, convert to hex string, then forward it to JS and call `RetenoPlugin.setDeviceToken(tokenString)`.
 - FCM (Firebase Messaging): use the dedicated iOS Firebase flow below. `IOS_DEVICE_TOKEN_HANDLING_MODE` defaults to `manual`, so the plugin can forward FCM tokens automatically after `init()`.
 
 ## Using FCM (Firebase Cloud Messaging) on iOS
@@ -339,13 +339,13 @@ function onInAppStatus(event) {
   console.log('In-app status:', detail.event, detail.data);
 }
 
-await retenosdk.setOnInAppLifecycleCallback(onInAppStatus);
+await RetenoPlugin.setOnInAppLifecycleCallback(onInAppStatus);
 ```
 
 To unsubscribe:
 
 ```js
-await retenosdk.setOnInAppLifecycleCallback(null);
+await RetenoPlugin.setOnInAppLifecycleCallback(null);
 ```
 
 Status mapping used by the plugin:
@@ -375,22 +375,22 @@ The plugin supports both initialization-time and runtime in-app pause controls o
 
 ```js
 // Start SDK with in-apps paused and configure pause behaviour
-await retenosdk.init({
+await RetenoPlugin.init({
   pauseInAppMessages: true,
   inAppMessagesPauseBehaviour: 'SKIP_IN_APPS', // or 'POSTPONE_IN_APPS'
 });
 
 // Runtime pause/resume
-await retenosdk.pauseInAppMessages(true);  // pause
-await retenosdk.pauseInAppMessages(false); // resume
+await RetenoPlugin.pauseInAppMessages(true);  // pause
+await RetenoPlugin.pauseInAppMessages(false); // resume
 ```
 
 Pause behavior can also be configured at runtime:
 
 ```js
-await retenosdk.setInAppMessagesPauseBehaviour('SKIP_IN_APPS');
+await RetenoPlugin.setInAppMessagesPauseBehaviour('SKIP_IN_APPS');
 // or
-await retenosdk.setInAppMessagesPauseBehaviour('POSTPONE_IN_APPS');
+await RetenoPlugin.setInAppMessagesPauseBehaviour('POSTPONE_IN_APPS');
 ```
 
 ## Custom Notification Behavior (optional)
@@ -401,7 +401,7 @@ Configure them **after** SDK initialization.
 Set presentation options for foreground notifications:
 
 ```js
-await retenosdk.setWillPresentNotificationOptions({
+await RetenoPlugin.setWillPresentNotificationOptions({
   options: ['badge', 'sound', 'banner'],
   emitEvent: true
 });
@@ -412,7 +412,7 @@ If `emitEvent` is `true`, the plugin will emit `reteno-push-received` with the n
 Enable a response handler for notification taps:
 
 ```js
-await retenosdk.setDidReceiveNotificationResponseHandler({
+await RetenoPlugin.setDidReceiveNotificationResponseHandler({
   enabled: true,
   emitEvent: true
 });
@@ -455,7 +455,7 @@ The plugin supports the main iOS methods described in Reteno docs:
 
 Lifecycle tracking note for iOS:
 
-- iOS lifecycle tracking is configured during SDK initialization (`retenosdk.init({ lifecycleTrackingOptions: ... })`).
+- iOS lifecycle tracking is configured during SDK initialization (`RetenoPlugin.init({ lifecycleTrackingOptions: ... })`).
 - Calling `setLifecycleTrackingOptions(...)` after initialization is not supported on iOS.
 - `lifecycleTrackingOptions` accepts:
   - `'ALL'` -> enables app lifecycle, push subscription, and session event tracking.
@@ -483,7 +483,7 @@ Related automatic events controlled by the same init options:
 
 Screen view tracking:
 
-- **Manual (recommended for Cordova/Ionic)** — call `retenosdk.logScreenView(screenName)` on each navigation event (for example, by subscribing to your router's navigation events). This works on both iOS and Android and tracks the actual JS screens your users see.
-- **Automatic** — pass `isAutomaticScreenReportingEnabled: true` to `retenosdk.init(...)`. The native iOS SDK will track `UIViewController` transitions automatically. Defaults to `false`.
+- **Manual (recommended for Cordova/Ionic)** — call `RetenoPlugin.logScreenView(screenName)` on each navigation event (for example, by subscribing to your router's navigation events). This works on both iOS and Android and tracks the actual JS screens your users see.
+- **Automatic** — pass `isAutomaticScreenReportingEnabled: true` to `RetenoPlugin.init(...)`. The native iOS SDK will track `UIViewController` transitions automatically. Defaults to `false`.
 
 > **Note on automatic screen tracking in hybrid apps:** In Cordova/Ionic the entire UI runs inside a single WebView, so automatic tracking only captures native controller transitions (e.g. `CDVViewController`), not your JS screen navigations. The same applies to Android, where the native SDK's `autoScreenTracking` monitors `Fragment` transitions. For meaningful screen analytics in a hybrid app, always use `logScreenView()` manually.

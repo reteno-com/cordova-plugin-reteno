@@ -35,7 +35,7 @@ Notes:
 You can request it via the plugin API:
 
 ```js
-retenosdk
+RetenoPlugin
   .requestNotificationPermission()
   .then((grantedInt) => {
     // grantedInt: 1 (granted) or 0 (declined)
@@ -50,7 +50,7 @@ retenosdk
 Initialize Reteno once during app startup:
 
 ```js
-retenosdk
+RetenoPlugin
   .init()
   .then(() => {
     // initialized
@@ -84,12 +84,12 @@ const onCustomReceived = (payload) => {
   console.log('Custom push received', payload);
 };
 
-retenosdk.setOnRetenoPushDismissedListener(onDismissed);
-retenosdk.setOnRetenoCustomPushReceivedListener(onCustomReceived);
+RetenoPlugin.setOnRetenoPushDismissedListener(onDismissed);
+RetenoPlugin.setOnRetenoCustomPushReceivedListener(onCustomReceived);
 
 // later:
-retenosdk.removeOnRetenoPushDismissedListener(onDismissed);
-retenosdk.removeOnRetenoCustomPushReceivedListener(onCustomReceived);
+RetenoPlugin.removeOnRetenoPushDismissedListener(onDismissed);
+RetenoPlugin.removeOnRetenoCustomPushReceivedListener(onCustomReceived);
 ```
 
 ### Without Firebasex (Cordova)
@@ -173,7 +173,7 @@ The plugin's `reteno.gradle` script automatically reads this value from `capacit
 You can also pass the key explicitly in JS:
 
 ```js
-await retenosdk.init({ accessKey: 'YOUR_KEY' });
+await RetenoPlugin.init({ accessKey: 'YOUR_KEY' });
 ```
 
 ### 3. Set up `google-services.json`
@@ -199,7 +199,7 @@ If not, add it manually or install `@capacitor-firebase/messaging` (or similar) 
 ### 5. Initialize the SDK
 
 ```js
-await retenosdk.init();
+await RetenoPlugin.init();
 ```
 
 ### 6. Request notification permission
@@ -207,7 +207,7 @@ await retenosdk.init();
 Same as Cordova — call at the appropriate point in your UX:
 
 ```js
-const granted = await retenosdk.requestNotificationPermission();
+const granted = await RetenoPlugin.requestNotificationPermission();
 ```
 
 ### Deeplinks in push payloads

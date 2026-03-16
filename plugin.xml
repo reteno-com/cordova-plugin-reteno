@@ -12,7 +12,7 @@
     <hook type="after_platform_add" src="scripts/android-fcm-setup.js" />
     <hook type="after_prepare" src="scripts/android-fcm-setup.js" />
     <js-module name="cordova-plugin-reteno" src="www/cordova-plugin-reteno.js">
-        <clobbers target="retenosdk" />
+        <clobbers target="RetenoPlugin" />
     </js-module>
 
 <platform name="android">

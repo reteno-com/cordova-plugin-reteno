@@ -2,7 +2,7 @@
 
 Notes:
 
-- Recommended: call `retenosdk.init(...)` once on app startup before calling SDK-dependent methods like `logEvent`, `setUserAttributes`, `setAnonymousUserAttributes`, or `setDeviceToken`.
+- Recommended: call `RetenoPlugin.init(...)` once on app startup before calling SDK-dependent methods like `logEvent`, `setUserAttributes`, `setAnonymousUserAttributes`, or `setDeviceToken`.
 - As a convenience, the JS wrapper will auto-call init when you call those methods, but explicit init gives you clearer error handling and predictable timing.
 - All methods that call native code return a `Promise`. Optional `success` / `error` callbacks are still supported for backward compatibility.
 - Android SDK support: see the current Reteno Android SDK compatibility in release notes.
@@ -88,7 +88,7 @@ Initialize the Reteno SDK with optional configuration. Payload type: `RetenoInit
 
 ```js
 // Initialize with default options (in-app messages enabled).
-retenosdk.init()
+RetenoPlugin.init()
   .then(() => console.log('init: OK'))
   .catch((err) => console.error('init: ERROR', err));
 ```
@@ -109,7 +109,7 @@ retenosdk.init()
 //   in a WebView-based app — use logScreenView() instead.
 // isDebugMode: enables debug mode for near real-time event monitoring in the Reteno dashboard.
 //   Use only with test devices or developer accounts.
-retenosdk.init({
+RetenoPlugin.init({
   pauseInAppMessages: true,
   pausePushInAppMessages: false,
   inAppMessagesPauseBehaviour: 'SKIP_IN_APPS', // iOS
@@ -127,8 +127,8 @@ retenosdk.init({
 
 ```js
 // Shorthand lifecycle tracking values:
-retenosdk.init({ lifecycleTrackingOptions: 'ALL' });
-retenosdk.init({ lifecycleTrackingOptions: 'NONE' });
+RetenoPlugin.init({ lifecycleTrackingOptions: 'ALL' });
+RetenoPlugin.init({ lifecycleTrackingOptions: 'NONE' });
 ```
 
 ### setUserAttributes payload example
@@ -136,7 +136,7 @@ retenosdk.init({ lifecycleTrackingOptions: 'NONE' });
 ```js
 // `externalUserId` is required and must be a non-empty string.
 // `user` is optional (you can omit it or pass null).
-retenosdk.setUserAttributes(
+RetenoPlugin.setUserAttributes(
   {
     externalUserId: 'user-123',
     user: {
@@ -170,7 +170,7 @@ retenosdk.setUserAttributes(
 ```js
 // Anonymous attributes are used before contact identification.
 // Note: Unlike setUserAttributes, this payload does NOT include phone/email.
-retenosdk.setAnonymousUserAttributes(
+RetenoPlugin.setAnonymousUserAttributes(
   {
     firstName: 'John',
     lastName: 'Doe',
@@ -200,7 +200,7 @@ retenosdk.setAnonymousUserAttributes(
 // 1 token per device behavior.
 // `externalUserId` is required and must be a non-empty string.
 // `user` is required and must be an object.
-retenosdk.setMultiAccountUserAttributes(
+RetenoPlugin.setMultiAccountUserAttributes(
   {
     externalUserId: 'user-123',
     user: {
@@ -236,7 +236,7 @@ retenosdk.setMultiAccountUserAttributes(
 // Unspecified fields default to true.
 // Android: applies immediately.
 // iOS: this works only BEFORE SDK initialization (before calling init()).
-retenosdk.setLifecycleTrackingOptions(
+RetenoPlugin.setLifecycleTrackingOptions(
   {
     sessionEventsEnabled: true,
   }
@@ -247,8 +247,8 @@ retenosdk.setLifecycleTrackingOptions(
 
 ```js
 // Convenience values:
-retenosdk.setLifecycleTrackingOptions('ALL');
-retenosdk.setLifecycleTrackingOptions('NONE');
+RetenoPlugin.setLifecycleTrackingOptions('ALL');
+RetenoPlugin.setLifecycleTrackingOptions('NONE');
 ```
 
 If `init()` has already started/completed on iOS, `setLifecycleTrackingOptions(...)` returns an error.
@@ -259,7 +259,7 @@ Invalid values (anything except `'ALL'`, `'NONE'`, or an object with known field
 Payload type: `LogEventPayload` in [types](../types/index.ts).
 
 ```js
-retenosdk.logEvent(
+RetenoPlugin.logEvent(
   {
     eventName: 'purchase',
     // Optional ISO 8601 string. If omitted, current time is used.
@@ -283,7 +283,7 @@ See also: [Reteno ecommerce activity tracking](https://docs.reteno.com/reference
 
 ```js
 // Product viewed
-retenosdk.logEcommerceEvent({
+RetenoPlugin.logEcommerceEvent({
   eventType: 'productViewed',
   product: {
     productId: 'SKU-123',
@@ -299,7 +299,7 @@ retenosdk.logEcommerceEvent({
 
 ```js
 // Cart updated
-retenosdk.logEcommerceEvent({
+RetenoPlugin.logEcommerceEvent({
   eventType: 'cartUpdated',
   cartId: 'cart-456',
   products: [
@@ -319,7 +319,7 @@ retenosdk.logEcommerceEvent({
 
 ```js
 // Order created
-retenosdk.logEcommerceEvent({
+RetenoPlugin.logEcommerceEvent({
   eventType: 'orderCreated',
   order: {
     externalOrderId: 'ORD-789',
@@ -345,7 +345,7 @@ retenosdk.logEcommerceEvent({
 
 ```js
 // Search request
-retenosdk.logEcommerceEvent({
+RetenoPlugin.logEcommerceEvent({
   eventType: 'searchRequest',
   search: 'red t-shirt',
   isFound: true,
@@ -357,7 +357,7 @@ retenosdk.logEcommerceEvent({
 ### logScreenView example
 
 ```js
-retenosdk.logScreenView(
+RetenoPlugin.logScreenView(
   'HomeScreen'
 )
   .then(() => console.log('logScreenView: OK'))
@@ -367,7 +367,7 @@ retenosdk.logScreenView(
 ### forcePushData example
 
 ```js
-retenosdk
+RetenoPlugin
   .forcePushData()
   .then(() => console.log('forcePushData: OK'))
   .catch((err) => console.error('forcePushData: ERROR', err));
@@ -381,12 +381,12 @@ Pause or resume in-app messages at runtime.
 
 ```js
 // Pause in-app messages
-retenosdk.pauseInAppMessages(true)
+RetenoPlugin.pauseInAppMessages(true)
   .then(() => console.log('pauseInAppMessages: paused'))
   .catch((err) => console.error('pauseInAppMessages: ERROR', err));
 
 // Resume in-app messages
-retenosdk.pauseInAppMessages(false)
+RetenoPlugin.pauseInAppMessages(false)
   .then(() => console.log('pauseInAppMessages: resumed'))
   .catch((err) => console.error('pauseInAppMessages: ERROR', err));
 ```
@@ -398,12 +398,12 @@ On iOS, you can also preconfigure this during `init(...)` via `inAppMessagesPaus
 
 ```js
 // Discard messages received while paused
-retenosdk.setInAppMessagesPauseBehaviour('SKIP_IN_APPS')
+RetenoPlugin.setInAppMessagesPauseBehaviour('SKIP_IN_APPS')
   .then(() => console.log('setInAppMessagesPauseBehaviour: OK'))
   .catch((err) => console.error('setInAppMessagesPauseBehaviour: ERROR', err));
 
 // Save the first queued message and display it when unpaused
-retenosdk.setInAppMessagesPauseBehaviour('POSTPONE_IN_APPS')
+RetenoPlugin.setInAppMessagesPauseBehaviour('POSTPONE_IN_APPS')
   .then(() => console.log('setInAppMessagesPauseBehaviour: OK'))
   .catch((err) => console.error('setInAppMessagesPauseBehaviour: ERROR', err));
 ```
@@ -435,10 +435,10 @@ function onInAppStatus(event) {
   // action (iOS only): { isCloseButtonClicked, isButtonClicked, isOpenUrlClicked }
 }
 
-retenosdk.setOnInAppLifecycleCallback(onInAppStatus);
+RetenoPlugin.setOnInAppLifecycleCallback(onInAppStatus);
 
 // Later, to unsubscribe:
-retenosdk.setOnInAppLifecycleCallback(null);
+RetenoPlugin.setOnInAppLifecycleCallback(null);
 ```
 
 ### setOnInAppMessageCustomDataReceivedListener example
@@ -448,7 +448,7 @@ Subscribe to in-app message custom data events when a button is clicked.
 Important: once you register this receiver, Reteno SDK will not open button links automatically. Instead, it will pass all custom data to your listener, including the link under the `url` key. You are responsible for handling navigation.
 
 ```js
-retenosdk.setOnInAppMessageCustomDataReceivedListener(function (event) {
+RetenoPlugin.setOnInAppMessageCustomDataReceivedListener(function (event) {
   // event.detail contains the custom data payload
   // If a link was assigned to the button, it will be under event.detail.url
   console.log('In-app custom data:', event.detail);
@@ -465,18 +465,18 @@ Notes:
 
 ```js
 // 1) Initialize Reteno first.
-retenosdk
+RetenoPlugin
   .init()
   .then(() => {
     // Forward token from your token source (replace this with your integration).
     getFcmTokenFromSomewhere(
       (token) => {
-        if (token) retenosdk.setDeviceToken(token);
+        if (token) RetenoPlugin.setDeviceToken(token);
       },
       (err) => console.error('getFcmTokenFromSomewhere: ERROR', err)
     );
   })
-  .catch((err) => console.error('retenosdk.init: ERROR', err));
+  .catch((err) => console.error('RetenoPlugin.init: ERROR', err));
 ```
 
 ### setOnRetenoPushReceivedListener example
@@ -496,10 +496,10 @@ function onPushReceived(event) {
   console.log('reteno-push-received:', event);
 }
 
-retenosdk.setOnRetenoPushReceivedListener(onPushReceived);
+RetenoPlugin.setOnRetenoPushReceivedListener(onPushReceived);
 
 // Later, to unsubscribe:
-retenosdk.removeOnRetenoPushReceivedListener(onPushReceived);
+RetenoPlugin.removeOnRetenoPushReceivedListener(onPushReceived);
 ```
 
 ### setOnRetenoNotificationClickedListener example
@@ -512,10 +512,10 @@ function onNotificationClicked(event) {
   console.log('reteno-notification-clicked:', event);
 }
 
-retenosdk.setOnRetenoNotificationClickedListener(onNotificationClicked);
+RetenoPlugin.setOnRetenoNotificationClickedListener(onNotificationClicked);
 
 // Later, to unsubscribe:
-retenosdk.removeOnRetenoNotificationClickedListener(onNotificationClicked);
+RetenoPlugin.removeOnRetenoNotificationClickedListener(onNotificationClicked);
 ```
 
 ### setOnRetenoPushButtonClickedListener example
@@ -529,7 +529,7 @@ Payload type: `RetenoPushButtonClickedPayload` in [types](../types/index.ts).
 
 ```js
 // 1. Enable notification action handler with event emission (enabled defaults to true)
-retenosdk.setNotificationActionHandler({ emitEvent: true })
+RetenoPlugin.setNotificationActionHandler({ emitEvent: true })
   .then(() => console.log('setNotificationActionHandler: enabled'))
   .catch((err) => console.error('setNotificationActionHandler: ERROR', err));
 
@@ -543,13 +543,13 @@ function onPushButtonClicked(event) {
   // detail.userInfo - original notification payload
 }
 
-retenosdk.setOnRetenoPushButtonClickedListener(onPushButtonClicked);
+RetenoPlugin.setOnRetenoPushButtonClickedListener(onPushButtonClicked);
 
 // Later, to unsubscribe:
-retenosdk.removeOnRetenoPushButtonClickedListener(onPushButtonClicked);
+RetenoPlugin.removeOnRetenoPushButtonClickedListener(onPushButtonClicked);
 
 // To disable the handler entirely:
-retenosdk.setNotificationActionHandler(false);
+RetenoPlugin.setNotificationActionHandler(false);
 ```
 
 ### updateDefaultNotificationChannel example
@@ -559,7 +559,7 @@ Updates the default notification channel parameters for existing users on Androi
 Payload type: `NotificationChannelConfig` in [types](../types/index.ts).
 
 ```js
-retenosdk.updateDefaultNotificationChannel(
+RetenoPlugin.updateDefaultNotificationChannel(
   {
     name: 'New Channel Name',
     description: 'New Channel Description',
@@ -576,7 +576,7 @@ Fetches paginated App Inbox messages. Payload type: `GetAppInboxMessagesPayload`
 Returns `AppInboxMessages`: `{ messages: AppInboxMessage[], totalPages: number }`.
 
 ```js
-retenosdk.getAppInboxMessages(
+RetenoPlugin.getAppInboxMessages(
   {
     page: 1,
     pageSize: 20,
@@ -596,7 +596,7 @@ retenosdk.getAppInboxMessages(
 Fetches count of App Inbox messages. Returns a `number`.
 
 ```js
-retenosdk.getAppInboxMessagesCount()
+RetenoPlugin.getAppInboxMessagesCount()
   .then((count) => console.log('Unread messages:', count))
   .catch((err) => console.error('getAppInboxMessagesCount: ERROR', err));
 ```
@@ -610,7 +610,7 @@ function onInboxCountChanged(count) {
   console.log('App Inbox count changed:', count);
 }
 
-retenosdk.subscribeOnMessagesCountChanged(onInboxCountChanged, (err) => {
+RetenoPlugin.subscribeOnMessagesCountChanged(onInboxCountChanged, (err) => {
   console.error('subscribeOnMessagesCountChanged: ERROR', err);
 });
 ```
@@ -620,7 +620,7 @@ retenosdk.subscribeOnMessagesCountChanged(onInboxCountChanged, (err) => {
 Unsubscribes from App Inbox messages count changes.
 
 ```js
-retenosdk.unsubscribeMessagesCountChanged()
+RetenoPlugin.unsubscribeMessagesCountChanged()
   .then(() => console.log('unsubscribeMessagesCountChanged: OK'))
   .catch((err) => console.error('unsubscribeMessagesCountChanged: ERROR', err));
 ```
@@ -630,7 +630,7 @@ retenosdk.unsubscribeMessagesCountChanged()
 Marks an App Inbox message as opened.
 
 ```js
-retenosdk.markAsOpened('message-id')
+RetenoPlugin.markAsOpened('message-id')
   .then(() => console.log('markAsOpened: OK'))
   .catch((err) => console.error('markAsOpened: ERROR', err));
 ```
@@ -640,7 +640,7 @@ retenosdk.markAsOpened('message-id')
 Marks all App Inbox messages as opened.
 
 ```js
-retenosdk.markAllMessagesAsOpened()
+RetenoPlugin.markAllMessagesAsOpened()
   .then(() => console.log('markAllMessagesAsOpened: OK'))
   .catch((err) => console.error('markAllMessagesAsOpened: ERROR', err));
 ```
@@ -653,7 +653,7 @@ Returns `RecommendationsResponse`: `{ recoms: RecommendationItem[] }`. Each item
 
 ```js
 // Product-based recommendations.
-retenosdk.getRecommendations(
+RetenoPlugin.getRecommendations(
   {
     recomVariantId: 'variant-id',
     productIds: ['product-1', 'product-2'],
@@ -670,7 +670,7 @@ retenosdk.getRecommendations(
 
 ```js
 // Category-based recommendations.
-retenosdk.getRecommendations(
+RetenoPlugin.getRecommendations(
   {
     recomVariantId: 'variant-id',
     categoryId: 'category-1',
@@ -683,7 +683,7 @@ retenosdk.getRecommendations(
 
 ```js
 // With filters.
-retenosdk.getRecommendations(
+RetenoPlugin.getRecommendations(
   {
     recomVariantId: 'variant-id',
     productIds: ['product-1'],
@@ -700,7 +700,7 @@ retenosdk.getRecommendations(
 Sends recommendation events. Payload type: `LogRecommendationsPayload` in [types](../types/index.ts).
 
 ```js
-retenosdk.logRecommendations(
+RetenoPlugin.logRecommendations(
   {
     recomVariantId: 'variant-id',
     recomEvents: [

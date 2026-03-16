@@ -398,7 +398,7 @@ function onDeviceReady() {
     }
 
     function getRetenoSdk() {
-        return (window && window.retenosdk) ? window.retenosdk : null;
+        return (window && window.RetenoPlugin) ? window.RetenoPlugin : null;
     }
 
     function setFieldGroupVisibility(groupEl, isVisible) {
@@ -675,7 +675,7 @@ function onDeviceReady() {
         }
         var sdk = getRetenoSdk();
         if (!sdk || typeof sdk.init !== 'function') {
-            return Promise.reject(new Error('Reteno SDK is not available (window.retenosdk missing).'));
+            return Promise.reject(new Error('Reteno SDK is not available (window.RetenoPlugin missing).'));
         }
         initPromise = sdk
             .init(buildInitOptions())

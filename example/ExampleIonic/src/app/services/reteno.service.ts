@@ -14,7 +14,7 @@ type PageUiState = Record<string, unknown>;
 
 declare global {
   interface Window {
-    retenosdk?: {
+    RetenoPlugin?: {
       init?: (optionsOrSuccess?: unknown, successOrError?: unknown, errorMaybe?: unknown) => Promise<unknown>;
       logEvent?: (payload: unknown, success?: () => void, error?: (err: unknown) => void) => Promise<void>;
       setUserAttributes?: (
@@ -154,7 +154,7 @@ export class RetenoService {
   };
 
   isAvailable(): boolean {
-    return !!window.retenosdk;
+    return !!window.RetenoPlugin;
   }
 
   isInitialized(): boolean {
@@ -242,9 +242,9 @@ export class RetenoService {
     if (this.initPromise) {
       return this.initPromise;
     }
-    const sdk = window.retenosdk;
+    const sdk = window.RetenoPlugin;
     if (!sdk?.init) {
-      return Promise.reject(new Error('retenosdk is not available'));
+      return Promise.reject(new Error('RetenoPlugin is not available'));
     }
     this.initPromise = sdk.init({
       pauseInAppMessages: this.initOptions.pauseInAppMessages,
@@ -283,9 +283,9 @@ export class RetenoService {
 
   setUserAttributes(payload: unknown): Promise<void> {
     return this.withInit(() => {
-      const sdk = window.retenosdk;
+      const sdk = window.RetenoPlugin;
       if (!sdk?.setUserAttributes) {
-        return Promise.reject(new Error('retenosdk.setUserAttributes is not available'));
+        return Promise.reject(new Error('RetenoPlugin.setUserAttributes is not available'));
       }
       return sdk.setUserAttributes(payload);
     });
@@ -293,9 +293,9 @@ export class RetenoService {
 
   setAnonymousUserAttributes(payload: unknown): Promise<void> {
     return this.withInit(() => {
-      const sdk = window.retenosdk;
+      const sdk = window.RetenoPlugin;
       if (!sdk?.setAnonymousUserAttributes) {
-        return Promise.reject(new Error('retenosdk.setAnonymousUserAttributes is not available'));
+        return Promise.reject(new Error('RetenoPlugin.setAnonymousUserAttributes is not available'));
       }
       return sdk.setAnonymousUserAttributes(payload);
     });
@@ -303,9 +303,9 @@ export class RetenoService {
 
   logEvent(payload: unknown): Promise<void> {
     return this.withInit(() => {
-      const sdk = window.retenosdk;
+      const sdk = window.RetenoPlugin;
       if (!sdk?.logEvent) {
-        return Promise.reject(new Error('retenosdk.logEvent is not available'));
+        return Promise.reject(new Error('RetenoPlugin.logEvent is not available'));
       }
       return sdk.logEvent(payload);
     });
@@ -313,9 +313,9 @@ export class RetenoService {
 
   getInitialNotification(arg0: unknown = null): Promise<unknown> {
     return this.withInit(() => {
-      const sdk = window.retenosdk;
+      const sdk = window.RetenoPlugin;
       if (!sdk?.getInitialNotification) {
-        return Promise.reject(new Error('retenosdk.getInitialNotification is not available'));
+        return Promise.reject(new Error('RetenoPlugin.getInitialNotification is not available'));
       }
       return sdk.getInitialNotification(arg0);
     });
@@ -323,9 +323,9 @@ export class RetenoService {
 
   requestNotificationPermission(): Promise<unknown> {
     return this.withInit(() => {
-      const sdk = window.retenosdk;
+      const sdk = window.RetenoPlugin;
       if (!sdk?.requestNotificationPermission) {
-        return Promise.reject(new Error('retenosdk.requestNotificationPermission is not available'));
+        return Promise.reject(new Error('RetenoPlugin.requestNotificationPermission is not available'));
       }
       return sdk.requestNotificationPermission();
     });
@@ -333,9 +333,9 @@ export class RetenoService {
 
   setWillPresentNotificationOptions(payload: { options?: string[]; emitEvent?: boolean } | string[] | null): Promise<void> {
     return this.withInit(() => {
-      const sdk = window.retenosdk;
+      const sdk = window.RetenoPlugin;
       if (!sdk?.setWillPresentNotificationOptions) {
-        return Promise.reject(new Error('retenosdk.setWillPresentNotificationOptions is not available'));
+        return Promise.reject(new Error('RetenoPlugin.setWillPresentNotificationOptions is not available'));
       }
       return sdk.setWillPresentNotificationOptions(payload);
     });
@@ -343,9 +343,9 @@ export class RetenoService {
 
   setDidReceiveNotificationResponseHandler(payload: { enabled?: boolean; emitEvent?: boolean } | boolean | null): Promise<void> {
     return this.withInit(() => {
-      const sdk = window.retenosdk;
+      const sdk = window.RetenoPlugin;
       if (!sdk?.setDidReceiveNotificationResponseHandler) {
-        return Promise.reject(new Error('retenosdk.setDidReceiveNotificationResponseHandler is not available'));
+        return Promise.reject(new Error('RetenoPlugin.setDidReceiveNotificationResponseHandler is not available'));
       }
       return sdk.setDidReceiveNotificationResponseHandler(payload);
     });
@@ -353,9 +353,9 @@ export class RetenoService {
 
   setDeviceToken(token: string): Promise<void> {
     return this.withInit(() => {
-      const sdk = window.retenosdk;
+      const sdk = window.RetenoPlugin;
       if (!sdk?.setDeviceToken) {
-        return Promise.reject(new Error('retenosdk.setDeviceToken is not available'));
+        return Promise.reject(new Error('RetenoPlugin.setDeviceToken is not available'));
       }
       return sdk.setDeviceToken(token);
     });
@@ -363,9 +363,9 @@ export class RetenoService {
 
   setMultiAccountUserAttributes(payload: unknown): Promise<void> {
     return this.withInit(() => {
-      const sdk = window.retenosdk;
+      const sdk = window.RetenoPlugin;
       if (!sdk?.setMultiAccountUserAttributes) {
-        return Promise.reject(new Error('retenosdk.setMultiAccountUserAttributes is not available'));
+        return Promise.reject(new Error('RetenoPlugin.setMultiAccountUserAttributes is not available'));
       }
       return sdk.setMultiAccountUserAttributes(payload);
     });
@@ -373,9 +373,9 @@ export class RetenoService {
 
   setLifecycleTrackingOptions(options: unknown): Promise<void> {
     return this.withInit(() => {
-      const sdk = window.retenosdk;
+      const sdk = window.RetenoPlugin;
       if (!sdk?.setLifecycleTrackingOptions) {
-        return Promise.reject(new Error('retenosdk.setLifecycleTrackingOptions is not available'));
+        return Promise.reject(new Error('RetenoPlugin.setLifecycleTrackingOptions is not available'));
       }
       return sdk.setLifecycleTrackingOptions(options);
     });
@@ -383,9 +383,9 @@ export class RetenoService {
 
   logScreenView(screenName: string): Promise<void> {
     return this.withInit(() => {
-      const sdk = window.retenosdk;
+      const sdk = window.RetenoPlugin;
       if (!sdk?.logScreenView) {
-        return Promise.reject(new Error('retenosdk.logScreenView is not available'));
+        return Promise.reject(new Error('RetenoPlugin.logScreenView is not available'));
       }
       return sdk.logScreenView(screenName);
     });
@@ -393,9 +393,9 @@ export class RetenoService {
 
   forcePushData(): Promise<void> {
     return this.withInit(() => {
-      const sdk = window.retenosdk;
+      const sdk = window.RetenoPlugin;
       if (!sdk?.forcePushData) {
-        return Promise.reject(new Error('retenosdk.forcePushData is not available'));
+        return Promise.reject(new Error('RetenoPlugin.forcePushData is not available'));
       }
       return sdk.forcePushData();
     });
@@ -403,9 +403,9 @@ export class RetenoService {
 
   updateDefaultNotificationChannel(config: { name: string; description: string }): Promise<void> {
     return this.withInit(() => {
-      const sdk = window.retenosdk;
+      const sdk = window.RetenoPlugin;
       if (!sdk?.updateDefaultNotificationChannel) {
-        return Promise.reject(new Error('retenosdk.updateDefaultNotificationChannel is not available'));
+        return Promise.reject(new Error('RetenoPlugin.updateDefaultNotificationChannel is not available'));
       }
       return sdk.updateDefaultNotificationChannel(config);
     });
@@ -413,9 +413,9 @@ export class RetenoService {
 
   pauseInAppMessages(isPaused: boolean): Promise<void> {
     return this.withInit(() => {
-      const sdk = window.retenosdk;
+      const sdk = window.RetenoPlugin;
       if (!sdk?.pauseInAppMessages) {
-        return Promise.reject(new Error('retenosdk.pauseInAppMessages is not available'));
+        return Promise.reject(new Error('RetenoPlugin.pauseInAppMessages is not available'));
       }
       return sdk.pauseInAppMessages(isPaused);
     });
@@ -423,9 +423,9 @@ export class RetenoService {
 
   setInAppMessagesPauseBehaviour(behaviour: string): Promise<void> {
     return this.withInit(() => {
-      const sdk = window.retenosdk;
+      const sdk = window.RetenoPlugin;
       if (!sdk?.setInAppMessagesPauseBehaviour) {
-        return Promise.reject(new Error('retenosdk.setInAppMessagesPauseBehaviour is not available'));
+        return Promise.reject(new Error('RetenoPlugin.setInAppMessagesPauseBehaviour is not available'));
       }
       return sdk.setInAppMessagesPauseBehaviour(behaviour);
     });
@@ -439,7 +439,7 @@ export class RetenoService {
     };
     this.ensureInit()
       .then(() => {
-        const sdk = window.retenosdk;
+        const sdk = window.RetenoPlugin;
         if (sdk?.setOnInAppLifecycleCallback) {
           sdk.setOnInAppLifecycleCallback(handler);
         } else {
@@ -454,7 +454,7 @@ export class RetenoService {
   }
 
   removeOnInAppLifecycleCallback(handler: (event: Event) => void): void {
-    const sdk = window.retenosdk;
+    const sdk = window.RetenoPlugin;
     if (sdk?.setOnInAppLifecycleCallback) {
       sdk.setOnInAppLifecycleCallback(null);
     }
@@ -469,7 +469,7 @@ export class RetenoService {
     };
     this.ensureInit()
       .then(() => {
-        const sdk = window.retenosdk;
+        const sdk = window.RetenoPlugin;
         if (sdk?.setOnInAppMessageCustomDataReceivedListener) {
           sdk.setOnInAppMessageCustomDataReceivedListener(handler);
         } else {
@@ -484,7 +484,7 @@ export class RetenoService {
   }
 
   removeOnInAppMessageCustomDataReceivedListener(handler: (event: Event) => void): void {
-    const sdk = window.retenosdk;
+    const sdk = window.RetenoPlugin;
     if (sdk?.removeOnInAppMessageCustomDataReceivedListener) {
       sdk.removeOnInAppMessageCustomDataReceivedListener(handler);
       return;
@@ -494,9 +494,9 @@ export class RetenoService {
 
   getAppInboxMessages(payload: { page: number; pageSize: number; status?: string }): Promise<unknown> {
     return this.withInit(() => {
-      const sdk = window.retenosdk;
+      const sdk = window.RetenoPlugin;
       if (!sdk?.getAppInboxMessages) {
-        return Promise.reject(new Error('retenosdk.getAppInboxMessages is not available'));
+        return Promise.reject(new Error('RetenoPlugin.getAppInboxMessages is not available'));
       }
       return sdk.getAppInboxMessages(payload);
     });
@@ -504,9 +504,9 @@ export class RetenoService {
 
   getAppInboxMessagesCount(): Promise<number> {
     return this.withInit(() => {
-      const sdk = window.retenosdk;
+      const sdk = window.RetenoPlugin;
       if (!sdk?.getAppInboxMessagesCount) {
-        return Promise.reject(new Error('retenosdk.getAppInboxMessagesCount is not available'));
+        return Promise.reject(new Error('RetenoPlugin.getAppInboxMessagesCount is not available'));
       }
       return sdk.getAppInboxMessagesCount();
     });
@@ -517,9 +517,9 @@ export class RetenoService {
     error?: (err: unknown) => void
   ): Promise<unknown> {
     return this.withInit(() => {
-      const sdk = window.retenosdk;
+      const sdk = window.RetenoPlugin;
       if (!sdk?.subscribeOnMessagesCountChanged) {
-        return Promise.reject(new Error('retenosdk.subscribeOnMessagesCountChanged is not available'));
+        return Promise.reject(new Error('RetenoPlugin.subscribeOnMessagesCountChanged is not available'));
       }
       const res = sdk.subscribeOnMessagesCountChanged(listener, error);
       if (res && typeof (res as Promise<unknown>).then === 'function') {
@@ -531,9 +531,9 @@ export class RetenoService {
 
   unsubscribeMessagesCountChanged(): Promise<void> {
     return this.withInit(() => {
-      const sdk = window.retenosdk;
+      const sdk = window.RetenoPlugin;
       if (!sdk?.unsubscribeMessagesCountChanged) {
-        return Promise.reject(new Error('retenosdk.unsubscribeMessagesCountChanged is not available'));
+        return Promise.reject(new Error('RetenoPlugin.unsubscribeMessagesCountChanged is not available'));
       }
       return sdk.unsubscribeMessagesCountChanged();
     });
@@ -541,9 +541,9 @@ export class RetenoService {
 
   markAsOpened(messageId: string): Promise<void> {
     return this.withInit(() => {
-      const sdk = window.retenosdk;
+      const sdk = window.RetenoPlugin;
       if (!sdk?.markAsOpened) {
-        return Promise.reject(new Error('retenosdk.markAsOpened is not available'));
+        return Promise.reject(new Error('RetenoPlugin.markAsOpened is not available'));
       }
       return sdk.markAsOpened(messageId);
     });
@@ -551,9 +551,9 @@ export class RetenoService {
 
   markAllMessagesAsOpened(): Promise<void> {
     return this.withInit(() => {
-      const sdk = window.retenosdk;
+      const sdk = window.RetenoPlugin;
       if (!sdk?.markAllMessagesAsOpened) {
-        return Promise.reject(new Error('retenosdk.markAllMessagesAsOpened is not available'));
+        return Promise.reject(new Error('RetenoPlugin.markAllMessagesAsOpened is not available'));
       }
       return sdk.markAllMessagesAsOpened();
     });
@@ -561,9 +561,9 @@ export class RetenoService {
 
   getRecommendations(payload: unknown): Promise<unknown> {
     return this.withInit(() => {
-      const sdk = window.retenosdk;
+      const sdk = window.RetenoPlugin;
       if (!sdk?.getRecommendations) {
-        return Promise.reject(new Error('retenosdk.getRecommendations is not available'));
+        return Promise.reject(new Error('RetenoPlugin.getRecommendations is not available'));
       }
       return sdk.getRecommendations(payload);
     });
@@ -571,9 +571,9 @@ export class RetenoService {
 
   logRecommendations(payload: unknown): Promise<void> {
     return this.withInit(() => {
-      const sdk = window.retenosdk;
+      const sdk = window.RetenoPlugin;
       if (!sdk?.logRecommendations) {
-        return Promise.reject(new Error('retenosdk.logRecommendations is not available'));
+        return Promise.reject(new Error('RetenoPlugin.logRecommendations is not available'));
       }
       return sdk.logRecommendations(payload);
     });
@@ -581,9 +581,9 @@ export class RetenoService {
 
   logEcommerceEvent(payload: unknown): Promise<void> {
     return this.withInit(() => {
-      const sdk = window.retenosdk;
+      const sdk = window.RetenoPlugin;
       if (!sdk?.logEcommerceEvent) {
-        return Promise.reject(new Error('retenosdk.logEcommerceEvent is not available'));
+        return Promise.reject(new Error('RetenoPlugin.logEcommerceEvent is not available'));
       }
       return sdk.logEcommerceEvent(payload);
     });
@@ -593,7 +593,7 @@ export class RetenoService {
   onPushReceived(listener: (payload: unknown) => void): void {
     this.ensureInit()
       .then(() => {
-        const sdk = window.retenosdk;
+        const sdk = window.RetenoPlugin;
         if (sdk?.setOnRetenoPushReceivedListener) {
           sdk.setOnRetenoPushReceivedListener((event: Event) => {
             // Cordova fires a CustomEvent with detail payload.
@@ -623,7 +623,7 @@ export class RetenoService {
     };
     this.ensureInit()
       .then(() => {
-        const sdk = window.retenosdk;
+        const sdk = window.RetenoPlugin;
         if (sdk?.setOnRetenoPushReceivedListener) {
           sdk.setOnRetenoPushReceivedListener(handler);
         } else {
@@ -638,7 +638,7 @@ export class RetenoService {
   }
 
   removeOnRetenoPushReceivedListener(handler: (event: Event) => void): void {
-    const sdk = window.retenosdk;
+    const sdk = window.RetenoPlugin;
     if (sdk?.removeOnRetenoPushReceivedListener) {
       sdk.removeOnRetenoPushReceivedListener(handler);
       return;
@@ -654,7 +654,7 @@ export class RetenoService {
     };
     this.ensureInit()
       .then(() => {
-        const sdk = window.retenosdk;
+        const sdk = window.RetenoPlugin;
         if (sdk?.setOnRetenoNotificationClickedListener) {
           sdk.setOnRetenoNotificationClickedListener(handler);
         } else {
@@ -669,7 +669,7 @@ export class RetenoService {
   }
 
   removeOnRetenoNotificationClickedListener(handler: (event: Event) => void): void {
-    const sdk = window.retenosdk;
+    const sdk = window.RetenoPlugin;
     if (sdk?.removeOnRetenoNotificationClickedListener) {
       sdk.removeOnRetenoNotificationClickedListener(handler);
       return;
@@ -685,7 +685,7 @@ export class RetenoService {
     };
     this.ensureInit()
       .then(() => {
-        const sdk = window.retenosdk;
+        const sdk = window.RetenoPlugin;
         if (sdk?.setOnRetenoPushDismissedListener) {
           sdk.setOnRetenoPushDismissedListener(handler);
         } else {
@@ -700,7 +700,7 @@ export class RetenoService {
   }
 
   removeOnRetenoPushDismissedListener(handler: (event: Event) => void): void {
-    const sdk = window.retenosdk;
+    const sdk = window.RetenoPlugin;
     if (sdk?.removeOnRetenoPushDismissedListener) {
       sdk.removeOnRetenoPushDismissedListener(handler);
       return;
@@ -716,7 +716,7 @@ export class RetenoService {
     };
     this.ensureInit()
       .then(() => {
-        const sdk = window.retenosdk;
+        const sdk = window.RetenoPlugin;
         if (sdk?.setOnRetenoCustomPushReceivedListener) {
           sdk.setOnRetenoCustomPushReceivedListener(handler);
         } else {
@@ -731,7 +731,7 @@ export class RetenoService {
   }
 
   removeOnRetenoCustomPushReceivedListener(handler: (event: Event) => void): void {
-    const sdk = window.retenosdk;
+    const sdk = window.RetenoPlugin;
     if (sdk?.removeOnRetenoCustomPushReceivedListener) {
       sdk.removeOnRetenoCustomPushReceivedListener(handler);
       return;
@@ -741,9 +741,9 @@ export class RetenoService {
 
   setNotificationActionHandler(payload: { enabled?: boolean; emitEvent?: boolean } | boolean | null): Promise<void> {
     return this.withInit(() => {
-      const sdk = window.retenosdk;
+      const sdk = window.RetenoPlugin;
       if (!sdk?.setNotificationActionHandler) {
-        return Promise.reject(new Error('retenosdk.setNotificationActionHandler is not available'));
+        return Promise.reject(new Error('RetenoPlugin.setNotificationActionHandler is not available'));
       }
       return sdk.setNotificationActionHandler(payload);
     });
@@ -757,7 +757,7 @@ export class RetenoService {
     };
     this.ensureInit()
       .then(() => {
-        const sdk = window.retenosdk;
+        const sdk = window.RetenoPlugin;
         if (sdk?.setOnRetenoPushButtonClickedListener) {
           sdk.setOnRetenoPushButtonClickedListener(handler);
         } else {
@@ -772,7 +772,7 @@ export class RetenoService {
   }
 
   removeOnRetenoPushButtonClickedListener(handler: (event: Event) => void): void {
-    const sdk = window.retenosdk;
+    const sdk = window.RetenoPlugin;
     if (sdk?.removeOnRetenoPushButtonClickedListener) {
       sdk.removeOnRetenoPushButtonClickedListener(handler);
       return;

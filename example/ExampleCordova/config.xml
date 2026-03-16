@@ -14,7 +14,7 @@
     </edit-config>
     <hook type="after_prepare" src="scripts/patch-ios-notification-extension.js" />
     <plugin name="cordova-plugin-app-version" spec="^0.1.14" />
-    <plugin name="cordova-plugin-reteno" spec="file:../../cordova-plugin-reteno-0.0.1.tgz">
+    <plugin name="cordova-plugin-reteno" spec="file:../../cordova-plugin-reteno-2.0.0.tgz">
         <variable name="SDK_ACCESS_KEY" value="630A66AF-C1D3-4F2A-ACC1-0D51C38D2B05" />
         <variable name="IOS_DEVICE_TOKEN_HANDLING_MODE" value="manual" />
     </plugin>

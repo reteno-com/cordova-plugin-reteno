@@ -278,7 +278,6 @@ function ensureExtensionPodTarget(podfilePath, appName, extensionName, retenoVer
 
   const nestedBlockLines = [
     `  target '${extensionName}' do`,
-    '    inherit! :search_paths',
     `    pod 'Reteno', '${retenoVersion}'`,
     '  end',
   ];
@@ -291,11 +290,11 @@ function ensureExtensionPodTarget(podfilePath, appName, extensionName, retenoVer
     `platform :ios, '${iosDeploymentTarget}'`
   );
 
-  // Align with Ionic setup: Swift pods are more stable as frameworks.
-  if (!next.includes('use_frameworks!')) {
+  // Ensure modular headers for Swift pod compatibility with static libraries.
+  if (!next.includes('use_modular_headers!')) {
     next = next.replace(
       /(platform\s*:ios,\s*'[^']+'\n)/,
-      `$1use_frameworks!\n`
+      `$1use_modular_headers!\n`
     );
   }
 
@@ -349,7 +348,6 @@ function ensureContentExtensionPodTarget(podfilePath, appName, contentExtensionN
   if (!current) return false;
   const nestedBlockLines = [
     `  target '${contentExtensionName}' do`,
-    '    inherit! :search_paths',
     `    pod 'Reteno', '${retenoVersion}'`,
     '  end',
   ];

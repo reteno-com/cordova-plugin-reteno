@@ -372,26 +372,6 @@ function __callWithAutoInit(action, args, success, error) {
       return __callWithAutoInit('setDeviceToken', [arg0], success, error);
     },
 
-    getPushPermissionStatus: function (success, error) {
-      if (!__isIosPlatform()) {
-        var p = Promise.resolve({
-          authorizationStatus: 'unsupported',
-          isAuthorized: false,
-        });
-        if (__isFn(success) || __isFn(error)) {
-          p.then(function (res) {
-            if (__isFn(success)) success(res);
-            return res;
-          }).catch(function (err) {
-            if (__isFn(error)) error(err);
-            throw err;
-          });
-        }
-        return p;
-      }
-      return __callWithExec('getPushPermissionStatus', [], success, error);
-    },
-
     /*
         options: LifecycleTrackingOptions
         */

@@ -8,46 +8,79 @@ Notes:
 - Android SDK support: see the current Reteno Android SDK compatibility in release notes.
 - Push deeplinks: Reteno can deliver links in push payloads, but routing them to the correct screen in a hybrid app usually requires a separate deeplink solution (for example, Branch.io, custom URL schemes, or Universal/App Links handling in the host app).
 
-| Method                                                             | Supported platform | Description                                                                                                                                       |
-| ------------------------------------------------------------------ | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [setUserAttributes](../www/cordova-plugin-reteno.js)               | iOS, Android       | [Types](../types/index.ts)                                                                                                                        |
-| [setAnonymousUserAttributes](../www/cordova-plugin-reteno.js)      | iOS, Android       | [Types](../types/index.ts)                                                                                                                        |
-| [setMultiAccountUserAttributes](../www/cordova-plugin-reteno.js)   | iOS, Android       | [Types](../types/index.ts)                                                                                                                        |
-| [setLifecycleTrackingOptions](../www/cordova-plugin-reteno.js)     | iOS, Android       | Configures automatic tracking for app lifecycle, push subscription, and session events. Android: applies immediately. iOS: supported only before initialization (stored and applied during `init(...)`). [Types](../types/index.ts)      |
-| [setDeviceToken](../www/cordova-plugin-reteno.js)                  | iOS, Android       | Forwards the device token to Reteno (use when another plugin owns push callbacks/token, e.g. Firebasex messaging enabled).                        |
-| [logEvent](../www/cordova-plugin-reteno.js)                        | iOS, Android       | [Types](../types/index.ts)                                                                                                                        |
-| [logScreenView](../www/cordova-plugin-reteno.js)                   | iOS, Android       | Logs a screen view for manual tracking.                                                                                                           |
-| [forcePushData](../www/cordova-plugin-reteno.js)                   | iOS, Android       | Forces Reteno to sync queued data. On iOS the plugin performs a technical `logEvent(..., forcePush: true)` call under the hood.                 |
-| [pauseInAppMessages](../www/cordova-plugin-reteno.js)             | iOS, Android       | Pauses or resumes in-app messages at runtime. Pass `true` to pause, `false` to resume.                                                            |
-| [setInAppMessagesPauseBehaviour](../www/cordova-plugin-reteno.js) | iOS, Android       | Sets how paused in-app messages are handled: `SKIP_IN_APPS` or `POSTPONE_IN_APPS`. [Types](../types/index.ts)                                     |
-| [getInitialNotification](../www/cordova-plugin-reteno.js)          | iOS, Android       | Returns push notification that triggered creating app instance                                                                                    |
-| [setOnRetenoPushReceivedListener](../www/cordova-plugin-reteno.js) | iOS, Android       | Sets listener for newly received push notification.                                                                                               |
-| [removeOnRetenoPushReceivedListener](../www/cordova-plugin-reteno.js) | iOS, Android       | Removes listener for push notification received events.                                                                                           |
-| [setOnRetenoNotificationClickedListener](../www/cordova-plugin-reteno.js) | iOS, Android       | Sets listener for notification click events.                                                                                                      |
-| [removeOnRetenoNotificationClickedListener](../www/cordova-plugin-reteno.js) | iOS, Android       | Removes listener for notification click events.                                                                                                   |
-| [setOnRetenoPushDismissedListener](../www/cordova-plugin-reteno.js) | Android            | Sets listener for push dismissed (swipe) events.                                                                                                   |
-| [removeOnRetenoPushDismissedListener](../www/cordova-plugin-reteno.js) | Android            | Removes listener for push dismissed (swipe) events.                                                                                                 |
-| [setOnRetenoCustomPushReceivedListener](../www/cordova-plugin-reteno.js) | Android            | Sets listener for custom push received events.                                                                                                     |
-| [removeOnRetenoCustomPushReceivedListener](../www/cordova-plugin-reteno.js) | Android            | Removes listener for custom push received events.                                                                                                   |
-| [setOnRetenoPushButtonClickedListener](../www/cordova-plugin-reteno.js) | iOS, Android       | Sets listener for push notification action button click events. Emits `reteno-push-button-clicked`. [Types](../types/index.ts)                     |
-| [removeOnRetenoPushButtonClickedListener](../www/cordova-plugin-reteno.js) | iOS, Android       | Removes listener for push notification action button click events.                                                                                  |
-| [setNotificationActionHandler](../www/cordova-plugin-reteno.js)    | iOS, Android       | On iOS, installs the native action button handler when both `enabled` (default: `true`) and `emitEvent` are true — e.g. `{ emitEvent: true }` or `{ enabled: true, emitEvent: true }`. Any other value (e.g. `false`, `null`, `true`, `{ enabled: true }`) clears the handler. On Android, this is a no-op (button clicks are detected automatically). [Types](../types/index.ts) |
-| [setOnInAppMessageCustomDataReceivedListener](../www/cordova-plugin-reteno.js) | Android            | Sets listener for in-app message custom data events.                                                                                              |
-| [removeOnInAppMessageCustomDataReceivedListener](../www/cordova-plugin-reteno.js) | Android            | Removes listener for in-app message custom data events.                                                                                            |
-| [setOnInAppLifecycleCallback](../www/cordova-plugin-reteno.js)    | iOS, Android       | Subscribes to in-app status/lifecycle events (beforeDisplay, onDisplay, beforeClose, afterClose, onError). Pass `null` to unsubscribe. [Types](../types/index.ts) |
-| [init](../www/cordova-plugin-reteno.js)                            | iOS, Android       | Initializes Reteno SDK. Accepts optional `RetenoInitializeOptions` with `pauseInAppMessages`, `pausePushInAppMessages`, `inAppMessagesPauseBehaviour` (iOS), `lifecycleTrackingOptions` and `isAutomaticScreenReportingEnabled` (iOS; see note below). [Types](../types/index.ts) |
-| [requestNotificationPermission](../www/cordova-plugin-reteno.js)   | iOS, Android       | Requests push permission (iOS) or `POST_NOTIFICATIONS` (Android 13+). Returns `0` or `1` on Android (`RequestNotificationPermissionResult`) in [types](../types/index.ts). |
-| [setWillPresentNotificationOptions](../www/cordova-plugin-reteno.js) | iOS               | Sets presentation options for foreground notifications. Optionally emits `reteno-push-received`. [Types](../types/index.ts)                        |
-| [setDidReceiveNotificationResponseHandler](../www/cordova-plugin-reteno.js) | iOS          | Enables a response handler for notification taps. Optionally emits `reteno-notification-clicked`. [Types](../types/index.ts)                       |
-| [updateDefaultNotificationChannel](../www/cordova-plugin-reteno.js) | Android            | Updates the default notification channel name and description for existing users. [Types](../types/index.ts)                                      |
-| [getAppInboxMessages](../www/cordova-plugin-reteno.js)             | iOS, Android       | Fetches App Inbox messages with pagination. [Types](../types/index.ts)                                                                             |
-| [getAppInboxMessagesCount](../www/cordova-plugin-reteno.js)        | iOS, Android       | Fetches count of App Inbox messages.                                                                                                               |
-| [subscribeOnMessagesCountChanged](../www/cordova-plugin-reteno.js) | iOS, Android       | Subscribes to App Inbox messages count changes.                                                                                                    |
-| [unsubscribeMessagesCountChanged](../www/cordova-plugin-reteno.js)  | iOS, Android       | Unsubscribes from App Inbox messages count changes.                                                                                                 |
-| [markAsOpened](../www/cordova-plugin-reteno.js)                    | iOS, Android       | Marks an App Inbox message as opened.                                                                                                              |
-| [markAllMessagesAsOpened](../www/cordova-plugin-reteno.js)         | iOS, Android       | Marks all App Inbox messages as opened.                                                                                                             |
-| [getRecommendations](../www/cordova-plugin-reteno.js)             | iOS, Android       | Fetches product or category recommendations. [Types](../types/index.ts)                                                                            |
-| [logRecommendations](../www/cordova-plugin-reteno.js)             | iOS, Android       | Sends recommendation impressions or clicks. [Types](../types/index.ts)                                                                             |
+### Initialization
+
+| Method | Supported platform | Description |
+| --- | --- | --- |
+| [init](../www/cordova-plugin-reteno.js) | iOS, Android | Initializes Reteno SDK. Accepts optional `RetenoInitializeOptions` with `accessKey`, `pauseInAppMessages`, `pausePushInAppMessages`, `inAppMessagesPauseBehaviour` (iOS), `lifecycleTrackingOptions`, `isAutomaticScreenReportingEnabled` (iOS; see note below) and `isDebugMode`. [Types](../types/index.ts) |
+| [requestNotificationPermission](../www/cordova-plugin-reteno.js) | iOS, Android | Requests push permission (iOS) or `POST_NOTIFICATIONS` (Android 13+). Returns `0` or `1` on Android (`RequestNotificationPermissionResult`) in [types](../types/index.ts). |
+| [setLifecycleTrackingOptions](../www/cordova-plugin-reteno.js) | iOS, Android | Configures automatic tracking for app lifecycle, push subscription, and session events. Android: applies immediately. iOS: supported only before initialization (stored and applied during `init(...)`). [Types](../types/index.ts) |
+
+### User data
+
+| Method | Supported platform | Description |
+| --- | --- | --- |
+| [setUserAttributes](../www/cordova-plugin-reteno.js) | iOS, Android | [Types](../types/index.ts) |
+| [setAnonymousUserAttributes](../www/cordova-plugin-reteno.js) | iOS, Android | [Types](../types/index.ts) |
+| [setMultiAccountUserAttributes](../www/cordova-plugin-reteno.js) | iOS, Android | [Types](../types/index.ts) |
+
+### Event tracking
+
+| Method | Supported platform | Description |
+| --- | --- | --- |
+| [logEvent](../www/cordova-plugin-reteno.js) | iOS, Android | [Types](../types/index.ts) |
+| [logEcommerceEvent](../www/cordova-plugin-reteno.js) | iOS, Android | Tracks ecommerce activity (product views, cart updates, orders, search requests, etc.). [Types](../types/index.ts) |
+| [logScreenView](../www/cordova-plugin-reteno.js) | iOS, Android | Logs a screen view for manual tracking. |
+| [forcePushData](../www/cordova-plugin-reteno.js) | iOS, Android | Forces Reteno to sync queued data. On iOS the plugin performs a technical `logEvent(..., forcePush: true)` call under the hood. |
+
+### Push notifications
+
+| Method | Supported platform | Description |
+| --- | --- | --- |
+| [setDeviceToken](../www/cordova-plugin-reteno.js) | iOS, Android | Forwards the device token to Reteno (use when another plugin owns push callbacks/token, e.g. Firebasex messaging enabled). |
+| [getInitialNotification](../www/cordova-plugin-reteno.js) | iOS, Android | Returns push notification that triggered creating app instance. |
+| [setOnRetenoPushReceivedListener](../www/cordova-plugin-reteno.js) | iOS, Android | Sets listener for newly received push notification. |
+| [removeOnRetenoPushReceivedListener](../www/cordova-plugin-reteno.js) | iOS, Android | Removes listener for push notification received events. |
+| [setOnRetenoNotificationClickedListener](../www/cordova-plugin-reteno.js) | iOS, Android | Sets listener for notification click events. |
+| [removeOnRetenoNotificationClickedListener](../www/cordova-plugin-reteno.js) | iOS, Android | Removes listener for notification click events. |
+| [setOnRetenoPushDismissedListener](../www/cordova-plugin-reteno.js) | Android | Sets listener for push dismissed (swipe) events. |
+| [removeOnRetenoPushDismissedListener](../www/cordova-plugin-reteno.js) | Android | Removes listener for push dismissed (swipe) events. |
+| [setOnRetenoCustomPushReceivedListener](../www/cordova-plugin-reteno.js) | Android | Sets listener for custom push received events. |
+| [removeOnRetenoCustomPushReceivedListener](../www/cordova-plugin-reteno.js) | Android | Removes listener for custom push received events. |
+| [setOnRetenoPushButtonClickedListener](../www/cordova-plugin-reteno.js) | iOS, Android | Sets listener for push notification action button click events. Emits `reteno-push-button-clicked`. [Types](../types/index.ts) |
+| [removeOnRetenoPushButtonClickedListener](../www/cordova-plugin-reteno.js) | iOS, Android | Removes listener for push notification action button click events. |
+| [setNotificationActionHandler](../www/cordova-plugin-reteno.js) | iOS, Android | On iOS, installs the native action button handler when both `enabled` (default: `true`) and `emitEvent` are true — e.g. `{ emitEvent: true }` or `{ enabled: true, emitEvent: true }`. Any other value (e.g. `false`, `null`, `true`, `{ enabled: true }`) clears the handler. On Android, this is a no-op (button clicks are detected automatically). [Types](../types/index.ts) |
+| [setWillPresentNotificationOptions](../www/cordova-plugin-reteno.js) | iOS | Sets presentation options for foreground notifications. Optionally emits `reteno-push-received`. [Types](../types/index.ts) |
+| [setDidReceiveNotificationResponseHandler](../www/cordova-plugin-reteno.js) | iOS | Enables a response handler for notification taps. Optionally emits `reteno-notification-clicked`. [Types](../types/index.ts) |
+| [updateDefaultNotificationChannel](../www/cordova-plugin-reteno.js) | Android | Updates the default notification channel name and description for existing users. [Types](../types/index.ts) |
+
+### In-app messages
+
+| Method | Supported platform | Description |
+| --- | --- | --- |
+| [pauseInAppMessages](../www/cordova-plugin-reteno.js) | iOS, Android | Pauses or resumes in-app messages at runtime. Pass `true` to pause, `false` to resume. |
+| [setInAppMessagesPauseBehaviour](../www/cordova-plugin-reteno.js) | iOS, Android | Sets how paused in-app messages are handled: `SKIP_IN_APPS` or `POSTPONE_IN_APPS`. [Types](../types/index.ts) |
+| [setOnInAppLifecycleCallback](../www/cordova-plugin-reteno.js) | iOS, Android | Subscribes to in-app status/lifecycle events (beforeDisplay, onDisplay, beforeClose, afterClose, onError). Pass `null` to unsubscribe. [Types](../types/index.ts) |
+| [setOnInAppMessageCustomDataReceivedListener](../www/cordova-plugin-reteno.js) | Android | Sets listener for in-app message custom data events. |
+| [removeOnInAppMessageCustomDataReceivedListener](../www/cordova-plugin-reteno.js) | Android | Removes listener for in-app message custom data events. |
+
+### App Inbox
+
+| Method | Supported platform | Description |
+| --- | --- | --- |
+| [getAppInboxMessages](../www/cordova-plugin-reteno.js) | iOS, Android | Fetches App Inbox messages with pagination. Returns `{ messages, totalPages }`. [Types](../types/index.ts) |
+| [getAppInboxMessagesCount](../www/cordova-plugin-reteno.js) | iOS, Android | Fetches count of App Inbox messages. Returns a number. |
+| [subscribeOnMessagesCountChanged](../www/cordova-plugin-reteno.js) | iOS, Android | Subscribes to App Inbox messages count changes. |
+| [unsubscribeMessagesCountChanged](../www/cordova-plugin-reteno.js) | iOS, Android | Unsubscribes from App Inbox messages count changes. |
+| [markAsOpened](../www/cordova-plugin-reteno.js) | iOS, Android | Marks an App Inbox message as opened. |
+| [markAllMessagesAsOpened](../www/cordova-plugin-reteno.js) | iOS, Android | Marks all App Inbox messages as opened. |
+
+### Recommendations
+
+| Method | Supported platform | Description |
+| --- | --- | --- |
+| [getRecommendations](../www/cordova-plugin-reteno.js) | iOS, Android | Fetches product or category recommendations. Returns `{ recoms: [...] }`. [Types](../types/index.ts) |
+| [logRecommendations](../www/cordova-plugin-reteno.js) | iOS, Android | Sends recommendation impressions or clicks. [Types](../types/index.ts) |
 
 ### init example
 
@@ -241,6 +274,86 @@ retenosdk.logEvent(
   .catch((err) => console.error('logEvent: ERROR', err));
 ```
 
+### logEcommerceEvent examples
+
+Tracks ecommerce activity. Payload type: `LogEcommerceEventPayload` in [types](../types/index.ts).
+Supported event types: `productViewed`, `productCategoryViewed`, `productAddedToWishlist`, `cartUpdated`, `orderCreated`, `orderUpdated`, `orderDelivered`, `orderCancelled`, `searchRequest`.
+
+See also: [Reteno ecommerce activity tracking](https://docs.reteno.com/reference/android-ecommerce-activity-tracking).
+
+```js
+// Product viewed
+retenosdk.logEcommerceEvent({
+  eventType: 'productViewed',
+  product: {
+    productId: 'SKU-123',
+    price: 29.99,
+    isInStock: true,
+    attributes: [{ name: 'color', value: ['red', 'blue'] }],
+  },
+  currencyCode: 'USD',
+})
+  .then(() => console.log('logEcommerceEvent: OK'))
+  .catch((err) => console.error('logEcommerceEvent: ERROR', err));
+```
+
+```js
+// Cart updated
+retenosdk.logEcommerceEvent({
+  eventType: 'cartUpdated',
+  cartId: 'cart-456',
+  products: [
+    {
+      productId: 'SKU-123',
+      quantity: 2,
+      price: 29.99,
+      name: 'T-Shirt',
+      category: 'Apparel',
+    },
+  ],
+  currencyCode: 'USD',
+})
+  .then(() => console.log('logEcommerceEvent: OK'))
+  .catch((err) => console.error('logEcommerceEvent: ERROR', err));
+```
+
+```js
+// Order created
+retenosdk.logEcommerceEvent({
+  eventType: 'orderCreated',
+  order: {
+    externalOrderId: 'ORD-789',
+    totalCost: 59.98,
+    status: 'INITIALIZED',
+    date: new Date().toISOString(),
+    items: [
+      {
+        externalItemId: 'SKU-123',
+        name: 'T-Shirt',
+        category: 'Apparel',
+        quantity: 2,
+        cost: 29.99,
+        url: 'https://example.com/products/SKU-123',
+      },
+    ],
+  },
+  currencyCode: 'USD',
+})
+  .then(() => console.log('logEcommerceEvent: OK'))
+  .catch((err) => console.error('logEcommerceEvent: ERROR', err));
+```
+
+```js
+// Search request
+retenosdk.logEcommerceEvent({
+  eventType: 'searchRequest',
+  search: 'red t-shirt',
+  isFound: true,
+})
+  .then(() => console.log('logEcommerceEvent: OK'))
+  .catch((err) => console.error('logEcommerceEvent: ERROR', err));
+```
+
 ### logScreenView example
 
 ```js
@@ -328,6 +441,20 @@ retenosdk.setOnInAppLifecycleCallback(onInAppStatus);
 retenosdk.setOnInAppLifecycleCallback(null);
 ```
 
+### setOnInAppMessageCustomDataReceivedListener example
+
+Subscribe to in-app message custom data events when a button is clicked.
+
+Important: once you register this receiver, Reteno SDK will not open button links automatically. Instead, it will pass all custom data to your listener, including the link under the `url` key. You are responsible for handling navigation.
+
+```js
+retenosdk.setOnInAppMessageCustomDataReceivedListener(function (event) {
+  // event.detail contains the custom data payload
+  // If a link was assigned to the button, it will be under event.detail.url
+  console.log('In-app custom data:', event.detail);
+});
+```
+
 ### setDeviceToken example
 
 If you obtain a token outside this plugin (for example via another plugin/SDK), you can forward it to Reteno so it can register the device for push.
@@ -360,20 +487,6 @@ Notes:
 
 - On Android this is based on the SDK 2.9.1 `EventListener` / `Procedure` API (`RetenoNotifications.getReceived()`).
 - This listener is not a replacement for `getInitialNotification()` (cold start): if the app was launched by tapping a notification, use `getInitialNotification()`.
-
-### setOnInAppMessageCustomDataReceivedListener example
-
-Subscribe to in-app message custom data events when a button is clicked.
-
-Important: once you register this receiver, Reteno SDK will not open button links automatically. Instead, it will pass all custom data to your listener, including the link under the `url` key. You are responsible for handling navigation.
-
-```js
-retenosdk.setOnInAppMessageCustomDataReceivedListener(function (event) {
-  // event.detail contains the custom data payload
-  // If a link was assigned to the button, it will be under event.detail.url
-  console.log('In-app custom data:', event.detail);
-});
-```
 
 ```js
 // Subscribe to push received events
@@ -460,25 +573,31 @@ retenosdk.updateDefaultNotificationChannel(
 
 Fetches paginated App Inbox messages. Payload type: `GetAppInboxMessagesPayload` in [types](../types/index.ts).
 
+Returns `AppInboxMessages`: `{ messages: AppInboxMessage[], totalPages: number }`.
+
 ```js
 retenosdk.getAppInboxMessages(
   {
     page: 1,
     pageSize: 20,
-    status: 'UNOPENED',
+    status: 'UNOPENED', // optional: 'OPENED' | 'UNOPENED'
   }
 )
-  .then((result) => console.log('getAppInboxMessages: OK', result))
+  .then((result) => {
+    // result.messages — array of AppInboxMessage objects
+    // result.totalPages — total number of pages
+    console.log('getAppInboxMessages: OK', result.messages.length, 'of', result.totalPages, 'pages');
+  })
   .catch((err) => console.error('getAppInboxMessages: ERROR', err));
 ```
 
 ### getAppInboxMessagesCount example
 
-Fetches count of App Inbox messages.
+Fetches count of App Inbox messages. Returns a `number`.
 
 ```js
 retenosdk.getAppInboxMessagesCount()
-  .then((count) => console.log('getAppInboxMessagesCount: OK', count))
+  .then((count) => console.log('Unread messages:', count))
   .catch((err) => console.error('getAppInboxMessagesCount: ERROR', err));
 ```
 
@@ -530,6 +649,8 @@ retenosdk.markAllMessagesAsOpened()
 
 Fetches recommendations. Payload type: `GetRecommendationsPayload` in [types](../types/index.ts).
 
+Returns `RecommendationsResponse`: `{ recoms: RecommendationItem[] }`. Each item contains `productId` plus the fields you requested.
+
 ```js
 // Product-based recommendations.
 retenosdk.getRecommendations(
@@ -539,7 +660,11 @@ retenosdk.getRecommendations(
     fields: ['name', 'price', 'image', 'link'],
   }
 )
-  .then((result) => console.log('getRecommendations: OK', result))
+  .then((result) => {
+    // result.recoms — array of recommendation items
+    // each item has productId + requested fields (name, price, etc.)
+    result.recoms.forEach((item) => console.log(item.productId, item.name));
+  })
   .catch((err) => console.error('getRecommendations: ERROR', err));
 ```
 
@@ -550,6 +675,20 @@ retenosdk.getRecommendations(
     recomVariantId: 'variant-id',
     categoryId: 'category-1',
     fields: ['name', 'price'],
+  }
+)
+  .then((result) => console.log('getRecommendations: OK', result))
+  .catch((err) => console.error('getRecommendations: ERROR', err));
+```
+
+```js
+// With filters.
+retenosdk.getRecommendations(
+  {
+    recomVariantId: 'variant-id',
+    productIds: ['product-1'],
+    fields: ['name', 'price'],
+    filters: [{ name: 'category', values: ['shoes', 'boots'] }],
   }
 )
   .then((result) => console.log('getRecommendations: OK', result))

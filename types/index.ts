@@ -83,6 +83,8 @@ export type LifecycleTrackingOptions =
   | string;
 
 export type RetenoInitializeOptions = {
+  /** SDK access key. If omitted, the plugin reads SDK_ACCESS_KEY from config.xml / capacitor.config. */
+  accessKey?: string;
   pauseInAppMessages?: boolean;
   pausePushInAppMessages?: boolean;
   inAppMessagesPauseBehaviour?: InAppPauseBehaviour;

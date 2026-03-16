@@ -68,10 +68,6 @@ declare global {
         success?: (result: unknown) => void,
         error?: (err: unknown) => void
       ) => Promise<unknown>;
-      getPushPermissionStatus?: (
-        success?: (result: unknown) => void,
-        error?: (err: unknown) => void
-      ) => Promise<unknown>;
       setWillPresentNotificationOptions?: (
         payload: { options?: string[]; presentationOptions?: string[]; emitEvent?: boolean } | string[] | null,
         success?: () => void,
@@ -332,16 +328,6 @@ export class RetenoService {
         return Promise.reject(new Error('retenosdk.requestNotificationPermission is not available'));
       }
       return sdk.requestNotificationPermission();
-    });
-  }
-
-  getPushPermissionStatus(): Promise<unknown> {
-    return this.withInit(() => {
-      const sdk = window.retenosdk;
-      if (!sdk?.getPushPermissionStatus) {
-        return Promise.reject(new Error('retenosdk.getPushPermissionStatus is not available'));
-      }
-      return sdk.getPushPermissionStatus();
     });
   }
 

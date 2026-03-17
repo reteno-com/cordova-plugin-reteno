@@ -38,6 +38,8 @@
     "@capacitor/status-bar": "^8.0.0",
     "@ionic/angular": "^8.7.16",
     "@ionic/core": "^8.7.16",
+    "@awesome-cordova-plugins/core": "^8.1.0",
+    "awesome-cordova-plugins-reteno": "file:../../../awesome-cordova-plugin-reteno/dist",
     "cordova-plugin-device": "^2.1.0",
     "cordova-plugin-reteno": "file:../../cordova-plugin-reteno-2.0.0.tgz",
     "ionicons": "^8.0.13",

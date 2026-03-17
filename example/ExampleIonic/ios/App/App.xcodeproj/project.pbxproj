@@ -68,7 +68,7 @@
 		504EC3111FED79650016851F /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		504EC3131FED79650016851F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		50B271D01FEDC1A000F3C39B /* public */ = {isa = PBXFileReference; lastKnownFileType = folder; path = public; sourceTree = "<group>"; };
-		7AFB96054D8B4F4B8DD6DC20 /* NotificationViewController.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = NotificationViewController.swift; path = App/NotificationContentExtension/NotificationViewController.swift; sourceTree = SOURCE_ROOT; };
+		7AFB96054D8B4F4B8DD6DC20 /* NotificationViewController.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = "NotificationViewController.swift"; path = "App/NotificationContentExtension/NotificationViewController.swift"; sourceTree = SOURCE_ROOT; };
 		A1E1B2C3D4E5F60123456780 /* App.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = App.entitlements; sourceTree = "<group>"; };
 		A1E1B2C3D4E5F60123456781 /* NotificationServiceExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = NotificationServiceExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1E1B2C3D4E5F60123456782 /* NotificationServiceExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = NotificationServiceExtension.entitlements; sourceTree = "<group>"; };
@@ -201,6 +201,14 @@
 			name = Resources;
 			path = Resources;
 			sourceTree = "<group>";
+		};
+		8BC148FCF0984728B06842A9 /* NotificationContentExtension */ = {
+			isa = "PBXGroup";
+			children = (
+			);
+			name = NotificationContentExtension;
+			sourceTree = "<group>";
+			path = App/NotificationContentExtension;
 		};
 /* End PBXGroup section */
 
@@ -597,10 +605,10 @@
 			baseConfigurationReference = FC68EB0AF532CFC21C3344DD /* Pods-App.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = "App/App-Debug.entitlements";
+				CODE_SIGN_ENTITLEMENTS = App/App-Debug.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Distribution";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 472;
+				CURRENT_PROJECT_VERSION = 473;
 				DEVELOPMENT_TEAM = X9JJR3XKX7;
 				INFOPLIST_FILE = App/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
@@ -621,10 +629,10 @@
 			baseConfigurationReference = AF51FD2D460BCFE21FA515B2 /* Pods-App.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = "App/App-Release.entitlements";
+				CODE_SIGN_ENTITLEMENTS = App/App-Release.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Distribution";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 472;
+				CURRENT_PROJECT_VERSION = 473;
 				DEVELOPMENT_TEAM = X9JJR3XKX7;
 				INFOPLIST_FILE = App/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
@@ -644,9 +652,9 @@
 			baseConfigurationReference = 13B29856654715C46BE515B5 /* Pods-NotificationContentExtension.release.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "Apple Distribution";
-				CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = X9JJR3XKX7;
-				INFOPLIST_FILE = App/NotificationContentExtension/Info.plist;
+				INFOPLIST_FILE = "App/NotificationContentExtension/Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.reteno.example-app.NotificationContentExtension";
@@ -702,13 +710,13 @@
 			baseConfigurationReference = C871517DB6EA2BA05686874C /* Pods-NotificationContentExtension.debug.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "Apple Distribution";
-				CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = X9JJR3XKX7;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
 				);
-				INFOPLIST_FILE = App/NotificationContentExtension/Info.plist;
+				INFOPLIST_FILE = "App/NotificationContentExtension/Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.reteno.example-app.NotificationContentExtension";

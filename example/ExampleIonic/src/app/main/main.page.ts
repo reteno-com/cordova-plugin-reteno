@@ -92,11 +92,14 @@ export class MainPage implements OnInit {
 
   private syncInitOptions(): void {
     const options = this.reteno.getInitOptions();
-    this.initPauseInAppMessages = options.pauseInAppMessages;
-    this.initPausePushInAppMessages = options.pausePushInAppMessages;
+    this.initPauseInAppMessages = options.pauseInAppMessages ?? false;
+    this.initPausePushInAppMessages = options.pausePushInAppMessages ?? false;
     this.initScreenReporting = false;
-    this.initLifecycleApp = options.lifecycleTrackingOptions.appLifecycleEnabled;
-    this.initLifecyclePush = options.lifecycleTrackingOptions.pushSubscriptionEnabled;
-    this.initLifecycleSession = options.lifecycleTrackingOptions.sessionEventsEnabled;
+    const lto = options.lifecycleTrackingOptions as
+      | { appLifecycleEnabled?: boolean | null; pushSubscriptionEnabled?: boolean | null; sessionEventsEnabled?: boolean | null }
+      | undefined;
+    this.initLifecycleApp = lto?.appLifecycleEnabled ?? true;
+    this.initLifecyclePush = lto?.pushSubscriptionEnabled ?? true;
+    this.initLifecycleSession = lto?.sessionEventsEnabled ?? true;
   }
 }

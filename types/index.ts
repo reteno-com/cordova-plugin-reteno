@@ -55,6 +55,8 @@ export type LogEventPayload = {
   date?: string | null;
   /** Optional list of parameters */
   parameters?: CustomEventParameter[] | null;
+  /** When true the event is sent to Reteno immediately (iOS only) */
+  forcePush?: boolean;
 };
 
 export type RequestNotificationPermissionResult = 0 | 1;

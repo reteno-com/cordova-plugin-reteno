@@ -5,7 +5,7 @@ allprojects {
     }
 }
 
-def retenoFcmVersion = '2.9.1'
+def retenoFcmVersion = '2.9.2'
 
 def firebaseMessagingVersion = '23.1.0'
 

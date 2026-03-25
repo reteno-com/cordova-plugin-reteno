@@ -601,7 +601,7 @@ public class RetenoPlugin extends CordovaPlugin {
   }
 
   /**
-   * Register notification event listeners using the SDK 2.9.1 EventListener API.
+   * Register notification event listeners using the SDK 2.9.2 EventListener API.
    * Each listener is a direct {@link Procedure} implementation — no reflection needed.
    */
   private void registerNotificationListeners() {

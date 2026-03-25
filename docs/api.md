@@ -485,7 +485,7 @@ Subscribe to push received events while the app is running.
 
 Notes:
 
-- On Android this is based on the SDK 2.9.1 `EventListener` / `Procedure` API (`RetenoNotifications.getReceived()`).
+- On Android this is based on the SDK 2.9.2 `EventListener` / `Procedure` API (`RetenoNotifications.getReceived()`).
 - This listener is not a replacement for `getInitialNotification()` (cold start): if the app was launched by tapping a notification, use `getInitialNotification()`.
 
 ```js

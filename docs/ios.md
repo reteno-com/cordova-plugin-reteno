@@ -68,12 +68,12 @@ target 'App' do
 
   target 'NotificationServiceExtension' do
     inherit! :search_paths
-    pod 'Reteno', '2.6.1'
+    pod 'Reteno', '2.6.2'
   end
 
   target 'NotificationContentExtension' do
     inherit! :search_paths
-    pod 'Reteno', '2.6.1'
+    pod 'Reteno', '2.6.2'
   end
 end
 ```
@@ -187,12 +187,12 @@ target 'App' do
 
   target 'NotificationServiceExtension' do
     inherit! :search_paths
-    pod 'Reteno', '2.6.1'
+    pod 'Reteno', '2.6.2'
   end
 
   target 'NotificationContentExtension' do
     inherit! :search_paths
-    pod 'Reteno', '2.6.1'
+    pod 'Reteno', '2.6.2'
   end
 end
 ```

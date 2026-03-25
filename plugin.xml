@@ -58,7 +58,7 @@
 
   <podspec>
     <pods>
-      <pod name="Reteno" spec="2.6.1" />
+      <pod name="Reteno" spec="2.6.2" />
       <pod name="FirebaseMessaging" />
     </pods>
   </podspec>

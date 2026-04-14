@@ -6,6 +6,7 @@ module.exports = {
     "src/android/",
     "src/ios/",
     "**/*.min.js",
+    "tests/",
   ],
   env: {
     browser: true,
@@ -16,6 +17,9 @@ module.exports = {
   overrides: [
     {
       files: ["www/**/*.js"],
+      globals: {
+        cordova: "readonly",
+      },
       rules: {
         "no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
       },

@@ -1,8 +1,8 @@
-var exec = require('cordova/exec');
+const exec = require('cordova/exec');
 
-var PLUGIN_NAME = 'RetenoPlugin';
+const PLUGIN_NAME = 'RetenoPlugin';
 
-var __retenoState = {
+const __retenoState = {
   initialized: false,
   initPromise: null,
   pendingInitOptions: {},
@@ -23,7 +23,7 @@ function __promiseExec(action, args) {
 }
 
 function __callWithExec(action, args, success, error) {
-  var p = __promiseExec(action, args);
+  const p = __promiseExec(action, args);
   if (__isFn(success) || __isFn(error)) {
     p.then(function (res) {
       if (__isFn(success)) success(res);
@@ -45,8 +45,8 @@ function __ensureInit(options) {
     return __retenoState.initPromise;
   }
 
-  var pendingOptions = __retenoState.pendingInitOptions || {};
-  var opts = Object.assign({}, pendingOptions, options || {});
+  const pendingOptions = __retenoState.pendingInitOptions || {};
+  const opts = Object.assign({}, pendingOptions, options || {});
   __retenoState.initPromise = __promiseExec('initialize', [opts])
     .then(function (res) {
       __retenoState.initialized = true;
@@ -64,7 +64,7 @@ function __ensureInit(options) {
 }
 
 function __callWithAutoInit(action, args, success, error) {
-  var p = __ensureInit().then(function () {
+  const p = __ensureInit().then(function () {
     return __promiseExec(action, args);
   });
   if (__isFn(success) || __isFn(error)) {
@@ -134,7 +134,7 @@ var urlutil = require('cordova/urlutil');
 })();
 */
 
-var RetenoPluginFunctions = {
+const RetenoPluginFunctions = {
     /*
         options: {
           accessKey?: string,
@@ -154,8 +154,8 @@ var RetenoPluginFunctions = {
         arg0 = {};
       }
 
-      var options = arg0 || {};
-      var p = __ensureInit(options);
+      const options = arg0 || {};
+      const p = __ensureInit(options);
       if (__isFn(success) || __isFn(error)) {
         p.then(function (res) {
           if (__isFn(success)) success(res);
@@ -185,7 +185,7 @@ var RetenoPluginFunctions = {
         */
     logEcommerceEvent: function (arg0, success, error) {
       // Accept either `payload` or legacy `[payload]`.
-      var payload = Array.isArray(arg0) ? arg0[0] : arg0;
+      const payload = Array.isArray(arg0) ? arg0[0] : arg0;
       if (!payload || typeof payload !== 'object') {
         return Promise.reject(new Error('Missing argument: payload'));
       }
@@ -200,7 +200,7 @@ var RetenoPluginFunctions = {
         */
     setUserAttributes: function (arg0, success, error) {
       // Accept either `payload` or legacy `[payload]`.
-      var payload = Array.isArray(arg0) ? arg0[0] : arg0;
+      const payload = Array.isArray(arg0) ? arg0[0] : arg0;
       if (
         !payload ||
         !payload.externalUserId ||
@@ -216,7 +216,7 @@ var RetenoPluginFunctions = {
         */
     setAnonymousUserAttributes: function (arg0, success, error) {
       // Accept either `payload` or legacy `[payload]`.
-      var payload = Array.isArray(arg0) ? arg0[0] : arg0;
+      const payload = Array.isArray(arg0) ? arg0[0] : arg0;
       if (!payload || typeof payload !== 'object') {
         return Promise.reject(new Error('Missing argument: payload'));
       }
@@ -247,7 +247,7 @@ var RetenoPluginFunctions = {
         */
     setMultiAccountUserAttributes: function (arg0, success, error) {
       // Accept either `payload` or legacy `[payload]`.
-      var payload = Array.isArray(arg0) ? arg0[0] : arg0;
+      const payload = Array.isArray(arg0) ? arg0[0] : arg0;
       if (
         !payload ||
         !payload.externalUserId ||
@@ -270,7 +270,7 @@ var RetenoPluginFunctions = {
       // Back-compat:
       // - setOnRetenoPushReceivedListener(listener)
       // - setOnRetenoPushReceivedListener(reteno, listener) (legacy)
-      var listener = typeof arg0 === 'function' ? arg0 : arg1;
+      const listener = typeof arg0 === 'function' ? arg0 : arg1;
       if (typeof listener !== 'function') return;
       document.addEventListener('reteno-push-received', listener);
     },
@@ -279,7 +279,7 @@ var RetenoPluginFunctions = {
       // Back-compat:
       // - setOnRetenoNotificationClickedListener(listener)
       // - setOnRetenoNotificationClickedListener(reteno, listener) (legacy)
-      var listener = typeof arg0 === 'function' ? arg0 : arg1;
+      const listener = typeof arg0 === 'function' ? arg0 : arg1;
       if (typeof listener !== 'function') return;
       document.addEventListener('reteno-notification-clicked', listener);
     },
@@ -298,20 +298,20 @@ var RetenoPluginFunctions = {
       // Back-compat:
       // - setOnInAppMessageCustomDataReceivedListener(listener)
       // - setOnInAppMessageCustomDataReceivedListener(reteno, listener) (legacy)
-      var listener = typeof arg0 === 'function' ? arg0 : arg1;
+      const listener = typeof arg0 === 'function' ? arg0 : arg1;
       if (typeof listener !== 'function') return;
       document.addEventListener('reteno-in-app-custom-data', listener);
     },
 
     removeOnInAppMessageCustomDataReceivedListener: function (arg0, arg1) {
-      var listener = typeof arg0 === 'function' ? arg0 : arg1;
+      const listener = typeof arg0 === 'function' ? arg0 : arg1;
       if (typeof listener !== 'function') return;
       document.removeEventListener('reteno-in-app-custom-data', listener);
     },
 
     // Push notification dismissed (swiped away)
     setOnRetenoPushDismissedListener: function (arg0, arg1) {
-      var listener = typeof arg0 === 'function' ? arg0 : arg1;
+      const listener = typeof arg0 === 'function' ? arg0 : arg1;
       if (typeof listener !== 'function') return;
       document.addEventListener('reteno-push-dismissed', listener);
     },
@@ -323,7 +323,7 @@ var RetenoPluginFunctions = {
 
     // Custom push notification received
     setOnRetenoCustomPushReceivedListener: function (arg0, arg1) {
-      var listener = typeof arg0 === 'function' ? arg0 : arg1;
+      const listener = typeof arg0 === 'function' ? arg0 : arg1;
       if (typeof listener !== 'function') return;
       document.addEventListener('reteno-custom-push-received', listener);
     },
@@ -335,7 +335,7 @@ var RetenoPluginFunctions = {
 
     // Push notification action button clicked (iOS & Android)
     setOnRetenoPushButtonClickedListener: function (arg0, arg1) {
-      var listener = typeof arg0 === 'function' ? arg0 : arg1;
+      const listener = typeof arg0 === 'function' ? arg0 : arg1;
       if (typeof listener !== 'function') return;
       document.addEventListener('reteno-push-button-clicked', listener);
     },
@@ -361,7 +361,7 @@ var RetenoPluginFunctions = {
     },
 
     setOnInAppLifecycleCallback: function (arg0, arg1) {
-      var listener = typeof arg0 === 'function' ? arg0 : arg1;
+      const listener = typeof arg0 === 'function' ? arg0 : arg1;
       if (arg0 === null || listener === null) {
         return __callWithAutoInit('setInAppLifecycleCallback', [null]);
       }
@@ -384,13 +384,13 @@ var RetenoPluginFunctions = {
         */
     setLifecycleTrackingOptions: function (arg0, success, error) {
       // Accept either `options` or legacy `[options]`.
-      var options = Array.isArray(arg0) ? arg0[0] : arg0;
+      const options = Array.isArray(arg0) ? arg0[0] : arg0;
       if (!options) {
         return Promise.reject(new Error('Missing argument: options'));
       }
 
       if (__isIosPlatform()) {
-        var p;
+        let p;
         if (__retenoState.initialized || __retenoState.initPromise) {
           p = Promise.reject(
             new Error('iOS supports lifecycleTrackingOptions only during init(...) before SDK initialization.')
@@ -449,7 +449,7 @@ var RetenoPluginFunctions = {
         isPaused: boolean
         */
     pauseInAppMessages: function (arg0, success, error) {
-      var isPaused = !!arg0;
+      const isPaused = !!arg0;
       return __callWithAutoInit('pauseInAppMessages', [isPaused], success, error);
     },
 
@@ -495,7 +495,7 @@ var RetenoPluginFunctions = {
         */
     updateDefaultNotificationChannel: function (arg0, success, error) {
       // Accept either `config` or legacy `[config]`.
-      var config = Array.isArray(arg0) ? arg0[0] : arg0;
+      const config = Array.isArray(arg0) ? arg0[0] : arg0;
       if (!config || typeof config !== 'object') {
         return Promise.reject(new Error('Missing argument: config'));
       }
@@ -518,7 +518,7 @@ var RetenoPluginFunctions = {
         */
     getAppInboxMessages: function (arg0, success, error) {
       // Accept either `payload` or legacy `[payload]`.
-      var payload = Array.isArray(arg0) ? arg0[0] : arg0;
+      const payload = Array.isArray(arg0) ? arg0[0] : arg0;
       if (!payload || typeof payload !== 'object') {
         return Promise.reject(new Error('Missing argument: payload'));
       }
@@ -536,8 +536,8 @@ var RetenoPluginFunctions = {
     },
 
     subscribeOnMessagesCountChanged: function (arg0, arg1) {
-      var success = typeof arg0 === 'function' ? arg0 : arg1;
-      var error = typeof arg0 === 'function' ? arg1 : undefined;
+      const success = typeof arg0 === 'function' ? arg0 : arg1;
+      const error = typeof arg0 === 'function' ? arg1 : undefined;
       return __ensureInit().then(function () {
         exec(success, error, PLUGIN_NAME, 'subscribeOnMessagesCountChanged', []);
         return 1;
@@ -553,7 +553,7 @@ var RetenoPluginFunctions = {
         */
     markAsOpened: function (arg0, success, error) {
       // Accept either `messageId` or legacy `[messageId]`.
-      var messageId = Array.isArray(arg0) ? arg0[0] : arg0;
+      const messageId = Array.isArray(arg0) ? arg0[0] : arg0;
       if (!messageId || typeof messageId !== 'string' || messageId.trim().length === 0) {
         return Promise.reject(new Error('Missing argument: messageId'));
       }
@@ -569,7 +569,7 @@ var RetenoPluginFunctions = {
         */
     getRecommendations: function (arg0, success, error) {
       // Accept either `payload` or legacy `[payload]`.
-      var payload = Array.isArray(arg0) ? arg0[0] : arg0;
+      const payload = Array.isArray(arg0) ? arg0[0] : arg0;
       if (!payload || typeof payload !== 'object') {
         return Promise.reject(new Error('Missing argument: payload'));
       }
@@ -588,7 +588,7 @@ var RetenoPluginFunctions = {
         */
     logRecommendations: function (arg0, success, error) {
       // Accept either `payload` or legacy `[payload]`.
-      var payload = Array.isArray(arg0) ? arg0[0] : arg0;
+      const payload = Array.isArray(arg0) ? arg0[0] : arg0;
       if (!payload || typeof payload !== 'object') {
         return Promise.reject(new Error('Missing argument: payload'));
       }

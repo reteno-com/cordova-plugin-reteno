@@ -23,6 +23,8 @@
     "LICENSE*"
   ],
   "scripts": {
+    "test": "jest --coverage",
+    "test:watch": "jest --watch",
     "lint": "eslint \"www/**/*.js\"",
     "lint:fix": "eslint --fix \"www/**/*.js\"",
     "format": "prettier --write \"{www,types,docs}/**/*.{js,ts,md,json,xml}\"",
@@ -39,7 +41,7 @@
   },
   "keywords": [
     "ecosystem:cordova",
-    "cordova-android",    
+    "cordova-android",
     "cordova-ios"
   ],
   "author": "mobile-sdk@reteno.com",
@@ -49,11 +51,12 @@
   },
   "homepage": "https://github.com/reteno-com/cordova-plugin-reteno#readme",
   "license": "MIT",
-  "dependencies": {},
   "devDependencies": {
     "@cordova/eslint-config": "^5.0.0",
     "eslint": "^8.57.1",
     "eslint-config-prettier": "^9.1.0",
+    "jest": "^30.3.0",
+    "jest-environment-jsdom": "^30.3.0",
     "prettier": "^3.4.2",
     "typescript": "^5.7.3"
   }

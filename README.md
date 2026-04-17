@@ -4,12 +4,25 @@ Reteno SDK for Cordova and Capacitor apps.
 
 ## Installation
 
-- [iOS](docs/ios.md)
-- [Android](docs/android.md)
+```bash
+npm install cordova-plugin-reteno
+```
 
-## Usage
+## Documentation
 
-- [API](docs/api.md)
+- [Cordova SDK Overview](https://docs.reteno.com/reference/cordova-sdk-setup)
+- [Ionic SDK Overview](https://docs.reteno.com/reference/ionic-sdk)
+
+### Setup Guides
+
+- [Cordova iOS SDK Setup](https://docs.reteno.com/reference/cordova-ios-sdk-setup)
+- [Cordova Android SDK Setup](https://docs.reteno.com/reference/cordova-android-sdk-setup)
+- [Ionic iOS SDK Setup](https://docs.reteno.com/reference/ionic-ios-sdk-setup)
+- [Ionic Android SDK Setup](https://docs.reteno.com/reference/ionic-android-sdk-setup)
+
+### Additional
+
+- [Release Notes](https://github.com/reteno-com/cordova-plugin-reteno/releases)
 
 ## License
 

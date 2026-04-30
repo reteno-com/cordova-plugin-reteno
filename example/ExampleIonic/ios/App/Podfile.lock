@@ -13,7 +13,7 @@ PODS:
   - CordovaPlugins (8.0.0):
     - CapacitorCordova
     - FirebaseMessaging
-    - Reteno (= 2.6.2)
+    - Reteno (= 2.7.0)
   - FirebaseCore (12.10.0):
     - FirebaseCoreInternal (~> 12.10.0)
     - GoogleUtilities/Environment (~> 8.1)
@@ -67,7 +67,7 @@ PODS:
   - nanopb/decode (3.30910.0)
   - nanopb/encode (3.30910.0)
   - PromisesObjC (2.4.0)
-  - Reteno (2.6.2)
+  - Reteno (2.7.0)
 
 DEPENDENCIES:
   - "Capacitor (from `../../node_modules/@capacitor/ios`)"
@@ -78,7 +78,7 @@ DEPENDENCIES:
   - "CapacitorStatusBar (from `../../node_modules/@capacitor/status-bar`)"
   - CordovaPlugins (from `../capacitor-cordova-ios-plugins`)
   - FirebaseMessaging
-  - Reteno (= 2.6.2)
+  - Reteno (= 2.7.0)
 
 SPEC REPOS:
   trunk:

@@ -39,15 +39,21 @@ export class RetenoService {
   private initialized = false;
   private initPromise: Promise<unknown> | null = null;
   private uiState: Record<string, PageUiState> = {};
+  private static readonly defaultLifecycleTrackingOptions = {
+    appLifecycleEnabled: true,
+    foregroundLifecycleEnabled: false,
+    pushSubscriptionEnabled: true,
+    sessionStartEventsEnabled: true,
+    sessionEndEventsEnabled: false,
+  };
   private initOptions: RetenoInitializeOptions = {
     pauseInAppMessages: false,
     pausePushInAppMessages: false,
     isAutomaticScreenReportingEnabled: false,
     isDebugMode: true,
+    sessionDurationSeconds: 30 * 60,
     lifecycleTrackingOptions: {
-      appLifecycleEnabled: true,
-      pushSubscriptionEnabled: true,
-      sessionEventsEnabled: true,
+      ...RetenoService.defaultLifecycleTrackingOptions,
     },
   };
 
@@ -69,24 +75,51 @@ export class RetenoService {
     if (options.isAutomaticScreenReportingEnabled != null) {
       this.initOptions.isAutomaticScreenReportingEnabled = options.isAutomaticScreenReportingEnabled;
     }
+    if (options.sessionDurationSeconds != null) {
+      this.initOptions.sessionDurationSeconds = Number(options.sessionDurationSeconds);
+    }
+    if (options.sessionDurationMillis != null) {
+      this.initOptions.sessionDurationMillis = Number(options.sessionDurationMillis);
+    }
     if (options.lifecycleTrackingOptions && typeof options.lifecycleTrackingOptions === 'object') {
       const lto = options.lifecycleTrackingOptions as {
         appLifecycleEnabled?: boolean | null;
+        foregroundLifecycleEnabled?: boolean | null;
         pushSubscriptionEnabled?: boolean | null;
         sessionEventsEnabled?: boolean | null;
+        sessionStartEventsEnabled?: boolean | null;
+        sessionEndEventsEnabled?: boolean | null;
       };
-      const current = this.initOptions.lifecycleTrackingOptions as {
-        appLifecycleEnabled: boolean;
-        pushSubscriptionEnabled: boolean;
-        sessionEventsEnabled: boolean;
+      const currentRaw = this.initOptions.lifecycleTrackingOptions as {
+        appLifecycleEnabled?: boolean | null;
+        foregroundLifecycleEnabled?: boolean | null;
+        pushSubscriptionEnabled?: boolean | null;
+        sessionStartEventsEnabled?: boolean | null;
+        sessionEndEventsEnabled?: boolean | null;
       };
+      const current = {
+        ...RetenoService.defaultLifecycleTrackingOptions,
+        ...(currentRaw ?? {}),
+      };
+      const legacySessionEventsEnabled =
+        lto.sessionEventsEnabled != null ? Boolean(lto.sessionEventsEnabled) : undefined;
       this.initOptions.lifecycleTrackingOptions = {
         appLifecycleEnabled:
           lto.appLifecycleEnabled != null ? Boolean(lto.appLifecycleEnabled) : current.appLifecycleEnabled,
+        foregroundLifecycleEnabled:
+          lto.foregroundLifecycleEnabled != null
+            ? Boolean(lto.foregroundLifecycleEnabled)
+            : current.foregroundLifecycleEnabled,
         pushSubscriptionEnabled:
           lto.pushSubscriptionEnabled != null ? Boolean(lto.pushSubscriptionEnabled) : current.pushSubscriptionEnabled,
-        sessionEventsEnabled:
-          lto.sessionEventsEnabled != null ? Boolean(lto.sessionEventsEnabled) : current.sessionEventsEnabled,
+        sessionStartEventsEnabled:
+          lto.sessionStartEventsEnabled != null
+            ? Boolean(lto.sessionStartEventsEnabled)
+            : (legacySessionEventsEnabled != null ? legacySessionEventsEnabled : current.sessionStartEventsEnabled),
+        sessionEndEventsEnabled:
+          lto.sessionEndEventsEnabled != null
+            ? Boolean(lto.sessionEndEventsEnabled)
+            : (legacySessionEventsEnabled != null ? legacySessionEventsEnabled : current.sessionEndEventsEnabled),
       };
     }
   }

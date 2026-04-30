@@ -16,8 +16,11 @@ export class MainPage implements OnInit {
   initPauseInAppMessages = false;
   initPausePushInAppMessages = false;
   initLifecycleApp = true;
+  initLifecycleForeground = false;
   initLifecyclePush = true;
-  initLifecycleSession = true;
+  initLifecycleSessionStart = true;
+  initLifecycleSessionEnd = false;
+  initSessionDurationSeconds = 30 * 60;
   initScreenReporting = false;
   initialized = false;
 
@@ -54,10 +57,13 @@ export class MainPage implements OnInit {
       pauseInAppMessages: this.initPauseInAppMessages,
       pausePushInAppMessages: this.initPausePushInAppMessages,
       isAutomaticScreenReportingEnabled: false,
+      sessionDurationSeconds: this.initSessionDurationSeconds,
       lifecycleTrackingOptions: {
         appLifecycleEnabled: this.initLifecycleApp,
+        foregroundLifecycleEnabled: this.initLifecycleForeground,
         pushSubscriptionEnabled: this.initLifecyclePush,
-        sessionEventsEnabled: this.initLifecycleSession,
+        sessionStartEventsEnabled: this.initLifecycleSessionStart,
+        sessionEndEventsEnabled: this.initLifecycleSessionEnd,
       },
     });
   }
@@ -95,11 +101,21 @@ export class MainPage implements OnInit {
     this.initPauseInAppMessages = options.pauseInAppMessages ?? false;
     this.initPausePushInAppMessages = options.pausePushInAppMessages ?? false;
     this.initScreenReporting = false;
+    this.initSessionDurationSeconds = Number(options.sessionDurationSeconds ?? 30 * 60);
     const lto = options.lifecycleTrackingOptions as
-      | { appLifecycleEnabled?: boolean | null; pushSubscriptionEnabled?: boolean | null; sessionEventsEnabled?: boolean | null }
+      | {
+          appLifecycleEnabled?: boolean | null;
+          foregroundLifecycleEnabled?: boolean | null;
+          pushSubscriptionEnabled?: boolean | null;
+          sessionStartEventsEnabled?: boolean | null;
+          sessionEndEventsEnabled?: boolean | null;
+          sessionEventsEnabled?: boolean | null;
+        }
       | undefined;
     this.initLifecycleApp = lto?.appLifecycleEnabled ?? true;
+    this.initLifecycleForeground = lto?.foregroundLifecycleEnabled ?? false;
     this.initLifecyclePush = lto?.pushSubscriptionEnabled ?? true;
-    this.initLifecycleSession = lto?.sessionEventsEnabled ?? true;
+    this.initLifecycleSessionStart = lto?.sessionStartEventsEnabled ?? (lto?.sessionEventsEnabled ?? true);
+    this.initLifecycleSessionEnd = lto?.sessionEndEventsEnabled ?? (lto?.sessionEventsEnabled ?? false);
   }
 }

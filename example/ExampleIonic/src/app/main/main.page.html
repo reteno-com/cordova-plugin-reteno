@@ -34,6 +34,14 @@
         </ion-item>
         <ion-item>
           <ion-toggle
+            [checked]="initLifecycleForeground"
+            (ionChange)="initLifecycleForeground = $event.detail.checked; onInitOptionsChanged()"
+          >
+            foregroundLifecycleEnabled
+          </ion-toggle>
+        </ion-item>
+        <ion-item>
+          <ion-toggle
             [checked]="initLifecyclePush"
             (ionChange)="initLifecyclePush = $event.detail.checked; onInitOptionsChanged()"
           >
@@ -42,11 +50,28 @@
         </ion-item>
         <ion-item>
           <ion-toggle
-            [checked]="initLifecycleSession"
-            (ionChange)="initLifecycleSession = $event.detail.checked; onInitOptionsChanged()"
+            [checked]="initLifecycleSessionStart"
+            (ionChange)="initLifecycleSessionStart = $event.detail.checked; onInitOptionsChanged()"
           >
-            sessionEventsEnabled
+            sessionStartEventsEnabled
           </ion-toggle>
+        </ion-item>
+        <ion-item>
+          <ion-toggle
+            [checked]="initLifecycleSessionEnd"
+            (ionChange)="initLifecycleSessionEnd = $event.detail.checked; onInitOptionsChanged()"
+          >
+            sessionEndEventsEnabled
+          </ion-toggle>
+        </ion-item>
+        <ion-item>
+          <ion-input
+            type="number"
+            label="sessionDurationSeconds"
+            labelPlacement="stacked"
+            [value]="initSessionDurationSeconds"
+            (ionChange)="initSessionDurationSeconds = +($event.detail.value || 0); onInitOptionsChanged()"
+          ></ion-input>
         </ion-item>
         <ion-item>
           <ion-toggle

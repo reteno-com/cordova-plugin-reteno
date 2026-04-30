@@ -572,12 +572,7 @@ public class RetenoPlugin extends CordovaPlugin {
         }
       }
 
-      if (options != null && options.has("sessionDurationMillis")) {
-        long sessionDurationMillis = options.optLong("sessionDurationMillis", -1L);
-        if (sessionDurationMillis > 0L) {
-          builder.sessionDuration(sessionDurationMillis);
-        }
-      } else if (options != null && options.has("sessionDurationSeconds")) {
+      if (options != null && options.has("sessionDurationSeconds")) {
         long sessionDurationSeconds = options.optLong("sessionDurationSeconds", -1L);
         if (sessionDurationSeconds > 0L) {
           builder.sessionDuration(sessionDurationSeconds * 1000L);

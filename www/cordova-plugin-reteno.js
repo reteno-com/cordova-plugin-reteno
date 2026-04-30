@@ -143,7 +143,6 @@ const RetenoPluginFunctions = {
           inAppMessagesPauseBehaviour?: 'SKIP_IN_APPS' | 'POSTPONE_IN_APPS',
           isAutomaticScreenReportingEnabled?: boolean,
           isDebugMode?: boolean,
-          sessionDurationMillis?: number, // Android 2.9.3+, iOS 2.7.0+
           sessionDurationSeconds?: number, // Android 2.9.3+, iOS 2.7.0+
           lifecycleTrackingOptions?: {
             appLifecycleEnabled?: boolean,

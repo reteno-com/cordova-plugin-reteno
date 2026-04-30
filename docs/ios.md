@@ -469,7 +469,6 @@ Lifecycle tracking note for iOS:
     - `sessionEventsEnabled` (legacy alias; deprecated)
 - Session duration can be configured during `init(...)` via:
   - `sessionDurationSeconds`
-  - `sessionDurationMillis`
 
 ## App Lifecycle Events (iOS)
 

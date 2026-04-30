@@ -66,7 +66,6 @@ For Android SDK `2.9.3+`, you can also configure session duration and split sess
 RetenoPlugin.init({
   // Optional: session reset duration
   sessionDurationSeconds: 30 * 60,
-  // sessionDurationMillis: 1800000,
   lifecycleTrackingOptions: {
     appLifecycleEnabled: true,
     // ApplicationForgrounded/ApplicationBackgrounded events (disabled by default in 2.9.3)

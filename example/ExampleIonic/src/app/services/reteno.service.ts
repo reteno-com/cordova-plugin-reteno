@@ -78,9 +78,6 @@ export class RetenoService {
     if (options.sessionDurationSeconds != null) {
       this.initOptions.sessionDurationSeconds = Number(options.sessionDurationSeconds);
     }
-    if (options.sessionDurationMillis != null) {
-      this.initOptions.sessionDurationMillis = Number(options.sessionDurationMillis);
-    }
     if (options.lifecycleTrackingOptions && typeof options.lifecycleTrackingOptions === 'object') {
       const lto = options.lifecycleTrackingOptions as {
         appLifecycleEnabled?: boolean | null;

@@ -93,12 +93,6 @@ class RetenoPlugin: CDVPlugin {
     let lifecycleSessionEndEnabled = lifecycleOptions?.sessionEndEventsEnabled ?? false
 
     let sessionDurationSeconds: TimeInterval = {
-      if let millis = options["sessionDurationMillis"] as? Double, millis > 0 {
-        return millis / 1000.0
-      }
-      if let millis = options["sessionDurationMillis"] as? Int, millis > 0 {
-        return Double(millis) / 1000.0
-      }
       if let seconds = options["sessionDurationSeconds"] as? Double, seconds > 0 {
         return seconds
       }

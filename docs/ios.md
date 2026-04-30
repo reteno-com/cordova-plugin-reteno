@@ -68,12 +68,12 @@ target 'App' do
 
   target 'NotificationServiceExtension' do
     inherit! :search_paths
-    pod 'Reteno', '2.6.2'
+    pod 'Reteno', '2.7.0'
   end
 
   target 'NotificationContentExtension' do
     inherit! :search_paths
-    pod 'Reteno', '2.6.2'
+    pod 'Reteno', '2.7.0'
   end
 end
 ```
@@ -187,12 +187,12 @@ target 'App' do
 
   target 'NotificationServiceExtension' do
     inherit! :search_paths
-    pod 'Reteno', '2.6.2'
+    pod 'Reteno', '2.7.0'
   end
 
   target 'NotificationContentExtension' do
     inherit! :search_paths
-    pod 'Reteno', '2.6.2'
+    pod 'Reteno', '2.7.0'
   end
 end
 ```
@@ -458,12 +458,18 @@ Lifecycle tracking note for iOS:
 - iOS lifecycle tracking is configured during SDK initialization (`RetenoPlugin.init({ lifecycleTrackingOptions: ... })`).
 - Calling `setLifecycleTrackingOptions(...)` after initialization is not supported on iOS.
 - `lifecycleTrackingOptions` accepts:
-  - `'ALL'` -> enables app lifecycle, push subscription, and session event tracking.
-  - `'NONE'` -> disables app lifecycle, push subscription, and session event tracking.
+  - `'ALL'` -> enables app lifecycle, foreground lifecycle (`ApplicationOpened`/`ApplicationBackgrounded`), push subscription, and session start/end tracking.
+  - `'NONE'` -> disables these automatic events.
   - object:
     - `appLifecycleEnabled`
+    - `foregroundLifecycleEnabled`
     - `pushSubscriptionEnabled`
-    - `sessionEventsEnabled`
+    - `sessionStartEventsEnabled`
+    - `sessionEndEventsEnabled`
+    - `sessionEventsEnabled` (legacy alias; deprecated)
+- Session duration can be configured during `init(...)` via:
+  - `sessionDurationSeconds`
+  - `sessionDurationMillis`
 
 ## App Lifecycle Events (iOS)
 
@@ -479,7 +485,8 @@ When automatic tracking is enabled, the native iOS SDK can report these events:
 Related automatic events controlled by the same init options:
 
 - Push subscription status events (`pushSubscriptionEnabled`)
-- Session events (`sessionEventsEnabled`)
+- Session events (`sessionStartEventsEnabled` / `sessionEndEventsEnabled`)
+- Foreground lifecycle events (`foregroundLifecycleEnabled`)
 
 Screen view tracking:
 

@@ -572,6 +572,18 @@ public class RetenoPlugin extends CordovaPlugin {
         }
       }
 
+      if (options != null && options.has("sessionDurationMillis")) {
+        long sessionDurationMillis = options.optLong("sessionDurationMillis", -1L);
+        if (sessionDurationMillis > 0L) {
+          builder.sessionDuration(sessionDurationMillis);
+        }
+      } else if (options != null && options.has("sessionDurationSeconds")) {
+        long sessionDurationSeconds = options.optLong("sessionDurationSeconds", -1L);
+        if (sessionDurationSeconds > 0L) {
+          builder.sessionDuration(sessionDurationSeconds * 1000L);
+        }
+      }
+
       // Ensure AndroidX Startup initializer has created the Reteno instance.
       // We intentionally do not short-circuit initialization just because getInstance() is non-null;
       // the SDK still needs to receive config (access key/debug/etc.).
@@ -1145,10 +1157,10 @@ public class RetenoPlugin extends CordovaPlugin {
     if (value instanceof String) {
       String str = ((String) value).trim();
       if ("ALL".equalsIgnoreCase(str)) {
-        return new LifecycleTrackingOptions(true, true, true);
+        return new LifecycleTrackingOptions(true, true, true, true, true);
       }
       if ("NONE".equalsIgnoreCase(str)) {
-        return new LifecycleTrackingOptions(false, false, false);
+        return new LifecycleTrackingOptions(false, false, false, false, false);
       }
       return null;
     }
@@ -1158,13 +1170,34 @@ public class RetenoPlugin extends CordovaPlugin {
       boolean appLifecycleEnabled = payload.has("appLifecycleEnabled")
         ? payload.optBoolean("appLifecycleEnabled", true)
         : true;
+      boolean foregroundLifecycleEnabled = payload.has("foregroundLifecycleEnabled")
+        ? payload.optBoolean("foregroundLifecycleEnabled", false)
+        : false;
       boolean pushSubscriptionEnabled = payload.has("pushSubscriptionEnabled")
         ? payload.optBoolean("pushSubscriptionEnabled", true)
         : true;
-      boolean sessionEventsEnabled = payload.has("sessionEventsEnabled")
+
+      // Back-compat flag from <=2.9.2 plugin API.
+      boolean legacySessionEventsEnabled = payload.has("sessionEventsEnabled")
         ? payload.optBoolean("sessionEventsEnabled", true)
         : true;
-      return new LifecycleTrackingOptions(appLifecycleEnabled, pushSubscriptionEnabled, sessionEventsEnabled);
+
+      boolean sessionStartEventsEnabled = payload.has("sessionStartEventsEnabled")
+        ? payload.optBoolean("sessionStartEventsEnabled", legacySessionEventsEnabled)
+        : legacySessionEventsEnabled;
+
+      // SDK 2.9.3 default for session end is disabled unless explicitly enabled.
+      boolean sessionEndEventsEnabled = payload.has("sessionEndEventsEnabled")
+        ? payload.optBoolean("sessionEndEventsEnabled", false)
+        : (payload.has("sessionEventsEnabled") ? legacySessionEventsEnabled : false);
+
+      return new LifecycleTrackingOptions(
+        appLifecycleEnabled,
+        foregroundLifecycleEnabled,
+        pushSubscriptionEnabled,
+        sessionStartEventsEnabled,
+        sessionEndEventsEnabled
+      );
     }
 
     return null;

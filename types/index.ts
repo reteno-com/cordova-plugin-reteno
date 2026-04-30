@@ -77,8 +77,13 @@ export type NotificationResponseHandlerOptions = {
 export type LifecycleTrackingOptions =
   | {
       appLifecycleEnabled?: boolean | null;
+      foregroundLifecycleEnabled?: boolean | null;
       pushSubscriptionEnabled?: boolean | null;
+      /** @deprecated Use sessionStartEventsEnabled/sessionEndEventsEnabled instead. */
+      /** Backward-compatible alias for setting both sessionStart/sessionEnd */
       sessionEventsEnabled?: boolean | null;
+      sessionStartEventsEnabled?: boolean | null;
+      sessionEndEventsEnabled?: boolean | null;
     }
   | 'ALL'
   | 'NONE'
@@ -92,6 +97,10 @@ export type RetenoInitializeOptions = {
   inAppMessagesPauseBehaviour?: InAppPauseBehaviour;
   isAutomaticScreenReportingEnabled?: boolean;
   lifecycleTrackingOptions?: LifecycleTrackingOptions;
+  /** Android only (SDK 2.9.3+): session reset duration in milliseconds. */
+  sessionDurationMillis?: number;
+  /** Android only (SDK 2.9.3+): session reset duration in seconds. */
+  sessionDurationSeconds?: number;
   /** Enables Reteno debug mode for near real-time event monitoring. Use only with test devices. */
   isDebugMode?: boolean;
 };

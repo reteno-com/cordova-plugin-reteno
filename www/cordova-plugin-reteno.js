@@ -143,7 +143,16 @@ const RetenoPluginFunctions = {
           inAppMessagesPauseBehaviour?: 'SKIP_IN_APPS' | 'POSTPONE_IN_APPS',
           isAutomaticScreenReportingEnabled?: boolean,
           isDebugMode?: boolean,
-          lifecycleTrackingOptions?: { appLifecycleEnabled?: boolean, pushSubscriptionEnabled?: boolean, sessionEventsEnabled?: boolean }
+          sessionDurationMillis?: number, // Android 2.9.3+
+          sessionDurationSeconds?: number, // Android 2.9.3+
+          lifecycleTrackingOptions?: {
+            appLifecycleEnabled?: boolean,
+            foregroundLifecycleEnabled?: boolean,
+            pushSubscriptionEnabled?: boolean,
+            sessionEventsEnabled?: boolean, // backward-compatible alias
+            sessionStartEventsEnabled?: boolean,
+            sessionEndEventsEnabled?: boolean
+          }
         }
     */
     init: function (arg0, success, error) {

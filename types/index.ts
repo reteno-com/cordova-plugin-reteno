@@ -97,9 +97,9 @@ export type RetenoInitializeOptions = {
   inAppMessagesPauseBehaviour?: InAppPauseBehaviour;
   isAutomaticScreenReportingEnabled?: boolean;
   lifecycleTrackingOptions?: LifecycleTrackingOptions;
-  /** Android only (SDK 2.9.3+): session reset duration in milliseconds. */
+  /** Session reset duration in milliseconds (Android 2.9.3+, iOS 2.7.0+). */
   sessionDurationMillis?: number;
-  /** Android only (SDK 2.9.3+): session reset duration in seconds. */
+  /** Session reset duration in seconds (Android 2.9.3+, iOS 2.7.0+). */
   sessionDurationSeconds?: number;
   /** Enables Reteno debug mode for near real-time event monitoring. Use only with test devices. */
   isDebugMode?: boolean;

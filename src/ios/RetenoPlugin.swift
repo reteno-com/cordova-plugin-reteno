@@ -69,13 +69,15 @@ class RetenoPlugin: CDVPlugin {
     let lifecycleOptionsInput = options["lifecycleTrackingOptions"]
     let lifecycleOptions: (
       appLifecycleEnabled: Bool,
+      foregroundLifecycleEnabled: Bool,
       pushSubscriptionEnabled: Bool,
-      sessionEventsEnabled: Bool
+      sessionStartEventsEnabled: Bool,
+      sessionEndEventsEnabled: Bool
     )?
     if let lifecycleOptionsInput, !(lifecycleOptionsInput is NSNull) {
       guard let parsedOptions = parseLifecycleTrackingOptions(lifecycleOptionsInput) else {
         sendError(
-          "Invalid argument: lifecycleTrackingOptions. Expected 'ALL', 'NONE', or { appLifecycleEnabled, pushSubscriptionEnabled, sessionEventsEnabled }.",
+          "Invalid argument: lifecycleTrackingOptions. Expected 'ALL', 'NONE', or { appLifecycleEnabled, foregroundLifecycleEnabled, pushSubscriptionEnabled, sessionStartEventsEnabled, sessionEndEventsEnabled }.",
           to: command
         )
         return
@@ -85,8 +87,27 @@ class RetenoPlugin: CDVPlugin {
       lifecycleOptions = nil
     }
     let lifecycleAppEnabled = lifecycleOptions?.appLifecycleEnabled ?? true
+    let lifecycleForegroundEnabled = lifecycleOptions?.foregroundLifecycleEnabled ?? false
     let lifecyclePushEnabled = lifecycleOptions?.pushSubscriptionEnabled ?? true
-    let lifecycleSessionEnabled = lifecycleOptions?.sessionEventsEnabled ?? true
+    let lifecycleSessionStartEnabled = lifecycleOptions?.sessionStartEventsEnabled ?? true
+    let lifecycleSessionEndEnabled = lifecycleOptions?.sessionEndEventsEnabled ?? false
+
+    let sessionDurationSeconds: TimeInterval = {
+      if let millis = options["sessionDurationMillis"] as? Double, millis > 0 {
+        return millis / 1000.0
+      }
+      if let millis = options["sessionDurationMillis"] as? Int, millis > 0 {
+        return Double(millis) / 1000.0
+      }
+      if let seconds = options["sessionDurationSeconds"] as? Double, seconds > 0 {
+        return seconds
+      }
+      if let seconds = options["sessionDurationSeconds"] as? Int, seconds > 0 {
+        return Double(seconds)
+      }
+      return RetenoSessionConfiguration.default.sessionDuration
+    }()
+
     let screenReportingEnabled = (options["isAutomaticScreenReportingEnabled"] as? Bool) ?? false
     let isDebugMode = (options["isDebugMode"] as? Bool) ?? false
 
@@ -101,8 +122,13 @@ class RetenoPlugin: CDVPlugin {
     let configuration = RetenoConfiguration(
       isAutomaticScreenReportingEnabled: screenReportingEnabled,
       isAutomaticAppLifecycleReportingEnabled: lifecycleAppEnabled,
+      isApplicationForegroundLifecycleReportingEnabled: lifecycleForegroundEnabled,
       isAutomaticPushSubsriptionReportingEnabled: lifecyclePushEnabled,
-      isAutomaticSessionReportingEnabled: lifecycleSessionEnabled,
+      sessionConfiguration: RetenoSessionConfiguration(
+        sessionDuration: sessionDurationSeconds,
+        isSessionStartReportingEnabled: lifecycleSessionStartEnabled,
+        isSessionEndReportingEnabled: lifecycleSessionEndEnabled
+      ),
       isPausedInAppMessages: pauseInAppMessages,
       inAppMessagesPauseBehaviour: inAppMessagesPauseBehaviour,
       isDebugMode: isDebugMode,
@@ -1359,24 +1385,30 @@ class RetenoPlugin: CDVPlugin {
 
   private func parseLifecycleTrackingOptions(_ value: Any?) -> (
     appLifecycleEnabled: Bool,
+    foregroundLifecycleEnabled: Bool,
     pushSubscriptionEnabled: Bool,
-    sessionEventsEnabled: Bool
+    sessionStartEventsEnabled: Bool,
+    sessionEndEventsEnabled: Bool
   )? {
     if let raw = stringValue(value) {
       if raw.caseInsensitiveCompare("ALL") == .orderedSame {
-        return (true, true, true)
+        return (true, true, true, true, true)
       }
       if raw.caseInsensitiveCompare("NONE") == .orderedSame {
-        return (false, false, false)
+        return (false, false, false, false, false)
       }
       return nil
     }
 
     guard let payload = dictionaryValue(value) else { return nil }
+    let legacySessionEventsEnabled = (payload["sessionEventsEnabled"] as? Bool) ?? true
     return (
       appLifecycleEnabled: (payload["appLifecycleEnabled"] as? Bool) ?? true,
+      foregroundLifecycleEnabled: (payload["foregroundLifecycleEnabled"] as? Bool) ?? false,
       pushSubscriptionEnabled: (payload["pushSubscriptionEnabled"] as? Bool) ?? true,
-      sessionEventsEnabled: (payload["sessionEventsEnabled"] as? Bool) ?? true
+      sessionStartEventsEnabled: (payload["sessionStartEventsEnabled"] as? Bool) ?? legacySessionEventsEnabled,
+      sessionEndEventsEnabled: (payload["sessionEndEventsEnabled"] as? Bool) ??
+        (payload.keys.contains("sessionEventsEnabled") ? legacySessionEventsEnabled : false)
     )
   }
 

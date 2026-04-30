@@ -911,7 +911,7 @@ function main() {
   const appBundleId = unquote(project.getBuildProperty('PRODUCT_BUNDLE_IDENTIFIER', 'Release', appName)) || 'com.reteno.example-app';
   const pluginXmlContent = readFileIfExists(path.join(appRoot, 'plugins', 'cordova-plugin-reteno', 'plugin.xml'));
   const pluginXmlMatch = pluginXmlContent && pluginXmlContent.match(/<pod\s+name="Reteno"\s+spec="([^"]+)"/);
-  const retenoVersion = (pluginXmlMatch && pluginXmlMatch[1]) || '2.6.2';
+  const retenoVersion = (pluginXmlMatch && pluginXmlMatch[1]) || '2.7.0';
   const iosDeploymentTarget = unquote(project.getBuildProperty('IPHONEOS_DEPLOYMENT_TARGET', 'Release', appName)) || '15.0';
   const extensionBundleId = `${appBundleId}.${extensionName}`;
   const appGroup = `group.${appBundleId}.reteno-local-storage`;

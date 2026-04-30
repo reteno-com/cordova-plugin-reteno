@@ -12,7 +12,7 @@ Notes:
 
 | Method | Supported platform | Description |
 | --- | --- | --- |
-| [init](../www/cordova-plugin-reteno.js) | iOS, Android | Initializes Reteno SDK. Accepts optional `RetenoInitializeOptions` with `accessKey`, `pauseInAppMessages`, `pausePushInAppMessages`, `inAppMessagesPauseBehaviour` (iOS), `lifecycleTrackingOptions`, `isAutomaticScreenReportingEnabled` (iOS; see note below) and `isDebugMode`. [Types](../types/index.ts) |
+| [init](../www/cordova-plugin-reteno.js) | iOS, Android | Initializes Reteno SDK. Accepts optional `RetenoInitializeOptions` with `accessKey`, `pauseInAppMessages`, `pausePushInAppMessages`, `inAppMessagesPauseBehaviour` (iOS), `lifecycleTrackingOptions`, `sessionDurationMillis` / `sessionDurationSeconds` (Android 2.9.3+), `isAutomaticScreenReportingEnabled` (iOS; see note below) and `isDebugMode`. [Types](../types/index.ts) |
 | [requestNotificationPermission](../www/cordova-plugin-reteno.js) | iOS, Android | Requests push permission (iOS) or `POST_NOTIFICATIONS` (Android 13+). Returns `0` or `1` on Android (`RequestNotificationPermissionResult`) in [types](../types/index.ts). |
 | [setLifecycleTrackingOptions](../www/cordova-plugin-reteno.js) | iOS, Android | Configures automatic tracking for app lifecycle, push subscription, and session events. Android: applies immediately. iOS: supported only before initialization (stored and applied during `init(...)`). [Types](../types/index.ts) |
 
@@ -99,6 +99,7 @@ RetenoPlugin.init()
 // pausePushInAppMessages: pauses in-app messages triggered by push notifications.
 // inAppMessagesPauseBehaviour: (iOS) defines handling while paused: 'SKIP_IN_APPS' or 'POSTPONE_IN_APPS'.
 // lifecycleTrackingOptions: configures app lifecycle, push subscription, and session event tracking ('ALL', 'NONE', or an object).
+// sessionDurationMillis/sessionDurationSeconds (Android 2.9.3+): optional session reset duration.
 // isAutomaticScreenReportingEnabled: enables automatic native screen view tracking on iOS.
 //   Keep this false in Cordova/Ionic WebView apps (including Android demos).
 //   Defaults to false. Note: in Cordova/Ionic apps the UI runs inside a single WebView,
@@ -115,10 +116,13 @@ RetenoPlugin.init({
   inAppMessagesPauseBehaviour: 'SKIP_IN_APPS', // iOS
   isAutomaticScreenReportingEnabled: false, // keep false for hybrid/WebView apps
   isDebugMode: true, // enables debug mode
+  sessionDurationSeconds: 30 * 60, // Android 2.9.3+: 30 minutes
   lifecycleTrackingOptions: {
     appLifecycleEnabled: true,
+    foregroundLifecycleEnabled: false,
     pushSubscriptionEnabled: true,
-    sessionEventsEnabled: false,
+    sessionStartEventsEnabled: true,
+    sessionEndEventsEnabled: false, // Android 2.9.3 default
   },
 })
   .then(() => console.log('init: OK'))
@@ -129,6 +133,8 @@ RetenoPlugin.init({
 // Shorthand lifecycle tracking values:
 RetenoPlugin.init({ lifecycleTrackingOptions: 'ALL' });
 RetenoPlugin.init({ lifecycleTrackingOptions: 'NONE' });
+// Legacy alias (deprecated): sessionEventsEnabled controls both start/end at once.
+RetenoPlugin.init({ lifecycleTrackingOptions: { sessionEventsEnabled: false } });
 ```
 
 ### setUserAttributes payload example
@@ -236,9 +242,11 @@ RetenoPlugin.setMultiAccountUserAttributes(
 // Unspecified fields default to true.
 // Android: applies immediately.
 // iOS: this works only BEFORE SDK initialization (before calling init()).
+// Deprecated: sessionEventsEnabled (if used) toggles both sessionStart and sessionEnd.
 RetenoPlugin.setLifecycleTrackingOptions(
   {
-    sessionEventsEnabled: true,
+    sessionStartEventsEnabled: true,
+    sessionEndEventsEnabled: true,
   }
 )
   .then(() => console.log('setLifecycleTrackingOptions: OK'))
@@ -485,7 +493,7 @@ Subscribe to push received events while the app is running.
 
 Notes:
 
-- On Android this is based on the SDK 2.9.2 `EventListener` / `Procedure` API (`RetenoNotifications.getReceived()`).
+- On Android this is based on the SDK 2.9.3 `EventListener` / `Procedure` API (`RetenoNotifications.getReceived()`).
 - This listener is not a replacement for `getInitialNotification()` (cold start): if the app was launched by tapping a notification, use `getInitialNotification()`.
 
 ```js

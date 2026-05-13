@@ -339,6 +339,42 @@ function ensureFirebaseMessagingPod(podfilePath, appName) {
 }
 
 /**
+ * Ensures the main app target's Reteno pod version matches retenoVersion.
+ * Updates in place if already present with a different version.
+ */
+function ensureMainRetenaoPodVersion(podfilePath, appName, retenoVersion) {
+  const current = readFileIfExists(podfilePath);
+  if (!current) return false;
+
+  const hostTargetName = getHostTargetName(current, appName, [
+    'NotificationServiceExtension',
+    'NotificationContentExtension'
+  ]);
+  const hostBlocks = findTargetBlocks(current, hostTargetName);
+  if (hostBlocks.length === 0) return false;
+
+  const hostBlock = hostBlocks[0];
+  const lines = current.split('\n');
+  const hostLines = lines.slice(hostBlock.startLine, hostBlock.endLine + 1);
+
+  const podLineIdx = hostLines.findIndex(l => /pod 'Reteno'/.test(l));
+  if (podLineIdx === -1) return false;
+
+  const expected = `pod 'Reteno', '${retenoVersion}'`;
+  if (hostLines[podLineIdx].includes(expected)) return false;
+
+  lines[hostBlock.startLine + podLineIdx] = lines[hostBlock.startLine + podLineIdx].replace(
+    /pod 'Reteno',\s*'[^']*'/,
+    expected
+  );
+  const next = lines.join('\n');
+  if (next === current) return false;
+
+  fs.writeFileSync(podfilePath, next, 'utf8');
+  return true;
+}
+
+/**
  * Adds a pod target for the Notification Content Extension.
  * Uses a greedy match so it inserts BEFORE the outer closing `end` of the main
  * app target (not inside a previously-added nested NSE target block).
@@ -1232,6 +1268,7 @@ final class NotificationViewController: RetenoCarouselNotificationViewController
   ensureGoogleServiceInfoFileReferencePath(projectPath, appName);
 
   let podfileChanged = false;
+  podfileChanged = ensureMainRetenaoPodVersion(podfilePath, appName, retenoVersion) || podfileChanged;
   podfileChanged = ensureExtensionPodTarget(podfilePath, appName, extensionName, retenoVersion, iosDeploymentTarget) || podfileChanged;
   podfileChanged = ensureContentExtensionPodTarget(podfilePath, appName, contentExtensionName, retenoVersion) || podfileChanged;
   const tokenMode = getConfigXmlPreference(appRoot, 'IOS_DEVICE_TOKEN_HANDLING_MODE');

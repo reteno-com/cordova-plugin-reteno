@@ -86,4 +86,13 @@ describe('cordova-plugin-reteno inbox', () => {
       expect(call[1]).toBe(error);
     });
   });
+
+  describe('unsubscribeMessagesCountChanged()', () => {
+    it('should call exec', async () => {
+      const mockExec = require('cordova/exec');
+      await plugin.unsubscribeMessagesCountChanged();
+      const call = mockExec.mock.calls.find((c) => c[3] === 'unsubscribeMessagesCountChanged');
+      expect(call).toBeTruthy();
+    });
+  });
 });

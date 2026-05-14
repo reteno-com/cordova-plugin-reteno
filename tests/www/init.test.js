@@ -44,6 +44,65 @@ describe('cordova-plugin-reteno init', () => {
       );
     });
 
+    it('should pass sessionDurationSeconds to exec', async () => {
+      const mockExec = require('cordova/exec');
+      await plugin.init({ sessionDurationSeconds: 120 });
+      const initArgs = mockExec.mock.calls.find((c) => c[3] === 'initialize');
+      expect(initArgs[4][0]).toEqual(expect.objectContaining({ sessionDurationSeconds: 120 }));
+    });
+
+    it('should pass lifecycleTrackingOptions with new fields to exec', async () => {
+      const mockExec = require('cordova/exec');
+      await plugin.init({
+        lifecycleTrackingOptions: {
+          appLifecycleEnabled: true,
+          foregroundLifecycleEnabled: true,
+          pushSubscriptionEnabled: false,
+          sessionStartEventsEnabled: true,
+          sessionEndEventsEnabled: false,
+        },
+      });
+      const initArgs = mockExec.mock.calls.find((c) => c[3] === 'initialize');
+      expect(initArgs[4][0]).toEqual(
+        expect.objectContaining({
+          lifecycleTrackingOptions: expect.objectContaining({
+            foregroundLifecycleEnabled: true,
+            sessionStartEventsEnabled: true,
+            sessionEndEventsEnabled: false,
+          }),
+        })
+      );
+    });
+
+    it('should pass lifecycleTrackingOptions "ALL" string to exec', async () => {
+      const mockExec = require('cordova/exec');
+      await plugin.init({ lifecycleTrackingOptions: 'ALL' });
+      const initArgs = mockExec.mock.calls.find((c) => c[3] === 'initialize');
+      expect(initArgs[4][0]).toEqual(
+        expect.objectContaining({ lifecycleTrackingOptions: 'ALL' })
+      );
+    });
+
+    it('should pass lifecycleTrackingOptions "NONE" string to exec', async () => {
+      const mockExec = require('cordova/exec');
+      await plugin.init({ lifecycleTrackingOptions: 'NONE' });
+      const initArgs = mockExec.mock.calls.find((c) => c[3] === 'initialize');
+      expect(initArgs[4][0]).toEqual(
+        expect.objectContaining({ lifecycleTrackingOptions: 'NONE' })
+      );
+    });
+
+    it('should pass backward-compat sessionEventsEnabled in lifecycleTrackingOptions to exec', async () => {
+      const mockExec = require('cordova/exec');
+      await plugin.init({ lifecycleTrackingOptions: { sessionEventsEnabled: false } });
+      const initArgs = mockExec.mock.calls.find((c) => c[3] === 'initialize');
+      expect(initArgs[4][0]).toEqual(
+        expect.objectContaining({
+          lifecycleTrackingOptions: expect.objectContaining({ sessionEventsEnabled: false }),
+        })
+      );
+    });
+
     it('should be idempotent', async () => {
       const mockExec = require('cordova/exec');
       await plugin.init();
@@ -91,6 +150,18 @@ describe('cordova-plugin-reteno init', () => {
       const result = await freshPlugin.logEvent({ eventName: 'e2' });
       expect(result).toBe(1);
     });
+
+    it('should invoke error callback when init fails', async () => {
+      const freshPlugin = requireFreshPlugin();
+      const mockExec = require('cordova/exec');
+      mockExec.mockImplementation((_success, error, _plugin, action) => {
+        if (action === 'initialize' && typeof error === 'function') error('init-fail');
+      });
+
+      const errorCb = jest.fn();
+      await expect(freshPlugin.init({}, null, errorCb)).rejects.toBe('init-fail');
+      expect(errorCb).toHaveBeenCalledWith('init-fail');
+    });
   });
 
   describe('getInitialNotification()', () => {
@@ -101,6 +172,25 @@ describe('cordova-plugin-reteno init', () => {
       expect(initCalls).toHaveLength(0);
       const call = require('cordova/exec').mock.calls.find((c) => c[3] === 'getInitialNotification');
       expect(call).toBeTruthy();
+    });
+
+    it('should invoke success callback when exec resolves', async () => {
+      const freshPlugin = requireFreshPlugin();
+      const successCb = jest.fn();
+      await freshPlugin.getInitialNotification(null, successCb);
+      expect(successCb).toHaveBeenCalledWith(1);
+    });
+
+    it('should invoke error callback when exec rejects', async () => {
+      const freshPlugin = requireFreshPlugin();
+      const mockExec = require('cordova/exec');
+      mockExec.mockImplementation((_success, error, _plugin, action) => {
+        if (action === 'getInitialNotification' && typeof error === 'function') error('no-notification');
+      });
+
+      const errorCb = jest.fn();
+      await expect(freshPlugin.getInitialNotification(null, null, errorCb)).rejects.toBe('no-notification');
+      expect(errorCb).toHaveBeenCalledWith('no-notification');
     });
   });
 });

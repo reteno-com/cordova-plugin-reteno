@@ -28,6 +28,26 @@ describe('cordova-plugin-reteno notifications', () => {
       expect(call).toBeTruthy();
       expect(call[4][0]).toEqual(['badge', 'sound']);
     });
+
+    it('should forward object payload with presentationOptions and emitEvent', async () => {
+      const mockExec = require('cordova/exec');
+      const payload = {
+        presentationOptions: ['badge', 'banner'],
+        emitEvent: true,
+      };
+      await plugin.setWillPresentNotificationOptions(payload);
+      const call = mockExec.mock.calls.find((c) => c[3] === 'setWillPresentNotificationOptions');
+      expect(call).toBeTruthy();
+      expect(call[4][0]).toEqual(payload);
+    });
+
+    it('should forward null payload to clear native handler', async () => {
+      const mockExec = require('cordova/exec');
+      await plugin.setWillPresentNotificationOptions(null);
+      const call = mockExec.mock.calls.find((c) => c[3] === 'setWillPresentNotificationOptions');
+      expect(call).toBeTruthy();
+      expect(call[4][0]).toBeNull();
+    });
   });
 
   describe('setDidReceiveNotificationResponseHandler()', () => {
@@ -40,6 +60,22 @@ describe('cordova-plugin-reteno notifications', () => {
       const call = mockExec.mock.calls.find((c) => c[3] === 'setDidReceiveNotificationResponseHandler');
       expect(call).toBeTruthy();
     });
+
+    it('should forward boolean payload', async () => {
+      const mockExec = require('cordova/exec');
+      await plugin.setDidReceiveNotificationResponseHandler(true);
+      const call = mockExec.mock.calls.find((c) => c[3] === 'setDidReceiveNotificationResponseHandler');
+      expect(call).toBeTruthy();
+      expect(call[4][0]).toBe(true);
+    });
+
+    it('should forward null payload to clear native handler', async () => {
+      const mockExec = require('cordova/exec');
+      await plugin.setDidReceiveNotificationResponseHandler(null);
+      const call = mockExec.mock.calls.find((c) => c[3] === 'setDidReceiveNotificationResponseHandler');
+      expect(call).toBeTruthy();
+      expect(call[4][0]).toBeNull();
+    });
   });
 
   describe('setNotificationActionHandler()', () => {
@@ -51,6 +87,22 @@ describe('cordova-plugin-reteno notifications', () => {
       });
       const call = mockExec.mock.calls.find((c) => c[3] === 'setNotificationActionHandler');
       expect(call).toBeTruthy();
+    });
+
+    it('should forward boolean payload', async () => {
+      const mockExec = require('cordova/exec');
+      await plugin.setNotificationActionHandler(false);
+      const call = mockExec.mock.calls.find((c) => c[3] === 'setNotificationActionHandler');
+      expect(call).toBeTruthy();
+      expect(call[4][0]).toBe(false);
+    });
+
+    it('should forward null payload to clear native handler', async () => {
+      const mockExec = require('cordova/exec');
+      await plugin.setNotificationActionHandler(null);
+      const call = mockExec.mock.calls.find((c) => c[3] === 'setNotificationActionHandler');
+      expect(call).toBeTruthy();
+      expect(call[4][0]).toBeNull();
     });
   });
 
@@ -147,6 +199,51 @@ describe('cordova-plugin-reteno notifications', () => {
       expect(call).toBeTruthy();
     });
 
+    it('should forward foregroundLifecycleEnabled on Android', async () => {
+      const mockExec = require('cordova/exec');
+      await plugin.setLifecycleTrackingOptions({ foregroundLifecycleEnabled: true });
+      const call = mockExec.mock.calls.find((c) => c[3] === 'setLifecycleTrackingOptions');
+      expect(call).toBeTruthy();
+      expect(call[4][0]).toEqual(expect.objectContaining({ foregroundLifecycleEnabled: true }));
+    });
+
+    it('should forward sessionStartEventsEnabled and sessionEndEventsEnabled on Android', async () => {
+      const mockExec = require('cordova/exec');
+      await plugin.setLifecycleTrackingOptions({
+        sessionStartEventsEnabled: true,
+        sessionEndEventsEnabled: false,
+      });
+      const call = mockExec.mock.calls.find((c) => c[3] === 'setLifecycleTrackingOptions');
+      expect(call).toBeTruthy();
+      expect(call[4][0]).toEqual(
+        expect.objectContaining({ sessionStartEventsEnabled: true, sessionEndEventsEnabled: false })
+      );
+    });
+
+    it('should forward backward-compat sessionEventsEnabled on Android', async () => {
+      const mockExec = require('cordova/exec');
+      await plugin.setLifecycleTrackingOptions({ sessionEventsEnabled: false });
+      const call = mockExec.mock.calls.find((c) => c[3] === 'setLifecycleTrackingOptions');
+      expect(call).toBeTruthy();
+      expect(call[4][0]).toEqual(expect.objectContaining({ sessionEventsEnabled: false }));
+    });
+
+    it('should accept "ALL" string shortcut on Android', async () => {
+      const mockExec = require('cordova/exec');
+      await plugin.setLifecycleTrackingOptions('ALL');
+      const call = mockExec.mock.calls.find((c) => c[3] === 'setLifecycleTrackingOptions');
+      expect(call).toBeTruthy();
+      expect(call[4][0]).toBe('ALL');
+    });
+
+    it('should accept "NONE" string shortcut on Android', async () => {
+      const mockExec = require('cordova/exec');
+      await plugin.setLifecycleTrackingOptions('NONE');
+      const call = mockExec.mock.calls.find((c) => c[3] === 'setLifecycleTrackingOptions');
+      expect(call).toBeTruthy();
+      expect(call[4][0]).toBe('NONE');
+    });
+
     it('should store pending options on iOS before init', async () => {
       global.cordova = { platformId: 'ios' };
       const iosPlugin = requireFreshPlugin();
@@ -155,6 +252,15 @@ describe('cordova-plugin-reteno notifications', () => {
         appLifecycleEnabled: true,
       });
       expect(result).toBe(1);
+    });
+
+    it('should invoke success callback on iOS before init', async () => {
+      global.cordova = { platformId: 'ios' };
+      const iosPlugin = requireFreshPlugin();
+      global.cordova = { platformId: 'ios' };
+      const successCb = jest.fn();
+      await iosPlugin.setLifecycleTrackingOptions({ appLifecycleEnabled: true }, successCb);
+      expect(successCb).toHaveBeenCalledWith(1);
     });
 
     it('should reject on iOS after init', async () => {
@@ -167,6 +273,19 @@ describe('cordova-plugin-reteno notifications', () => {
           appLifecycleEnabled: true,
         })
       ).rejects.toThrow('iOS supports lifecycleTrackingOptions only during init');
+    });
+
+    it('should invoke error callback on iOS after init', async () => {
+      global.cordova = { platformId: 'ios' };
+      const iosPlugin = requireFreshPlugin();
+      global.cordova = { platformId: 'ios' };
+      await iosPlugin.init();
+
+      const errorCb = jest.fn();
+      await expect(
+        iosPlugin.setLifecycleTrackingOptions({ appLifecycleEnabled: true }, null, errorCb)
+      ).rejects.toThrow('iOS supports lifecycleTrackingOptions only during init');
+      expect(errorCb).toHaveBeenCalled();
     });
   });
 });

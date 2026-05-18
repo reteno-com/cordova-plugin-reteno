@@ -60,7 +60,7 @@ RetenoPlugin
   });
 ```
 
-For Android SDK `2.9.3+`, you can also configure session duration and split session lifecycle flags during init:
+For Android SDK `2.9.4+`, you can also configure session duration and split session lifecycle flags during init:
 
 ```js
 RetenoPlugin.init({
@@ -68,7 +68,7 @@ RetenoPlugin.init({
   sessionDurationSeconds: 30 * 60,
   lifecycleTrackingOptions: {
     appLifecycleEnabled: true,
-    // ApplicationForgrounded/ApplicationBackgrounded events (disabled by default in 2.9.3)
+    // ApplicationForgrounded/ApplicationBackgrounded events (disabled by default in 2.9.4)
     foregroundLifecycleEnabled: false,
     pushSubscriptionEnabled: true,
     // SessionStart/SessionEnd can now be managed separately
@@ -86,7 +86,7 @@ If you need advanced Reteno configuration (custom `RetenoConfig`, custom device 
 
 ## Push notification listeners
 
-The plugin uses the listener-based API (`EventListener` / `Procedure`, Android SDK `2.9.3`) for all push events.
+The plugin uses the listener-based API (`EventListener` / `Procedure`, Android SDK `2.9.4`) for all push events.
 
 - `setOnRetenoPushDismissedListener(listener)` — called when a push notification is dismissed (swiped away).
 - `setOnRetenoCustomPushReceivedListener(listener)` — called when a custom push notification is received.

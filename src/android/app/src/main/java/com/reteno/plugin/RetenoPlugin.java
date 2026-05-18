@@ -608,7 +608,7 @@ public class RetenoPlugin extends CordovaPlugin {
   }
 
   /**
-   * Register notification event listeners using the SDK 2.9.2 EventListener API.
+   * Register notification event listeners using the SDK 2.9.4 EventListener API.
    * Each listener is a direct {@link Procedure} implementation — no reflection needed.
    */
   private void registerNotificationListeners() {
@@ -1181,7 +1181,7 @@ public class RetenoPlugin extends CordovaPlugin {
         ? payload.optBoolean("sessionStartEventsEnabled", legacySessionEventsEnabled)
         : legacySessionEventsEnabled;
 
-      // SDK 2.9.3 default for session end is disabled unless explicitly enabled.
+      // SDK 2.9.4 default for session end is disabled unless explicitly enabled.
       boolean sessionEndEventsEnabled = payload.has("sessionEndEventsEnabled")
         ? payload.optBoolean("sessionEndEventsEnabled", false)
         : (payload.has("sessionEventsEnabled") ? legacySessionEventsEnabled : false);

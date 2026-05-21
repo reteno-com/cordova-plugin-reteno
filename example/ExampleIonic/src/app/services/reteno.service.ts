@@ -35,6 +35,7 @@ declare global {
 @Injectable({ providedIn: 'root' })
 export class RetenoService {
   private readonly reteno = inject(AwesomeCordovaPluginReteno);
+  private static readonly initOptionsStorageKey = 'retenoIonicDemoInitOptions';
 
   private initialized = false;
   private initPromise: Promise<unknown> | null = null;
@@ -56,6 +57,10 @@ export class RetenoService {
       ...RetenoService.defaultLifecycleTrackingOptions,
     },
   };
+
+  constructor() {
+    this.restoreInitOptionsFromStorage();
+  }
 
   isAvailable(): boolean {
     return !!window.RetenoPlugin;
@@ -119,10 +124,30 @@ export class RetenoService {
             : (legacySessionEventsEnabled != null ? legacySessionEventsEnabled : current.sessionEndEventsEnabled),
       };
     }
+    this.persistInitOptions();
   }
 
   getInitOptions(): RetenoInitializeOptions {
     return { ...this.initOptions };
+  }
+
+  getLifecycleTrackingOptions(): LifecycleTrackingOptions {
+    const lto = this.initOptions.lifecycleTrackingOptions as {
+      appLifecycleEnabled?: boolean | null;
+      foregroundLifecycleEnabled?: boolean | null;
+      pushSubscriptionEnabled?: boolean | null;
+      sessionStartEventsEnabled?: boolean | null;
+      sessionEndEventsEnabled?: boolean | null;
+      sessionEventsEnabled?: boolean | null;
+    } | undefined;
+
+    return {
+      appLifecycleEnabled: lto?.appLifecycleEnabled ?? true,
+      foregroundLifecycleEnabled: lto?.foregroundLifecycleEnabled ?? false,
+      pushSubscriptionEnabled: lto?.pushSubscriptionEnabled ?? true,
+      sessionStartEventsEnabled: lto?.sessionStartEventsEnabled ?? (lto?.sessionEventsEnabled ?? true),
+      sessionEndEventsEnabled: lto?.sessionEndEventsEnabled ?? (lto?.sessionEventsEnabled ?? false),
+    };
   }
 
   getPageState<T extends PageUiState>(pageKey: string, defaults: T): T {
@@ -216,7 +241,51 @@ export class RetenoService {
   }
 
   setLifecycleTrackingOptions(options: LifecycleTrackingOptions): Promise<any> {
+    if (options === 'ALL') {
+      this.setInitOptions({
+        lifecycleTrackingOptions: {
+          appLifecycleEnabled: true,
+          foregroundLifecycleEnabled: true,
+          pushSubscriptionEnabled: true,
+          sessionStartEventsEnabled: true,
+          sessionEndEventsEnabled: true,
+        },
+      });
+    } else if (options === 'NONE') {
+      this.setInitOptions({
+        lifecycleTrackingOptions: {
+          appLifecycleEnabled: false,
+          foregroundLifecycleEnabled: false,
+          pushSubscriptionEnabled: false,
+          sessionStartEventsEnabled: false,
+          sessionEndEventsEnabled: false,
+        },
+      });
+    } else if (options && typeof options === 'object') {
+      this.setInitOptions({ lifecycleTrackingOptions: options });
+    }
+
     return this.withInit(() => this.reteno.setLifecycleTrackingOptions(options));
+  }
+
+  private restoreInitOptionsFromStorage(): void {
+    try {
+      const raw = localStorage.getItem(RetenoService.initOptionsStorageKey);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as Partial<RetenoInitializeOptions>;
+      if (!parsed || typeof parsed !== 'object') return;
+      this.setInitOptions(parsed);
+    } catch {
+      // Ignore malformed saved data.
+    }
+  }
+
+  private persistInitOptions(): void {
+    try {
+      localStorage.setItem(RetenoService.initOptionsStorageKey, JSON.stringify(this.initOptions));
+    } catch {
+      // Ignore storage failures.
+    }
   }
 
   logScreenView(screenName: string): Promise<any> {

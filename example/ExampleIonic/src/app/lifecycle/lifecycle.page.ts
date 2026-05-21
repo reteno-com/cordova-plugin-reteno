@@ -25,6 +25,10 @@ export class LifecyclePage {
     sessionEndEventsEnabled: this.formBuilder.control<boolean>(false),
   });
 
+  constructor() {
+    this.syncFormFromSavedOptions();
+  }
+
   // Screen view is tracked globally in AppComponent.
 
   save() {
@@ -41,6 +45,8 @@ export class LifecyclePage {
       sessionStartEventsEnabled: !!v.sessionStartEventsEnabled,
       sessionEndEventsEnabled: !!v.sessionEndEventsEnabled,
     };
+
+    this.reteno.setInitOptions({ lifecycleTrackingOptions: options });
 
     this.status = 'Saving…';
     this.reteno
@@ -62,6 +68,15 @@ export class LifecyclePage {
     }
 
     this.status = 'Saving…';
+    this.reteno.setInitOptions({
+      lifecycleTrackingOptions: {
+        appLifecycleEnabled: true,
+        foregroundLifecycleEnabled: true,
+        pushSubscriptionEnabled: true,
+        sessionStartEventsEnabled: true,
+        sessionEndEventsEnabled: true,
+      },
+    });
     this.reteno
       .setLifecycleTrackingOptions('ALL')
       .then(() => {
@@ -88,6 +103,15 @@ export class LifecyclePage {
     }
 
     this.status = 'Saving…';
+    this.reteno.setInitOptions({
+      lifecycleTrackingOptions: {
+        appLifecycleEnabled: false,
+        foregroundLifecycleEnabled: false,
+        pushSubscriptionEnabled: false,
+        sessionStartEventsEnabled: false,
+        sessionEndEventsEnabled: false,
+      },
+    });
     this.reteno
       .setLifecycleTrackingOptions('NONE')
       .then(() => {
@@ -105,5 +129,23 @@ export class LifecyclePage {
         // eslint-disable-next-line no-console
         console.error('setLifecycleTrackingOptions: ERROR', err);
       });
+  }
+
+  private syncFormFromSavedOptions(): void {
+    const lto = this.reteno.getLifecycleTrackingOptions() as {
+      appLifecycleEnabled?: boolean;
+      foregroundLifecycleEnabled?: boolean;
+      pushSubscriptionEnabled?: boolean;
+      sessionStartEventsEnabled?: boolean;
+      sessionEndEventsEnabled?: boolean;
+    };
+
+    this.form.patchValue({
+      appLifecycleEnabled: !!lto.appLifecycleEnabled,
+      foregroundLifecycleEnabled: !!lto.foregroundLifecycleEnabled,
+      pushSubscriptionEnabled: !!lto.pushSubscriptionEnabled,
+      sessionStartEventsEnabled: !!lto.sessionStartEventsEnabled,
+      sessionEndEventsEnabled: !!lto.sessionEndEventsEnabled,
+    });
   }
 }

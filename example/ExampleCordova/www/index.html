@@ -48,6 +48,7 @@
 
                 <div id="retenoInitOptions" class="reteno-form" aria-label="Reteno init options">
                     <h2>Reteno: init options</h2>
+                    <p id="retenoInitOptionsHint" style="display:none;margin:0 0 8px;font-size:0.85em;color:#b45309;">Saved — changes take effect on next app restart</p>
 
                     <label class="toggle-row">
                         <span class="toggle-label">pauseInAppMessages</span>
@@ -72,10 +73,29 @@
                             <span>pushSubscriptionEnabled</span>
                         </label>
                         <label class="checkbox-row">
-                            <input id="retenoInitLifecycleSession" type="checkbox" checked>
-                            <span>sessionEventsEnabled</span>
+                            <input id="retenoInitLifecycleForeground" type="checkbox">
+                            <span>foregroundLifecycleEnabled</span>
+                        </label>
+                        <label class="checkbox-row">
+                            <input id="retenoInitLifecycleSessionStart" type="checkbox" checked>
+                            <span>sessionStartEventsEnabled</span>
+                        </label>
+                        <label class="checkbox-row">
+                            <input id="retenoInitLifecycleSessionEnd" type="checkbox">
+                            <span>sessionEndEventsEnabled</span>
                         </label>
                     </div>
+
+                    <label class="reteno-label" for="retenoInitSessionDurationSeconds">sessionDurationSeconds</label>
+                    <input
+                        id="retenoInitSessionDurationSeconds"
+                        class="reteno-input"
+                        type="number"
+                        min="1"
+                        step="1"
+                        value="1800"
+                        autocomplete="off"
+                    />
 
                     <div id="retenoInitScreenReportingRow" class="reteno-section">
                         <label class="toggle-row">
@@ -286,8 +306,16 @@
                             <span>Push subscription events</span>
                         </label>
                         <label class="checkbox-row">
-                            <input id="retenoLifecycleSession" type="checkbox" checked>
-                            <span>Session events</span>
+                            <input id="retenoLifecycleForeground" type="checkbox">
+                            <span>Foreground lifecycle events</span>
+                        </label>
+                        <label class="checkbox-row">
+                            <input id="retenoLifecycleSessionStart" type="checkbox" checked>
+                            <span>Session start events</span>
+                        </label>
+                        <label class="checkbox-row">
+                            <input id="retenoLifecycleSessionEnd" type="checkbox">
+                            <span>Session end events</span>
                         </label>
                     </div>
 

@@ -156,7 +156,10 @@ function onDeviceReady() {
     var initPausePushInAppEl = document.getElementById('retenoInitPausePushInAppMessages');
     var initLifecycleAppEl = document.getElementById('retenoInitLifecycleApp');
     var initLifecyclePushEl = document.getElementById('retenoInitLifecyclePush');
-    var initLifecycleSessionEl = document.getElementById('retenoInitLifecycleSession');
+    var initLifecycleForegroundEl = document.getElementById('retenoInitLifecycleForeground');
+    var initLifecycleSessionStartEl = document.getElementById('retenoInitLifecycleSessionStart');
+    var initLifecycleSessionEndEl = document.getElementById('retenoInitLifecycleSessionEnd');
+    var initSessionDurationSecondsEl = document.getElementById('retenoInitSessionDurationSeconds');
     var initScreenReportingEl = document.getElementById('retenoInitScreenReporting');
     var initScreenReportingRowEl = document.getElementById('retenoInitScreenReportingRow');
 
@@ -188,7 +191,9 @@ function onDeviceReady() {
 
     var lifecycleAppEl = document.getElementById('retenoLifecycleApp');
     var lifecyclePushEl = document.getElementById('retenoLifecyclePush');
-    var lifecycleSessionEl = document.getElementById('retenoLifecycleSession');
+    var lifecycleForegroundEl = document.getElementById('retenoLifecycleForeground');
+    var lifecycleSessionStartEl = document.getElementById('retenoLifecycleSessionStart');
+    var lifecycleSessionEndEl = document.getElementById('retenoLifecycleSessionEnd');
     var notificationNameEl = document.getElementById('retenoNotificationName');
     var notificationDescriptionEl = document.getElementById('retenoNotificationDescription');
     var iosNotificationHandlersEl = document.getElementById('retenoIosNotificationHandlers');
@@ -249,10 +254,10 @@ function onDeviceReady() {
     if (eventParamValueEl && !String(eventParamValueEl.value || '').trim()) eventParamValueEl.value = 'A-123';
     if (lifecycleAppEl && !lifecycleAppEl.checked) lifecycleAppEl.checked = true;
     if (lifecyclePushEl && !lifecyclePushEl.checked) lifecyclePushEl.checked = true;
-    if (lifecycleSessionEl && !lifecycleSessionEl.checked) lifecycleSessionEl.checked = true;
+    if (lifecycleSessionStartEl && !lifecycleSessionStartEl.checked) lifecycleSessionStartEl.checked = true;
     if (initLifecycleAppEl && !initLifecycleAppEl.checked) initLifecycleAppEl.checked = true;
     if (initLifecyclePushEl && !initLifecyclePushEl.checked) initLifecyclePushEl.checked = true;
-    if (initLifecycleSessionEl && !initLifecycleSessionEl.checked) initLifecycleSessionEl.checked = true;
+    if (initLifecycleSessionStartEl && !initLifecycleSessionStartEl.checked) initLifecycleSessionStartEl.checked = true;
     if (initScreenReportingEl && initScreenReportingEl.checked) initScreenReportingEl.checked = false;
     if (initPauseInAppEl && initPauseInAppEl.checked) initPauseInAppEl.checked = false;
     if (initPausePushInAppEl && initPausePushInAppEl.checked) initPausePushInAppEl.checked = false;
@@ -275,6 +280,69 @@ function onDeviceReady() {
     }
     if (inboxPageEl && !String(inboxPageEl.value || '').trim()) inboxPageEl.value = '1';
     if (inboxPageSizeEl && !String(inboxPageSizeEl.value || '').trim()) inboxPageSizeEl.value = '20';
+    var initOptionsStorageKey = 'retenoDemoInitOptions';
+
+    function readPersistedInitOptions() {
+        try {
+            var raw = localStorage.getItem(initOptionsStorageKey);
+            if (!raw) return null;
+            var parsed = JSON.parse(raw);
+            return parsed && typeof parsed === 'object' ? parsed : null;
+        } catch (err) {
+            return null;
+        }
+    }
+
+    function writePersistedInitOptions() {
+        try {
+            var options = buildInitOptions();
+            localStorage.setItem(initOptionsStorageKey, JSON.stringify(options));
+        } catch (err) {}
+    }
+
+    function applyPersistedInitOptions(options) {
+        if (!options || typeof options !== 'object') return;
+        if (typeof options.sessionDurationSeconds === 'number' && options.sessionDurationSeconds > 0 && initSessionDurationSecondsEl) {
+            initSessionDurationSecondsEl.value = String(Math.floor(options.sessionDurationSeconds));
+        }
+        if (typeof options.pauseInAppMessages === 'boolean' && initPauseInAppEl) {
+            initPauseInAppEl.checked = options.pauseInAppMessages;
+        }
+        if (typeof options.pausePushInAppMessages === 'boolean' && initPausePushInAppEl) {
+            initPausePushInAppEl.checked = options.pausePushInAppMessages;
+        }
+        if (options.lifecycleTrackingOptions && typeof options.lifecycleTrackingOptions === 'object') {
+            var lto = options.lifecycleTrackingOptions;
+            if (typeof lto.appLifecycleEnabled === 'boolean' && initLifecycleAppEl) initLifecycleAppEl.checked = lto.appLifecycleEnabled;
+            if (typeof lto.foregroundLifecycleEnabled === 'boolean' && initLifecycleForegroundEl) initLifecycleForegroundEl.checked = lto.foregroundLifecycleEnabled;
+            if (typeof lto.pushSubscriptionEnabled === 'boolean' && initLifecyclePushEl) initLifecyclePushEl.checked = lto.pushSubscriptionEnabled;
+            if (typeof lto.sessionStartEventsEnabled === 'boolean' && initLifecycleSessionStartEl) {
+                initLifecycleSessionStartEl.checked = lto.sessionStartEventsEnabled;
+            }
+            if (typeof lto.sessionEndEventsEnabled === 'boolean' && initLifecycleSessionEndEl) {
+                initLifecycleSessionEndEl.checked = lto.sessionEndEventsEnabled;
+            }
+        }
+    }
+
+    applyPersistedInitOptions(readPersistedInitOptions());
+
+    [
+        initPauseInAppEl,
+        initPausePushInAppEl,
+        initLifecycleAppEl,
+        initLifecycleForegroundEl,
+        initLifecyclePushEl,
+        initLifecycleSessionStartEl,
+        initLifecycleSessionEndEl,
+        initSessionDurationSecondsEl,
+    ].forEach(function (el) {
+        if (!el) return;
+        el.addEventListener('change', writePersistedInitOptions);
+        el.addEventListener('input', writePersistedInitOptions);
+    });
+
+    writePersistedInitOptions();
 
     function setStatus(text) {
         if (statusEl) {
@@ -650,16 +718,22 @@ function onDeviceReady() {
 
     function buildInitOptions() {
         var isIos = cordova && cordova.platformId === 'ios';
+        var sessionDurationSeconds = parseInt(initSessionDurationSecondsEl && initSessionDurationSecondsEl.value, 10);
         var options = {
             pauseInAppMessages: !!(initPauseInAppEl && initPauseInAppEl.checked),
             pausePushInAppMessages: !!(initPausePushInAppEl && initPausePushInAppEl.checked),
             // Keep native screen auto-tracking disabled in hybrid demos.
             isAutomaticScreenReportingEnabled: isIos && !!(initScreenReportingEl && initScreenReportingEl.checked),
             isDebugMode: true,
+            sessionDurationSeconds: Number.isFinite(sessionDurationSeconds) && sessionDurationSeconds > 0
+                ? sessionDurationSeconds
+                : 1800,
             lifecycleTrackingOptions: {
                 appLifecycleEnabled: !!(initLifecycleAppEl && initLifecycleAppEl.checked),
+                foregroundLifecycleEnabled: !!(initLifecycleForegroundEl && initLifecycleForegroundEl.checked),
                 pushSubscriptionEnabled: !!(initLifecyclePushEl && initLifecyclePushEl.checked),
-                sessionEventsEnabled: !!(initLifecycleSessionEl && initLifecycleSessionEl.checked),
+                sessionStartEventsEnabled: !!(initLifecycleSessionStartEl && initLifecycleSessionStartEl.checked),
+                sessionEndEventsEnabled: !!(initLifecycleSessionEndEl && initLifecycleSessionEndEl.checked),
             },
         };
 
@@ -682,7 +756,8 @@ function onDeviceReady() {
             .then(function () {
                 demoInitialized = true;
                 initPromise = null;
-                setInitOptionsVisible(false);
+                var hintEl = document.getElementById('retenoInitOptionsHint');
+                if (hintEl) hintEl.style.display = '';
             })
             .catch(function (err) {
                 initPromise = null;
@@ -1082,8 +1157,10 @@ function onDeviceReady() {
 
                 var options = {
                     appLifecycleEnabled: !!(lifecycleAppEl && lifecycleAppEl.checked),
+                    foregroundLifecycleEnabled: !!(lifecycleForegroundEl && lifecycleForegroundEl.checked),
                     pushSubscriptionEnabled: !!(lifecyclePushEl && lifecyclePushEl.checked),
-                    sessionEventsEnabled: !!(lifecycleSessionEl && lifecycleSessionEl.checked),
+                    sessionStartEventsEnabled: !!(lifecycleSessionStartEl && lifecycleSessionStartEl.checked),
+                    sessionEndEventsEnabled: !!(lifecycleSessionEndEl && lifecycleSessionEndEl.checked),
                 };
 
                 setLifecycleStatus('Saving...');
@@ -1121,8 +1198,10 @@ function onDeviceReady() {
                 sdk.setLifecycleTrackingOptions('ALL')
                     .then(function () {
                         if (lifecycleAppEl) lifecycleAppEl.checked = true;
+                        if (lifecycleForegroundEl) lifecycleForegroundEl.checked = true;
                         if (lifecyclePushEl) lifecyclePushEl.checked = true;
-                        if (lifecycleSessionEl) lifecycleSessionEl.checked = true;
+                        if (lifecycleSessionStartEl) lifecycleSessionStartEl.checked = true;
+                        if (lifecycleSessionEndEl) lifecycleSessionEndEl.checked = true;
                         setLifecycleStatus('setLifecycleTrackingOptions: success (ALL)');
                     })
                     .catch(function (err) {
@@ -1155,8 +1234,10 @@ function onDeviceReady() {
                 sdk.setLifecycleTrackingOptions('NONE')
                     .then(function () {
                         if (lifecycleAppEl) lifecycleAppEl.checked = false;
+                        if (lifecycleForegroundEl) lifecycleForegroundEl.checked = false;
                         if (lifecyclePushEl) lifecyclePushEl.checked = false;
-                        if (lifecycleSessionEl) lifecycleSessionEl.checked = false;
+                        if (lifecycleSessionStartEl) lifecycleSessionStartEl.checked = false;
+                        if (lifecycleSessionEndEl) lifecycleSessionEndEl.checked = false;
                         setLifecycleStatus('setLifecycleTrackingOptions: success (NONE)');
                     })
                     .catch(function (err) {

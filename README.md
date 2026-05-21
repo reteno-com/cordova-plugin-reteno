@@ -18,7 +18,7 @@ npm install cordova-plugin-reteno
 - [Cordova iOS SDK Setup](https://docs.reteno.com/reference/cordova-ios-sdk-setup)
 - [Cordova Android SDK Setup](https://docs.reteno.com/reference/cordova-android-sdk-setup)
 - [Ionic iOS SDK Setup](https://docs.reteno.com/reference/ionic-ios-sdk-setup)
-- [Ionic Android SDK Setup](https://docs.reteno.com/reference/ionic-android-sdk-setup)
+- [Ionic Android SDK Setup](https://docs.reteno.com/reference/ionic-ios-sdk-android)
 
 ### Additional
 

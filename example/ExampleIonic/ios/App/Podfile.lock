@@ -13,7 +13,7 @@ PODS:
   - CordovaPlugins (8.0.0):
     - CapacitorCordova
     - FirebaseMessaging
-    - Reteno (= 2.6.2)
+    - Reteno (= 2.7.0)
   - FirebaseCore (12.10.0):
     - FirebaseCoreInternal (~> 12.10.0)
     - GoogleUtilities/Environment (~> 8.1)
@@ -67,7 +67,7 @@ PODS:
   - nanopb/decode (3.30910.0)
   - nanopb/encode (3.30910.0)
   - PromisesObjC (2.4.0)
-  - Reteno (2.6.2)
+  - Reteno (2.7.0)
 
 DEPENDENCIES:
   - "Capacitor (from `../../node_modules/@capacitor/ios`)"
@@ -78,7 +78,7 @@ DEPENDENCIES:
   - "CapacitorStatusBar (from `../../node_modules/@capacitor/status-bar`)"
   - CordovaPlugins (from `../capacitor-cordova-ios-plugins`)
   - FirebaseMessaging
-  - Reteno (= 2.6.2)
+  - Reteno (= 2.7.0)
 
 SPEC REPOS:
   trunk:
@@ -115,7 +115,7 @@ SPEC CHECKSUMS:
   CapacitorHaptics: 2079d9fa04c5a71e18663b4722323c304c58245c
   CapacitorKeyboard: d7868c079a4d5277a3deca27a10a488fcbbb8b69
   CapacitorStatusBar: 312e2e67928dfe9514c4a8916a1fd610552f5f35
-  CordovaPlugins: 0096029f8e0b88d99aaf83dc0aab6d877f80e22a
+  CordovaPlugins: 2980b0497bec3d853fcf2a6e65c27a017bbf1f11
   FirebaseCore: f4428e22415ea3b3eca652c2098413dabf2a23a9
   FirebaseCoreInternal: e7bbaeb00ab73011298f35ed223aa7371e212948
   FirebaseInstallations: 047343aa91fd6a1ebfa3eb374ddecf36a8aaddfd
@@ -124,8 +124,8 @@ SPEC CHECKSUMS:
   GoogleUtilities: 00c88b9a86066ef77f0da2fab05f65d7768ed8e1
   nanopb: fad817b59e0457d11a5dfbde799381cd727c1275
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
-  Reteno: aff92cca380017e7cb0f5fd17d9d44a4873f58a6
+  Reteno: bed7f22c757e1f6a41476de23fd8788507d95e45
 
-PODFILE CHECKSUM: 96ab6f4af3d781e191ba8b144d857cc86520156a
+PODFILE CHECKSUM: 54d44791623ea281acd7886d2e3f6c7a6acdc4c3
 
 COCOAPODS: 1.16.2

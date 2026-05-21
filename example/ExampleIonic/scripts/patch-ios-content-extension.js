@@ -25,7 +25,7 @@ const RETENO_VERSION = (() => {
     const match = content.match(/pod\s+'Reteno',\s+'([^']+)'/);
     if (match) return match[1];
   } catch (e) {}
-  return '2.6.2';
+  return '2.7.0';
 })();
 const IOS_BUNDLE_ID = 'com.reteno.example-app';
 const NCE_BUNDLE_ID = `${IOS_BUNDLE_ID}.${EXTENSION_NAME}`;

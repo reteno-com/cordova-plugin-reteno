@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { AppHeaderComponent } from '../shared/app-header/app-header.component';
 import { IonicModule, Platform } from '@ionic/angular';
@@ -10,7 +10,7 @@ import { RetenoService } from '../services/reteno.service';
   styleUrls: ['lifecycle.page.scss'],
   imports: [IonicModule, ReactiveFormsModule, AppHeaderComponent],
 })
-export class LifecyclePage implements OnInit {
+export class LifecyclePage {
   status: string | null = null;
 
   private readonly formBuilder = inject(FormBuilder);
@@ -19,11 +19,15 @@ export class LifecyclePage implements OnInit {
 
   form = this.formBuilder.group({
     appLifecycleEnabled: this.formBuilder.control<boolean>(true),
+    foregroundLifecycleEnabled: this.formBuilder.control<boolean>(false),
     pushSubscriptionEnabled: this.formBuilder.control<boolean>(true),
-    sessionEventsEnabled: this.formBuilder.control<boolean>(true),
+    sessionStartEventsEnabled: this.formBuilder.control<boolean>(true),
+    sessionEndEventsEnabled: this.formBuilder.control<boolean>(false),
   });
 
-  ngOnInit(): void {}
+  constructor() {
+    this.syncFormFromSavedOptions();
+  }
 
   // Screen view is tracked globally in AppComponent.
 
@@ -36,9 +40,13 @@ export class LifecyclePage implements OnInit {
     const v = this.form.getRawValue();
     const options = {
       appLifecycleEnabled: !!v.appLifecycleEnabled,
+      foregroundLifecycleEnabled: !!v.foregroundLifecycleEnabled,
       pushSubscriptionEnabled: !!v.pushSubscriptionEnabled,
-      sessionEventsEnabled: !!v.sessionEventsEnabled,
+      sessionStartEventsEnabled: !!v.sessionStartEventsEnabled,
+      sessionEndEventsEnabled: !!v.sessionEndEventsEnabled,
     };
+
+    this.reteno.setInitOptions({ lifecycleTrackingOptions: options });
 
     this.status = 'Saving…';
     this.reteno
@@ -60,13 +68,24 @@ export class LifecyclePage implements OnInit {
     }
 
     this.status = 'Saving…';
+    this.reteno.setInitOptions({
+      lifecycleTrackingOptions: {
+        appLifecycleEnabled: true,
+        foregroundLifecycleEnabled: true,
+        pushSubscriptionEnabled: true,
+        sessionStartEventsEnabled: true,
+        sessionEndEventsEnabled: true,
+      },
+    });
     this.reteno
       .setLifecycleTrackingOptions('ALL')
       .then(() => {
         this.form.patchValue({
           appLifecycleEnabled: true,
+          foregroundLifecycleEnabled: true,
           pushSubscriptionEnabled: true,
-          sessionEventsEnabled: true,
+          sessionStartEventsEnabled: true,
+          sessionEndEventsEnabled: true,
         });
         this.status = 'setLifecycleTrackingOptions: OK (ALL)';
       })
@@ -84,13 +103,24 @@ export class LifecyclePage implements OnInit {
     }
 
     this.status = 'Saving…';
+    this.reteno.setInitOptions({
+      lifecycleTrackingOptions: {
+        appLifecycleEnabled: false,
+        foregroundLifecycleEnabled: false,
+        pushSubscriptionEnabled: false,
+        sessionStartEventsEnabled: false,
+        sessionEndEventsEnabled: false,
+      },
+    });
     this.reteno
       .setLifecycleTrackingOptions('NONE')
       .then(() => {
         this.form.patchValue({
           appLifecycleEnabled: false,
+          foregroundLifecycleEnabled: false,
           pushSubscriptionEnabled: false,
-          sessionEventsEnabled: false,
+          sessionStartEventsEnabled: false,
+          sessionEndEventsEnabled: false,
         });
         this.status = 'setLifecycleTrackingOptions: OK (NONE)';
       })
@@ -99,5 +129,23 @@ export class LifecyclePage implements OnInit {
         // eslint-disable-next-line no-console
         console.error('setLifecycleTrackingOptions: ERROR', err);
       });
+  }
+
+  private syncFormFromSavedOptions(): void {
+    const lto = this.reteno.getLifecycleTrackingOptions() as {
+      appLifecycleEnabled?: boolean;
+      foregroundLifecycleEnabled?: boolean;
+      pushSubscriptionEnabled?: boolean;
+      sessionStartEventsEnabled?: boolean;
+      sessionEndEventsEnabled?: boolean;
+    };
+
+    this.form.patchValue({
+      appLifecycleEnabled: !!lto.appLifecycleEnabled,
+      foregroundLifecycleEnabled: !!lto.foregroundLifecycleEnabled,
+      pushSubscriptionEnabled: !!lto.pushSubscriptionEnabled,
+      sessionStartEventsEnabled: !!lto.sessionStartEventsEnabled,
+      sessionEndEventsEnabled: !!lto.sessionEndEventsEnabled,
+    });
   }
 }

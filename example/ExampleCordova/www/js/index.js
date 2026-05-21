@@ -254,10 +254,10 @@ function onDeviceReady() {
     if (eventParamValueEl && !String(eventParamValueEl.value || '').trim()) eventParamValueEl.value = 'A-123';
     if (lifecycleAppEl && !lifecycleAppEl.checked) lifecycleAppEl.checked = true;
     if (lifecyclePushEl && !lifecyclePushEl.checked) lifecyclePushEl.checked = true;
-    if (lifecycleSessionEl && !lifecycleSessionEl.checked) lifecycleSessionEl.checked = true;
+    if (lifecycleSessionStartEl && !lifecycleSessionStartEl.checked) lifecycleSessionStartEl.checked = true;
     if (initLifecycleAppEl && !initLifecycleAppEl.checked) initLifecycleAppEl.checked = true;
     if (initLifecyclePushEl && !initLifecyclePushEl.checked) initLifecyclePushEl.checked = true;
-    if (initLifecycleSessionEl && !initLifecycleSessionEl.checked) initLifecycleSessionEl.checked = true;
+    if (initLifecycleSessionStartEl && !initLifecycleSessionStartEl.checked) initLifecycleSessionStartEl.checked = true;
     if (initScreenReportingEl && initScreenReportingEl.checked) initScreenReportingEl.checked = false;
     if (initPauseInAppEl && initPauseInAppEl.checked) initPauseInAppEl.checked = false;
     if (initPausePushInAppEl && initPausePushInAppEl.checked) initPausePushInAppEl.checked = false;
@@ -280,6 +280,69 @@ function onDeviceReady() {
     }
     if (inboxPageEl && !String(inboxPageEl.value || '').trim()) inboxPageEl.value = '1';
     if (inboxPageSizeEl && !String(inboxPageSizeEl.value || '').trim()) inboxPageSizeEl.value = '20';
+    var initOptionsStorageKey = 'retenoDemoInitOptions';
+
+    function readPersistedInitOptions() {
+        try {
+            var raw = localStorage.getItem(initOptionsStorageKey);
+            if (!raw) return null;
+            var parsed = JSON.parse(raw);
+            return parsed && typeof parsed === 'object' ? parsed : null;
+        } catch (err) {
+            return null;
+        }
+    }
+
+    function writePersistedInitOptions() {
+        try {
+            var options = buildInitOptions();
+            localStorage.setItem(initOptionsStorageKey, JSON.stringify(options));
+        } catch (err) {}
+    }
+
+    function applyPersistedInitOptions(options) {
+        if (!options || typeof options !== 'object') return;
+        if (typeof options.sessionDurationSeconds === 'number' && options.sessionDurationSeconds > 0 && initSessionDurationSecondsEl) {
+            initSessionDurationSecondsEl.value = String(Math.floor(options.sessionDurationSeconds));
+        }
+        if (typeof options.pauseInAppMessages === 'boolean' && initPauseInAppEl) {
+            initPauseInAppEl.checked = options.pauseInAppMessages;
+        }
+        if (typeof options.pausePushInAppMessages === 'boolean' && initPausePushInAppEl) {
+            initPausePushInAppEl.checked = options.pausePushInAppMessages;
+        }
+        if (options.lifecycleTrackingOptions && typeof options.lifecycleTrackingOptions === 'object') {
+            var lto = options.lifecycleTrackingOptions;
+            if (typeof lto.appLifecycleEnabled === 'boolean' && initLifecycleAppEl) initLifecycleAppEl.checked = lto.appLifecycleEnabled;
+            if (typeof lto.foregroundLifecycleEnabled === 'boolean' && initLifecycleForegroundEl) initLifecycleForegroundEl.checked = lto.foregroundLifecycleEnabled;
+            if (typeof lto.pushSubscriptionEnabled === 'boolean' && initLifecyclePushEl) initLifecyclePushEl.checked = lto.pushSubscriptionEnabled;
+            if (typeof lto.sessionStartEventsEnabled === 'boolean' && initLifecycleSessionStartEl) {
+                initLifecycleSessionStartEl.checked = lto.sessionStartEventsEnabled;
+            }
+            if (typeof lto.sessionEndEventsEnabled === 'boolean' && initLifecycleSessionEndEl) {
+                initLifecycleSessionEndEl.checked = lto.sessionEndEventsEnabled;
+            }
+        }
+    }
+
+    applyPersistedInitOptions(readPersistedInitOptions());
+
+    [
+        initPauseInAppEl,
+        initPausePushInAppEl,
+        initLifecycleAppEl,
+        initLifecycleForegroundEl,
+        initLifecyclePushEl,
+        initLifecycleSessionStartEl,
+        initLifecycleSessionEndEl,
+        initSessionDurationSecondsEl,
+    ].forEach(function (el) {
+        if (!el) return;
+        el.addEventListener('change', writePersistedInitOptions);
+        el.addEventListener('input', writePersistedInitOptions);
+    });
+
+    writePersistedInitOptions();
 
     function setStatus(text) {
         if (statusEl) {
@@ -693,7 +756,8 @@ function onDeviceReady() {
             .then(function () {
                 demoInitialized = true;
                 initPromise = null;
-                setInitOptionsVisible(false);
+                var hintEl = document.getElementById('retenoInitOptionsHint');
+                if (hintEl) hintEl.style.display = '';
             })
             .catch(function (err) {
                 initPromise = null;

@@ -29,9 +29,29 @@ describe('cordova-plugin-reteno user attributes', () => {
     it('should accept a valid payload', async () => {
       const result = await plugin.setUserAttributes({
         externalUserId: 'user-123',
-        user: { userAttributes: { email: 'test@example.com' } },
+        user: { userAttributes: { email: 'test@example.com', marketId: 'market_1' } },
       });
       expect(result).toBe(1);
+    });
+
+    it('should pass marketId to native user attributes', async () => {
+      const mockExec = require('cordova/exec');
+      await plugin.setUserAttributes({
+        externalUserId: 'user-123',
+        user: { userAttributes: { marketId: 'market_1' } },
+      });
+      const call = mockExec.mock.calls.find((c) => c[3] === 'setUserAttributes');
+      expect(call[4][0].user.userAttributes.marketId).toBe('market_1');
+    });
+
+    it('should pass empty marketId to native user attributes for clear operation', async () => {
+      const mockExec = require('cordova/exec');
+      await plugin.setUserAttributes({
+        externalUserId: 'user-123',
+        user: { userAttributes: { marketId: '' } },
+      });
+      const call = mockExec.mock.calls.find((c) => c[3] === 'setUserAttributes');
+      expect(call[4][0].user.userAttributes.marketId).toBe('');
     });
 
     it('should unwrap legacy array argument', async () => {
@@ -81,8 +101,23 @@ describe('cordova-plugin-reteno user attributes', () => {
       const result = await plugin.setAnonymousUserAttributes({
         firstName: 'John',
         lastName: 'Doe',
+        marketId: 'market_1',
       });
       expect(result).toBe(1);
+    });
+
+    it('should pass marketId to native anonymous attributes', async () => {
+      const mockExec = require('cordova/exec');
+      await plugin.setAnonymousUserAttributes({ marketId: 'market_1' });
+      const call = mockExec.mock.calls.find((c) => c[3] === 'setAnonymousUserAttributes');
+      expect(call[4][0].marketId).toBe('market_1');
+    });
+
+    it('should pass empty marketId to native anonymous attributes for clear operation', async () => {
+      const mockExec = require('cordova/exec');
+      await plugin.setAnonymousUserAttributes({ marketId: '' });
+      const call = mockExec.mock.calls.find((c) => c[3] === 'setAnonymousUserAttributes');
+      expect(call[4][0].marketId).toBe('');
     });
 
     it('should unwrap legacy array argument', async () => {
@@ -122,9 +157,19 @@ describe('cordova-plugin-reteno user attributes', () => {
     it('should accept a valid payload', async () => {
       const result = await plugin.setMultiAccountUserAttributes({
         externalUserId: 'u1',
-        user: { userAttributes: { email: 'a@b.com' } },
+        user: { userAttributes: { email: 'a@b.com', marketId: 'market_1' } },
       });
       expect(result).toBe(1);
+    });
+
+    it('should pass empty marketId to native multi-account user attributes for clear operation', async () => {
+      const mockExec = require('cordova/exec');
+      await plugin.setMultiAccountUserAttributes({
+        externalUserId: 'u1',
+        user: { userAttributes: { marketId: '' } },
+      });
+      const call = mockExec.mock.calls.find((c) => c[3] === 'setMultiAccountUserAttributes');
+      expect(call[4][0].user.userAttributes.marketId).toBe('');
     });
   });
 });

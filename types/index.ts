@@ -19,6 +19,13 @@ export type UserAttributesAnonymous = {
   timeZone?: string | null;
   address?: Address | null;
   fields?: Fields | null;
+  /**
+   * Market ID. Max 64 chars; latin letters, digits, '-' and '_' are allowed.
+   * Pass `""` (empty string) to clear the value on the server.
+   * Passing `null` or omitting the field has no effect (the existing value is kept).
+   * Available on Android 2.9.5+ and iOS 2.7.1+.
+   */
+  marketId?: string;
 };
 
 export type UserAttributes = {

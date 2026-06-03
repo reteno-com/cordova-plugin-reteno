@@ -34,6 +34,8 @@ export class HomePage implements OnInit, OnDestroy {
     lastName: this.formBuilder.control<string>('Doe'),
     languageCode: this.formBuilder.control<string>('en'),
     timeZone: this.formBuilder.control<string>('Europe/Kyiv'),
+    marketId: this.formBuilder.control<string>('market_1'),
+    clearMarketId: this.formBuilder.control<boolean>(false),
     region: this.formBuilder.control<string>('Kyiv'),
     town: this.formBuilder.control<string>('Kyiv'),
     address: this.formBuilder.control<string>('Main street 1'),
@@ -80,6 +82,7 @@ export class HomePage implements OnInit, OnDestroy {
       lastName?: string;
       languageCode?: string;
       timeZone?: string;
+      marketId?: string;
       address?: {
         region?: string;
         town?: string;
@@ -108,6 +111,13 @@ export class HomePage implements OnInit, OnDestroy {
 
     const timeZone = clean(v.timeZone);
     if (timeZone) userAttributes.timeZone = timeZone;
+
+    const marketId = clean(v.marketId);
+    if (v.clearMarketId) {
+      userAttributes.marketId = '';
+    } else if (marketId) {
+      userAttributes.marketId = marketId;
+    }
 
     const region = clean(v.region);
     const town = clean(v.town);

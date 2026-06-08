@@ -1468,9 +1468,9 @@ class RetenoPlugin: CDVPlugin {
       lastName: lastName,
       languageCode: languageCode,
       timeZone: timeZone,
+      marketId: marketId,
       address: address,
-      fields: fields,
-      marketId: marketId
+      fields: fields
     )
   }
 
@@ -1488,9 +1488,9 @@ class RetenoPlugin: CDVPlugin {
       lastName: lastName,
       languageCode: languageCode,
       timeZone: timeZone,
+      marketId: marketId,
       address: address,
-      fields: fields,
-      marketId: marketId
+      fields: fields
     )
   }
 

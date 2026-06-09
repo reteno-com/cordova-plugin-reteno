@@ -23,7 +23,7 @@
   "devDependencies": {
     "cordova": "^13.0.0",
     "cordova-android": "^14.0.1",
-    "cordova-ios": "^8.0.1",
+    "cordova-ios": "^8.1.0",
     "cordova-plugin-app-version": "^0.1.14",
     "cordova-plugin-reteno": "file:../../cordova-plugin-reteno-2.1.0.tgz"
   },

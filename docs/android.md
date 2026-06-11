@@ -35,8 +35,7 @@ Notes:
 You can request it via the plugin API:
 
 ```js
-RetenoPlugin
-  .requestNotificationPermission()
+RetenoPlugin.requestNotificationPermission()
   .then((grantedInt) => {
     // grantedInt: 1 (granted) or 0 (declined)
   })
@@ -50,8 +49,7 @@ RetenoPlugin
 Initialize Reteno once during app startup:
 
 ```js
-RetenoPlugin
-  .init()
+RetenoPlugin.init()
   .then(() => {
     // initialized
   })

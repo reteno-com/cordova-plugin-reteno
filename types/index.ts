@@ -112,7 +112,12 @@ export type RetenoInitializeOptions = {
 
 export type InAppPauseBehaviour = 'SKIP_IN_APPS' | 'POSTPONE_IN_APPS';
 
-export type InAppLifecycleEvent = 'beforeDisplay' | 'onDisplay' | 'beforeClose' | 'afterClose' | 'onError';
+export type InAppLifecycleEvent =
+  | 'beforeDisplay'
+  | 'onDisplay'
+  | 'beforeClose'
+  | 'afterClose'
+  | 'onError';
 
 export type InAppData = {
   id?: string;
@@ -125,7 +130,7 @@ export type InAppActionData = {
 };
 
 export type InAppCloseData = {
-  id?: string;//android only
+  id?: string; //android only
   closeAction: string;
   action?: InAppActionData;
 };

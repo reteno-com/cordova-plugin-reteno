@@ -78,7 +78,6 @@ target 'App' do
 end
 ```
 
-
 ## Add Notification Content Extension (NCE) — Images Carousel
 
 The Notification Content Extension is required for rich push notifications with an **Images Carousel**.
@@ -86,7 +85,7 @@ It provides the `UNNotificationContentExtension` entry point that renders a cust
 
 Official guide: https://docs.reteno.com/reference/ios-images-carousel
 
-### Create the extension target *(manual Xcode step)*
+### Create the extension target _(manual Xcode step)_
 
 In Xcode: **File → New → Target → Notification Content Extension**. Name it `NotificationContentExtension`.
 
@@ -130,7 +129,7 @@ Open `NotificationContentExtension/Info.plist` as source code and replace the `N
 
 Make sure the NCE **Deployment Target** in Xcode matches the main app target (iOS 15.0+). A mismatch is the most common reason carousel images fail to display.
 
-### Embed App Extensions — Copy only when installing *(manual Xcode step)*
+### Embed App Extensions — Copy only when installing _(manual Xcode step)_
 
 > **This step must be done manually in Xcode** — it cannot be automated.
 > Official guide (Troubleshooting → "Turn off Copy Only when Installing"): https://docs.reteno.com/reference/ios-images-carousel
@@ -307,6 +306,7 @@ If your app calls `FirebaseApp.configure()` without this file, Firebase will cra
 Nothing to do. Firebase iOS SDK uses **method swizzling** by default — it automatically intercepts `didRegisterForRemoteNotificationsWithDeviceToken` and forwards the APNS token to Firebase without any AppDelegate code.
 
 When `IOS_DEVICE_TOKEN_HANDLING_MODE` is set to `manual`, the plugin:
+
 1. Calls `FirebaseApp.configure()` automatically on `init()` if not already called and `GoogleService-Info.plist` is present.
 2. Subscribes to FCM token updates and forwards them to Reteno once Firebase is configured.
 
@@ -381,7 +381,7 @@ await RetenoPlugin.init({
 });
 
 // Runtime pause/resume
-await RetenoPlugin.pauseInAppMessages(true);  // pause
+await RetenoPlugin.pauseInAppMessages(true); // pause
 await RetenoPlugin.pauseInAppMessages(false); // resume
 ```
 
@@ -403,7 +403,7 @@ Set presentation options for foreground notifications:
 ```js
 await RetenoPlugin.setWillPresentNotificationOptions({
   options: ['badge', 'sound', 'banner'],
-  emitEvent: true
+  emitEvent: true,
 });
 ```
 
@@ -414,7 +414,7 @@ Enable a response handler for notification taps:
 ```js
 await RetenoPlugin.setDidReceiveNotificationResponseHandler({
   enabled: true,
-  emitEvent: true
+  emitEvent: true,
 });
 ```
 

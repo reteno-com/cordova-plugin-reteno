@@ -18,11 +18,11 @@ Notes:
 
 ### User data
 
-| Method                                                           | Supported platform | Description                                                                                           |
-| ---------------------------------------------------------------- | ------------------ | ----------------------------------------------------------------------------------------------------- |
-| [setUserAttributes](../www/cordova-plugin-reteno.js)             | iOS, Android       | Supports `marketId` (Android 2.9.5+, iOS 2.7.1+). Pass `""` to clear. [Types](../types/index.ts)    |
-| [setAnonymousUserAttributes](../www/cordova-plugin-reteno.js)    | iOS, Android       | Supports `marketId` (Android 2.9.5+, iOS 2.7.1+). Pass `""` to clear. [Types](../types/index.ts)    |
-| [setMultiAccountUserAttributes](../www/cordova-plugin-reteno.js) | iOS, Android       | Supports `marketId` (Android 2.9.5+, iOS 2.7.1+). Pass `""` to clear. [Types](../types/index.ts)    |
+| Method                                                           | Supported platform | Description                                                                                      |
+| ---------------------------------------------------------------- | ------------------ | ------------------------------------------------------------------------------------------------ |
+| [setUserAttributes](../www/cordova-plugin-reteno.js)             | iOS, Android       | Supports `marketId` (Android 2.9.5+, iOS 2.7.1+). Pass `""` to clear. [Types](../types/index.ts) |
+| [setAnonymousUserAttributes](../www/cordova-plugin-reteno.js)    | iOS, Android       | Supports `marketId` (Android 2.9.5+, iOS 2.7.1+). Pass `""` to clear. [Types](../types/index.ts) |
+| [setMultiAccountUserAttributes](../www/cordova-plugin-reteno.js) | iOS, Android       | Supports `marketId` (Android 2.9.5+, iOS 2.7.1+). Pass `""` to clear. [Types](../types/index.ts) |
 
 ### Event tracking
 

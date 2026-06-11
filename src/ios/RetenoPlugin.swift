@@ -125,14 +125,13 @@ class RetenoPlugin: CDVPlugin {
       ),
       isPausedInAppMessages: pauseInAppMessages,
       inAppMessagesPauseBehaviour: inAppMessagesPauseBehaviour,
-      isDebugMode: isDebugMode,
-      deviceTokenHandlingMode: deviceTokenMode
+      isDebugMode: isDebugMode
     )
 
     self.isManualTokenMode = (deviceTokenMode == .manual)
 
     DispatchQueue.main.async {
-      Reteno.start(apiKey: apiKey, configuration: configuration)
+      Reteno.start(apiKey: apiKey, deviceTokenHandlingMode: deviceTokenMode, configuration: configuration)
 
       // When IOS_DEVICE_TOKEN_HANDLING_MODE is manual and FirebaseMessaging is available,
       // configure Firebase if the developer hasn't done it yet, then hook FCM
@@ -1364,6 +1363,13 @@ class RetenoPlugin: CDVPlugin {
     return trimmed.isEmpty ? nil : trimmed
   }
 
+  // For marketId, empty string explicitly means "clear value" and must be preserved.
+  private func marketIdValue(_ value: Any?) -> String? {
+    guard let raw = value as? String else { return nil }
+    let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+    return trimmed.isEmpty ? "" : trimmed
+  }
+
   private func stringArrayValue(_ value: Any?) -> [String] {
     if let array = value as? [String] {
       return array.compactMap { stringValue($0) }
@@ -1453,6 +1459,7 @@ class RetenoPlugin: CDVPlugin {
     let timeZone = stringValue(payload["timeZone"])
     let address = buildAddress(from: payload["address"])
     let fields = buildCustomFields(from: payload["fields"])
+    let marketId = marketIdValue(payload["marketId"])
 
     return UserAttributes(
       phone: phone,
@@ -1461,6 +1468,7 @@ class RetenoPlugin: CDVPlugin {
       lastName: lastName,
       languageCode: languageCode,
       timeZone: timeZone,
+      marketId: marketId,
       address: address,
       fields: fields
     )
@@ -1473,12 +1481,14 @@ class RetenoPlugin: CDVPlugin {
     let timeZone = stringValue(payload["timeZone"])
     let address = buildAddress(from: payload["address"])
     let fields = buildCustomFields(from: payload["fields"])
+    let marketId = marketIdValue(payload["marketId"])
 
     return AnonymousUserAttributes(
       firstName: firstName,
       lastName: lastName,
       languageCode: languageCode,
       timeZone: timeZone,
+      marketId: marketId,
       address: address,
       fields: fields
     )

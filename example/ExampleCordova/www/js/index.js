@@ -173,6 +173,8 @@ function onDeviceReady() {
     var lastNameEl = document.getElementById('retenoLastName');
     var languageCodeEl = document.getElementById('retenoLanguageCode');
     var timeZoneEl = document.getElementById('retenoTimeZone');
+    var marketIdEl = document.getElementById('retenoMarketId');
+    var clearMarketIdEl = document.getElementById('retenoClearMarketId');
 
     var addressRegionEl = document.getElementById('retenoAddressRegion');
     var addressTownEl = document.getElementById('retenoAddressTown');
@@ -242,6 +244,7 @@ function onDeviceReady() {
     if (lastNameEl && !String(lastNameEl.value || '').trim()) lastNameEl.value = 'Doe';
     if (languageCodeEl && !String(languageCodeEl.value || '').trim()) languageCodeEl.value = 'en';
     if (timeZoneEl && !String(timeZoneEl.value || '').trim()) timeZoneEl.value = 'Europe/Kyiv';
+    if (marketIdEl && !String(marketIdEl.value || '').trim()) marketIdEl.value = 'market_1';
 
     if (addressRegionEl && !String(addressRegionEl.value || '').trim()) addressRegionEl.value = 'Kyiv';
     if (addressTownEl && !String(addressTownEl.value || '').trim()) addressTownEl.value = 'Kyiv';
@@ -844,8 +847,20 @@ function onDeviceReady() {
         });
     }
 
+    function syncMarketIdMode() {
+        if (!marketIdEl || !clearMarketIdEl) {
+            return;
+        }
+        marketIdEl.disabled = !!clearMarketIdEl.checked;
+    }
+
+    if (clearMarketIdEl) {
+        clearMarketIdEl.addEventListener('change', syncMarketIdMode);
+    }
+
     showPage('home');
     updateUserFormMode();
+    syncMarketIdMode();
 
     function applyWillPresentOptions() {
         var sdk = getRetenoSdk();
@@ -922,6 +937,8 @@ function onDeviceReady() {
                 var lastName = read(lastNameEl);
                 var languageCode = read(languageCodeEl);
                 var timeZone = read(timeZoneEl);
+                var marketId = read(marketIdEl);
+                var clearMarketId = !!(clearMarketIdEl && clearMarketIdEl.checked);
 
                 if (email) userAttributes.email = email;
                 if (phone) userAttributes.phone = phone;
@@ -929,6 +946,8 @@ function onDeviceReady() {
                 if (lastName) userAttributes.lastName = lastName;
                 if (languageCode) userAttributes.languageCode = languageCode;
                 if (timeZone) userAttributes.timeZone = timeZone;
+                if (clearMarketId) userAttributes.marketId = '';
+                else if (marketId) userAttributes.marketId = marketId;
 
                 var region = read(addressRegionEl);
                 var town = read(addressTownEl);

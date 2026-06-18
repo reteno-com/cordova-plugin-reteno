@@ -23,7 +23,7 @@ export type UserAttributesAnonymous = {
    * Market ID. Max 64 chars; latin letters, digits, '-' and '_' are allowed.
    * Pass `""` (empty string) to clear the value on the server.
    * Passing `null` or omitting the field has no effect (the existing value is kept).
-   * Available on Android 2.9.5+ and iOS 2.7.1+.
+   * Available with the bundled Android 2.9.6+ and iOS 2.7.2+ SDKs.
    */
   marketId?: string;
 };
@@ -104,7 +104,7 @@ export type RetenoInitializeOptions = {
   inAppMessagesPauseBehaviour?: InAppPauseBehaviour;
   isAutomaticScreenReportingEnabled?: boolean;
   lifecycleTrackingOptions?: LifecycleTrackingOptions;
-  /** Session reset duration in seconds (Android 2.9.4+, iOS 2.7.0+). */
+  /** Session reset duration in seconds (supported by the bundled Android 2.9.6+ and iOS 2.7.2+ SDKs). */
   sessionDurationSeconds?: number;
   /** Enables Reteno debug mode for near real-time event monitoring. Use only with test devices. */
   isDebugMode?: boolean;

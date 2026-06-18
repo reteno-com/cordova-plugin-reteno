@@ -12,17 +12,17 @@ Notes:
 
 | Method                                                           | Supported platform | Description                                                                                                                                                                                                                                                                                                                                                          |
 | ---------------------------------------------------------------- | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [init](../www/cordova-plugin-reteno.js)                          | iOS, Android       | Initializes Reteno SDK. Accepts optional `RetenoInitializeOptions` with `accessKey`, `pauseInAppMessages`, `pausePushInAppMessages`, `inAppMessagesPauseBehaviour` (iOS), `lifecycleTrackingOptions`, `sessionDurationSeconds` (Android 2.9.4+, iOS 2.7.0+), `isAutomaticScreenReportingEnabled` (iOS; see note below) and `isDebugMode`. [Types](../types/index.ts) |
+| [init](../www/cordova-plugin-reteno.js)                          | iOS, Android       | Initializes Reteno SDK. Accepts optional `RetenoInitializeOptions` with `accessKey`, `pauseInAppMessages`, `pausePushInAppMessages`, `inAppMessagesPauseBehaviour` (iOS), `lifecycleTrackingOptions`, `sessionDurationSeconds` (Android 2.9.6+, iOS 2.7.2+), `isAutomaticScreenReportingEnabled` (iOS; see note below) and `isDebugMode`. [Types](../types/index.ts) |
 | [requestNotificationPermission](../www/cordova-plugin-reteno.js) | iOS, Android       | Requests push permission (iOS) or `POST_NOTIFICATIONS` (Android 13+). Returns `0` or `1` on Android (`RequestNotificationPermissionResult`) in [types](../types/index.ts).                                                                                                                                                                                           |
 | [setLifecycleTrackingOptions](../www/cordova-plugin-reteno.js)   | iOS, Android       | Configures automatic tracking for app lifecycle, push subscription, and session events. Android: applies immediately. iOS: supported only before initialization (stored and applied during `init(...)`). [Types](../types/index.ts)                                                                                                                                  |
 
 ### User data
 
-| Method                                                           | Supported platform | Description                                                                                      |
-| ---------------------------------------------------------------- | ------------------ | ------------------------------------------------------------------------------------------------ |
-| [setUserAttributes](../www/cordova-plugin-reteno.js)             | iOS, Android       | Supports `marketId` (Android 2.9.5+, iOS 2.7.1+). Pass `""` to clear. [Types](../types/index.ts) |
-| [setAnonymousUserAttributes](../www/cordova-plugin-reteno.js)    | iOS, Android       | Supports `marketId` (Android 2.9.5+, iOS 2.7.1+). Pass `""` to clear. [Types](../types/index.ts) |
-| [setMultiAccountUserAttributes](../www/cordova-plugin-reteno.js) | iOS, Android       | Supports `marketId` (Android 2.9.5+, iOS 2.7.1+). Pass `""` to clear. [Types](../types/index.ts) |
+| Method                                                           | Supported platform | Description                                                                                                             |
+| ---------------------------------------------------------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| [setUserAttributes](../www/cordova-plugin-reteno.js)             | iOS, Android       | Supports `marketId` with the bundled Android 2.9.6+ and iOS 2.7.2+ SDKs. Pass `""` to clear. [Types](../types/index.ts) |
+| [setAnonymousUserAttributes](../www/cordova-plugin-reteno.js)    | iOS, Android       | Supports `marketId` with the bundled Android 2.9.6+ and iOS 2.7.2+ SDKs. Pass `""` to clear. [Types](../types/index.ts) |
+| [setMultiAccountUserAttributes](../www/cordova-plugin-reteno.js) | iOS, Android       | Supports `marketId` with the bundled Android 2.9.6+ and iOS 2.7.2+ SDKs. Pass `""` to clear. [Types](../types/index.ts) |
 
 ### Event tracking
 
@@ -55,6 +55,8 @@ Notes:
 | [updateDefaultNotificationChannel](../www/cordova-plugin-reteno.js)          | Android            | Updates the default notification channel name and description for existing users. [Types](../types/index.ts)                                                                                                                                                                                                                                                                      |
 
 ### In-app messages
+
+Bundled native SDKs support the `DOES_NOT_EQUAL` in-app rule condition: Android SDK 2.9.6+ and iOS SDK 2.7.2+.
 
 | Method                                                                            | Supported platform | Description                                                                                                                                                       |
 | --------------------------------------------------------------------------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -99,7 +101,7 @@ RetenoPlugin.init()
 // pausePushInAppMessages: pauses in-app messages triggered by push notifications.
 // inAppMessagesPauseBehaviour: (iOS) defines handling while paused: 'SKIP_IN_APPS' or 'POSTPONE_IN_APPS'.
 // lifecycleTrackingOptions: configures app lifecycle, push subscription, and session event tracking ('ALL', 'NONE', or an object).
-// sessionDurationSeconds (Android 2.9.4+, iOS 2.7.0+): optional session reset duration.
+// sessionDurationSeconds (Android 2.9.6+, iOS 2.7.2+): optional session reset duration.
 // isAutomaticScreenReportingEnabled: enables automatic native screen view tracking on iOS.
 //   Keep this false in Cordova/Ionic WebView apps (including Android demos).
 //   Defaults to false. Note: in Cordova/Ionic apps the UI runs inside a single WebView,
@@ -116,13 +118,13 @@ RetenoPlugin.init({
   inAppMessagesPauseBehaviour: 'SKIP_IN_APPS', // iOS
   isAutomaticScreenReportingEnabled: false, // keep false for hybrid/WebView apps
   isDebugMode: true, // enables debug mode
-  sessionDurationSeconds: 30 * 60, // Android 2.9.4+, iOS 2.7.0+: 30 minutes
+  sessionDurationSeconds: 30 * 60, // Android 2.9.6+, iOS 2.7.2+: 30 minutes
   lifecycleTrackingOptions: {
     appLifecycleEnabled: true,
     foregroundLifecycleEnabled: false,
     pushSubscriptionEnabled: true,
     sessionStartEventsEnabled: true,
-    sessionEndEventsEnabled: false, // Android 2.9.4 default
+    sessionEndEventsEnabled: false,
   },
 })
   .then(() => console.log('init: OK'))
@@ -483,7 +485,7 @@ Subscribe to push received events while the app is running.
 
 Notes:
 
-- On Android this is based on the SDK 2.9.4 `EventListener` / `Procedure` API (`RetenoNotifications.getReceived()`).
+- On Android this is based on the SDK 2.9.6 `EventListener` / `Procedure` API (`RetenoNotifications.getReceived()`).
 - This listener is not a replacement for `getInitialNotification()` (cold start): if the app was launched by tapping a notification, use `getInitialNotification()`.
 
 ```js

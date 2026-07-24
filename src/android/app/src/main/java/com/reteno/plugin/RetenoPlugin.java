@@ -353,6 +353,25 @@ public class RetenoPlugin extends CordovaPlugin {
       return true;
     }
 
+    if ("setNotificationGroupingRule".equals(action)) {
+      Activity activity = cordova.getActivity();
+      if (activity == null) {
+        callbackContext.error("Reteno Android SDK Error: Activity is null.");
+        return true;
+      }
+      activity.runOnUiThread(new Runnable() {
+        @Override
+        public void run() {
+          try {
+            setNotificationGroupingRule(args, callbackContext);
+          } catch (Exception e) {
+            callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
+          }
+        }
+      });
+      return true;
+    }
+
     if ("getAppInboxMessages".equals(action)) {
       cordova.getThreadPool().execute(new Runnable() {
         @Override
@@ -1318,6 +1337,54 @@ public class RetenoPlugin extends CordovaPlugin {
     } catch (Exception e) {
       callbackContext.error("Reteno Android SDK Error: " + e.getLocalizedMessage());
     }
+  }
+
+  private void setNotificationGroupingRule(JSONArray args, CallbackContext callbackContext) {
+    Object arg0 = (args == null || args.length() == 0) ? null : args.opt(0);
+    if (arg0 instanceof JSONArray) {
+      arg0 = ((JSONArray) arg0).opt(0);
+    }
+
+    if (arg0 == null || arg0 == JSONObject.NULL) {
+      RetenoNotificationGroupingRuleProvider.configure(
+        cordova.getActivity().getApplicationContext(), null, null
+      );
+      callbackContext.success(1);
+      return;
+    }
+
+    if (!(arg0 instanceof JSONObject)) {
+      callbackContext.error("Invalid argument: expected null or an object with payloadKey or groupId");
+      return;
+    }
+
+    JSONObject config = (JSONObject) arg0;
+    Object rawPayloadKey = config.opt("payloadKey");
+    Object rawGroupId = config.opt("groupId");
+    if ((rawPayloadKey != null && rawPayloadKey != JSONObject.NULL && !(rawPayloadKey instanceof String))
+      || (rawGroupId != null && rawGroupId != JSONObject.NULL && !(rawGroupId instanceof String))) {
+      callbackContext.error("Invalid argument: payloadKey and groupId must be strings");
+      return;
+    }
+
+    String payloadKey = rawPayloadKey instanceof String ? (String) rawPayloadKey : null;
+    String groupId = rawGroupId instanceof String ? (String) rawGroupId : null;
+    payloadKey = payloadKey == null ? null : payloadKey.trim();
+    groupId = groupId == null ? null : groupId.trim();
+
+    boolean hasPayloadKey = !TextUtils.isEmpty(payloadKey);
+    boolean hasGroupId = !TextUtils.isEmpty(groupId);
+    if (hasPayloadKey == hasGroupId) {
+      callbackContext.error("Invalid argument: provide exactly one of payloadKey or groupId");
+      return;
+    }
+
+    RetenoNotificationGroupingRuleProvider.configure(
+      cordova.getActivity().getApplicationContext(),
+      hasPayloadKey ? payloadKey : null,
+      hasGroupId ? groupId : null
+    );
+    callbackContext.success(1);
   }
 
   private void getAppInboxMessages(JSONArray args, CallbackContext callbackContext) throws JSONException {

@@ -2,6 +2,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.reteno.plugin">
 
-    <application />
+    <application>
+        <provider
+            android:name="com.reteno.plugin.RetenoNotificationGroupingRuleProvider"
+            android:authorities="${applicationId}.reteno.notification-grouping-rule"
+            android:exported="false" />
+    </application>
 
 </manifest>

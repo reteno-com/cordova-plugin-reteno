@@ -526,6 +526,37 @@ const RetenoPluginFunctions = {
   },
 
   /*
+        config: NotificationGroupingRule | null
+        { payloadKey: string } groups by a value from the push payload.
+        { groupId: string } assigns every Reteno notification to a constant group.
+        Passing null disables grouping.
+        Android only.
+        */
+  setNotificationGroupingRule: function (arg0, success, error) {
+    // Accept either `config` or legacy `[config]`.
+    const config = Array.isArray(arg0) ? arg0[0] : arg0;
+    if (config === null) {
+      return __callWithExec('setNotificationGroupingRule', [null], success, error);
+    }
+    if (!config || typeof config !== 'object') {
+      return Promise.reject(
+        new Error('Invalid argument: expected null or an object with payloadKey or groupId')
+      );
+    }
+
+    const payloadKey = typeof config.payloadKey === 'string' ? config.payloadKey.trim() : '';
+    const groupId = typeof config.groupId === 'string' ? config.groupId.trim() : '';
+    if (!!payloadKey === !!groupId) {
+      return Promise.reject(
+        new Error('Invalid argument: provide exactly one of payloadKey or groupId')
+      );
+    }
+
+    const normalizedConfig = payloadKey ? { payloadKey } : { groupId };
+    return __callWithExec('setNotificationGroupingRule', [normalizedConfig], success, error);
+  },
+
+  /*
         payload: GetAppInboxMessagesPayload
         {
           page: number,

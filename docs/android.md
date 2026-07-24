@@ -108,6 +108,23 @@ RetenoPlugin.removeOnRetenoPushDismissedListener(onDismissed);
 RetenoPlugin.removeOnRetenoCustomPushReceivedListener(onCustomReceived);
 ```
 
+## Notification grouping
+
+Android notifications can be assigned to a group using either a value from the push payload or a constant group ID. The configuration is stored natively and restored when the Android process starts, so it does not depend on the Cordova WebView being active.
+
+```js
+// Group notifications by the `chatId` field in the push payload.
+await RetenoPlugin.setNotificationGroupingRule({ payloadKey: 'chatId' });
+
+// Alternatively, assign all Reteno notifications to one group.
+await RetenoPlugin.setNotificationGroupingRule({ groupId: 'messages' });
+
+// Disable grouping.
+await RetenoPlugin.setNotificationGroupingRule(null);
+```
+
+This configures the group key on each notification. If you want Android to display a summary row for the group, the application must create its own notification with `setGroupSummary(true)` using the same group ID.
+
 ### Without Firebasex (Cordova)
 
 If you **do not need** `cordova-plugin-firebasex` features, you can still use Reteno Push on Android.

@@ -154,6 +154,14 @@ export type NotificationChannelConfig = {
   description: string;
 };
 
+/**
+ * Android notification grouping rule. The rule is persisted natively so it
+ * remains available when a push is handled before the WebView starts.
+ */
+export type NotificationGroupingRule =
+  | { payloadKey: string; groupId?: never }
+  | { groupId: string; payloadKey?: never };
+
 export type AppInboxStatus = 'OPENED' | 'UNOPENED';
 
 export type AppInboxMessage = {

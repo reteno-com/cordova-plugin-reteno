@@ -155,6 +155,60 @@ describe('cordova-plugin-reteno notifications', () => {
     });
   });
 
+  describe('setNotificationGroupingRule()', () => {
+    it('should configure grouping by push payload key without initializing the SDK', async () => {
+      const mockExec = require('cordova/exec');
+      await plugin.setNotificationGroupingRule({ payloadKey: '  chatId  ' });
+
+      const groupingCall = mockExec.mock.calls.find((c) => c[3] === 'setNotificationGroupingRule');
+      expect(groupingCall).toBeTruthy();
+      expect(groupingCall[4][0]).toEqual({ payloadKey: 'chatId' });
+      expect(mockExec.mock.calls.find((c) => c[3] === 'initialize')).toBeUndefined();
+    });
+
+    it('should configure a constant group id', async () => {
+      const mockExec = require('cordova/exec');
+      await plugin.setNotificationGroupingRule({ groupId: '  messages  ' });
+
+      const call = mockExec.mock.calls.find((c) => c[3] === 'setNotificationGroupingRule');
+      expect(call[4][0]).toEqual({ groupId: 'messages' });
+    });
+
+    it('should forward null to disable grouping', async () => {
+      const mockExec = require('cordova/exec');
+      await plugin.setNotificationGroupingRule(null);
+
+      const call = mockExec.mock.calls.find((c) => c[3] === 'setNotificationGroupingRule');
+      expect(call[4][0]).toBeNull();
+    });
+
+    it('should unwrap a legacy array argument', async () => {
+      const mockExec = require('cordova/exec');
+      await plugin.setNotificationGroupingRule([{ payloadKey: 'threadId' }]);
+
+      const call = mockExec.mock.calls.find((c) => c[3] === 'setNotificationGroupingRule');
+      expect(call[4][0]).toEqual({ payloadKey: 'threadId' });
+    });
+
+    it('should reject a missing config', async () => {
+      await expect(plugin.setNotificationGroupingRule()).rejects.toThrow(
+        'expected null or an object with payloadKey or groupId'
+      );
+    });
+
+    it('should reject empty values', async () => {
+      await expect(plugin.setNotificationGroupingRule({ payloadKey: '  ' })).rejects.toThrow(
+        'provide exactly one of payloadKey or groupId'
+      );
+    });
+
+    it('should reject configs containing both modes', async () => {
+      await expect(
+        plugin.setNotificationGroupingRule({ payloadKey: 'chatId', groupId: 'messages' })
+      ).rejects.toThrow('provide exactly one of payloadKey or groupId');
+    });
+  });
+
   describe('forcePushData()', () => {
     it('should call forcePushData on Android', async () => {
       const mockExec = require('cordova/exec');

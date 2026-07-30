@@ -57,14 +57,18 @@ describe('cordova-plugin-reteno notifications', () => {
         enabled: true,
         emitEvent: true,
       });
-      const call = mockExec.mock.calls.find((c) => c[3] === 'setDidReceiveNotificationResponseHandler');
+      const call = mockExec.mock.calls.find(
+        (c) => c[3] === 'setDidReceiveNotificationResponseHandler'
+      );
       expect(call).toBeTruthy();
     });
 
     it('should forward boolean payload', async () => {
       const mockExec = require('cordova/exec');
       await plugin.setDidReceiveNotificationResponseHandler(true);
-      const call = mockExec.mock.calls.find((c) => c[3] === 'setDidReceiveNotificationResponseHandler');
+      const call = mockExec.mock.calls.find(
+        (c) => c[3] === 'setDidReceiveNotificationResponseHandler'
+      );
       expect(call).toBeTruthy();
       expect(call[4][0]).toBe(true);
     });
@@ -72,7 +76,9 @@ describe('cordova-plugin-reteno notifications', () => {
     it('should forward null payload to clear native handler', async () => {
       const mockExec = require('cordova/exec');
       await plugin.setDidReceiveNotificationResponseHandler(null);
-      const call = mockExec.mock.calls.find((c) => c[3] === 'setDidReceiveNotificationResponseHandler');
+      const call = mockExec.mock.calls.find(
+        (c) => c[3] === 'setDidReceiveNotificationResponseHandler'
+      );
       expect(call).toBeTruthy();
       expect(call[4][0]).toBeNull();
     });
@@ -108,23 +114,27 @@ describe('cordova-plugin-reteno notifications', () => {
 
   describe('updateDefaultNotificationChannel()', () => {
     it('should reject when config is missing', async () => {
-      await expect(plugin.updateDefaultNotificationChannel(null)).rejects.toThrow('Missing argument: config');
+      await expect(plugin.updateDefaultNotificationChannel(null)).rejects.toThrow(
+        'Missing argument: config'
+      );
     });
 
     it('should reject when config is not an object', async () => {
-      await expect(plugin.updateDefaultNotificationChannel('string')).rejects.toThrow('Missing argument: config');
+      await expect(plugin.updateDefaultNotificationChannel('string')).rejects.toThrow(
+        'Missing argument: config'
+      );
     });
 
     it('should reject when name is missing', async () => {
-      await expect(plugin.updateDefaultNotificationChannel({ description: 'desc' })).rejects.toThrow(
-        'Missing argument: name'
-      );
+      await expect(
+        plugin.updateDefaultNotificationChannel({ description: 'desc' })
+      ).rejects.toThrow('Missing argument: name');
     });
 
     it('should reject when name is empty', async () => {
-      await expect(plugin.updateDefaultNotificationChannel({ name: '  ', description: 'desc' })).rejects.toThrow(
-        'Missing argument: name'
-      );
+      await expect(
+        plugin.updateDefaultNotificationChannel({ name: '  ', description: 'desc' })
+      ).rejects.toThrow('Missing argument: name');
     });
 
     it('should reject when description is missing', async () => {
@@ -134,9 +144,9 @@ describe('cordova-plugin-reteno notifications', () => {
     });
 
     it('should reject when description is empty', async () => {
-      await expect(plugin.updateDefaultNotificationChannel({ name: 'ch', description: '  ' })).rejects.toThrow(
-        'Missing argument: description'
-      );
+      await expect(
+        plugin.updateDefaultNotificationChannel({ name: 'ch', description: '  ' })
+      ).rejects.toThrow('Missing argument: description');
     });
 
     it('should accept valid config', async () => {
@@ -172,6 +182,20 @@ describe('cordova-plugin-reteno notifications', () => {
 
       const call = mockExec.mock.calls.find((c) => c[3] === 'setNotificationGroupingRule');
       expect(call[4][0]).toEqual({ groupId: 'messages' });
+    });
+
+    it('should enable native group-summary management', async () => {
+      const mockExec = require('cordova/exec');
+      await plugin.setNotificationGroupingRule({ payloadKey: 'chatId', showSummary: true });
+
+      const call = mockExec.mock.calls.find((c) => c[3] === 'setNotificationGroupingRule');
+      expect(call[4][0]).toEqual({ payloadKey: 'chatId', showSummary: true });
+    });
+
+    it('should reject a non-boolean showSummary value', async () => {
+      await expect(
+        plugin.setNotificationGroupingRule({ groupId: 'messages', showSummary: 'yes' })
+      ).rejects.toThrow('showSummary must be a boolean');
     });
 
     it('should forward null to disable grouping', async () => {
@@ -241,7 +265,9 @@ describe('cordova-plugin-reteno notifications', () => {
 
   describe('setLifecycleTrackingOptions()', () => {
     it('should reject when options is falsy', async () => {
-      await expect(plugin.setLifecycleTrackingOptions(null)).rejects.toThrow('Missing argument: options');
+      await expect(plugin.setLifecycleTrackingOptions(null)).rejects.toThrow(
+        'Missing argument: options'
+      );
     });
 
     it('should call exec on Android', async () => {

@@ -1344,7 +1344,7 @@ function onDeviceReady() {
                 return;
             }
             applyNotificationGroupingRule(
-                { payloadKey: payloadKey },
+                { payloadKey: payloadKey, showSummary: true },
                 'Grouping by payload key: ' + payloadKey
             );
         });
@@ -1357,7 +1357,10 @@ function onDeviceReady() {
                 setGroupingStatus('Please provide a constant group ID.');
                 return;
             }
-            applyNotificationGroupingRule({ groupId: groupId }, 'Constant group ID: ' + groupId);
+            applyNotificationGroupingRule(
+                { groupId: groupId, showSummary: true },
+                'Constant group ID: ' + groupId
+            );
         });
     }
 

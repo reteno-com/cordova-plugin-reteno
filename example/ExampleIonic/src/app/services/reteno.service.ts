@@ -27,8 +27,8 @@ export { LifecycleTrackingOptions };
 type PageUiState = Record<string, unknown>;
 
 export type NotificationGroupingRule =
-  | { payloadKey: string; groupId?: never }
-  | { groupId: string; payloadKey?: never };
+  | { payloadKey: string; groupId?: never; showSummary?: boolean }
+  | { groupId: string; payloadKey?: never; showSummary?: boolean };
 
 declare global {
   interface Window {

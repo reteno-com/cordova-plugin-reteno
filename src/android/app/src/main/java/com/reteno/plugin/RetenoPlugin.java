@@ -1347,7 +1347,7 @@ public class RetenoPlugin extends CordovaPlugin {
 
     if (arg0 == null || arg0 == JSONObject.NULL) {
       RetenoNotificationGroupingRuleProvider.configure(
-        cordova.getActivity().getApplicationContext(), null, null
+        cordova.getActivity().getApplicationContext(), null, null, false
       );
       callbackContext.success(1);
       return;
@@ -1361,9 +1361,15 @@ public class RetenoPlugin extends CordovaPlugin {
     JSONObject config = (JSONObject) arg0;
     Object rawPayloadKey = config.opt("payloadKey");
     Object rawGroupId = config.opt("groupId");
+    Object rawShowSummary = config.opt("showSummary");
     if ((rawPayloadKey != null && rawPayloadKey != JSONObject.NULL && !(rawPayloadKey instanceof String))
       || (rawGroupId != null && rawGroupId != JSONObject.NULL && !(rawGroupId instanceof String))) {
       callbackContext.error("Invalid argument: payloadKey and groupId must be strings");
+      return;
+    }
+    if (rawShowSummary != null && rawShowSummary != JSONObject.NULL
+      && !(rawShowSummary instanceof Boolean)) {
+      callbackContext.error("Invalid argument: showSummary must be a boolean");
       return;
     }
 
@@ -1382,7 +1388,8 @@ public class RetenoPlugin extends CordovaPlugin {
     RetenoNotificationGroupingRuleProvider.configure(
       cordova.getActivity().getApplicationContext(),
       hasPayloadKey ? payloadKey : null,
-      hasGroupId ? groupId : null
+      hasGroupId ? groupId : null,
+      rawShowSummary instanceof Boolean && (Boolean) rawShowSummary
     );
     callbackContext.success(1);
   }

@@ -159,8 +159,8 @@ export type NotificationChannelConfig = {
  * remains available when a push is handled before the WebView starts.
  */
 export type NotificationGroupingRule =
-  | { payloadKey: string; groupId?: never }
-  | { groupId: string; payloadKey?: never };
+  | { payloadKey: string; groupId?: never; showSummary?: boolean }
+  | { groupId: string; payloadKey?: never; showSummary?: boolean };
 
 export type AppInboxStatus = 'OPENED' | 'UNOPENED';
 

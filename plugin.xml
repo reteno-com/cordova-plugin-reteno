@@ -52,6 +52,9 @@
   <source-file
       src="src/android/app/src/main/java/com/reteno/plugin/RetenoNotificationGroupingRuleProvider.java"
       target-dir="src/com/reteno/plugin" />
+  <source-file
+      src="src/android/app/src/main/java/com/reteno/plugin/RetenoNotificationSummaryManager.java"
+      target-dir="src/com/reteno/plugin" />
 </platform>
 
 <platform name="ios">

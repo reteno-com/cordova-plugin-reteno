@@ -529,6 +529,7 @@ const RetenoPluginFunctions = {
         config: NotificationGroupingRule | null
         { payloadKey: string } groups by a value from the push payload.
         { groupId: string } assigns every Reteno notification to a constant group.
+        Set showSummary: true to let the plugin maintain a group-summary notification.
         Passing null disables grouping.
         Android only.
         */
@@ -546,6 +547,9 @@ const RetenoPluginFunctions = {
 
     const payloadKey = typeof config.payloadKey === 'string' ? config.payloadKey.trim() : '';
     const groupId = typeof config.groupId === 'string' ? config.groupId.trim() : '';
+    if (config.showSummary !== undefined && typeof config.showSummary !== 'boolean') {
+      return Promise.reject(new Error('Invalid argument: showSummary must be a boolean'));
+    }
     if (!!payloadKey === !!groupId) {
       return Promise.reject(
         new Error('Invalid argument: provide exactly one of payloadKey or groupId')
@@ -553,6 +557,9 @@ const RetenoPluginFunctions = {
     }
 
     const normalizedConfig = payloadKey ? { payloadKey } : { groupId };
+    if (config.showSummary === true) {
+      normalizedConfig.showSummary = true;
+    }
     return __callWithExec('setNotificationGroupingRule', [normalizedConfig], success, error);
   },
 

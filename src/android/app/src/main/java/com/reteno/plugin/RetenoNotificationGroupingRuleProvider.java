@@ -20,6 +20,7 @@ public final class RetenoNotificationGroupingRuleProvider extends ContentProvide
   private static final String PREFERENCES = "com.reteno.plugin.notification-grouping-rule";
   private static final String PAYLOAD_KEY = "payloadKey";
   private static final String GROUP_ID = "groupId";
+  private static final String SHOW_SUMMARY = "showSummary";
 
   @Override
   public boolean onCreate() {
@@ -30,42 +31,63 @@ public final class RetenoNotificationGroupingRuleProvider extends ContentProvide
     return true;
   }
 
-  static void configure(Context context, String payloadKey, String groupId) {
+  static void configure(Context context, String payloadKey, String groupId, boolean showSummary) {
     SharedPreferences.Editor editor = preferences(context).edit().clear();
     if (!TextUtils.isEmpty(payloadKey)) {
       editor.putString(PAYLOAD_KEY, payloadKey);
     } else if (!TextUtils.isEmpty(groupId)) {
       editor.putString(GROUP_ID, groupId);
     }
+    if (showSummary) {
+      editor.putBoolean(SHOW_SUMMARY, true);
+    }
     // Persist before returning so a process restart cannot lose a just-configured rule.
     editor.commit();
-    install(payloadKey, groupId);
+    install(context, payloadKey, groupId, showSummary);
   }
 
   private static void restore(Context context) {
     SharedPreferences preferences = preferences(context);
-    install(preferences.getString(PAYLOAD_KEY, null), preferences.getString(GROUP_ID, null));
+    install(
+      context,
+      preferences.getString(PAYLOAD_KEY, null),
+      preferences.getString(GROUP_ID, null),
+      preferences.getBoolean(SHOW_SUMMARY, false)
+    );
+  }
+
+  /** Resolves the group a received push belongs to under the persisted rule. */
+  static String resolveGroup(Context context, Map<String, String> payload) {
+    SharedPreferences preferences = preferences(context);
+    String payloadKey = preferences.getString(PAYLOAD_KEY, null);
+    if (!TextUtils.isEmpty(payloadKey)) {
+      String value = payload.get(payloadKey);
+      return TextUtils.isEmpty(value) ? null : value;
+    }
+    String groupId = preferences.getString(GROUP_ID, null);
+    return TextUtils.isEmpty(groupId) ? null : groupId;
   }
 
   private static SharedPreferences preferences(Context context) {
     return context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE);
   }
 
-  private static void install(String payloadKey, String groupId) {
+  private static void install(Context context, String payloadKey, String groupId, boolean showSummary) {
     if (!TextUtils.isEmpty(payloadKey)) {
       RetenoNotifications.setGroupingRule((Map<String, String> payload) -> {
         String value = payload.get(payloadKey);
         return TextUtils.isEmpty(value) ? null : value;
       });
-      return;
-    }
-
-    if (!TextUtils.isEmpty(groupId)) {
+    } else if (!TextUtils.isEmpty(groupId)) {
       RetenoNotifications.setGroupingRule((Map<String, String> payload) -> groupId);
-      return;
+    } else {
+      RetenoNotifications.setGroupingRule(null);
     }
-
-    RetenoNotifications.setGroupingRule(null);
+    RetenoNotificationSummaryManager.setEnabled(
+      context,
+      showSummary && (!TextUtils.isEmpty(payloadKey) || !TextUtils.isEmpty(groupId)),
+      !TextUtils.isEmpty(payloadKey) ? "payloadKey:" + payloadKey : "groupId:" + groupId
+    );
   }
 
   @Override

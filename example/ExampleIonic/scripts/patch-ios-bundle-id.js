@@ -198,10 +198,16 @@ function isGoogleServiceInfoInResources(project, targetUuid) {
 
 function copyGoogleServiceInfoToAppFolder() {
   if (!fs.existsSync(googleServiceInfoRootPath)) return false;
-  const source = fs.readFileSync(googleServiceInfoRootPath, 'utf8');
-  const current = readFileIfExists(googleServiceInfoAppPath);
-  if (current === source) return true;
-  fs.writeFileSync(googleServiceInfoAppPath, source, 'utf8');
+
+  const source = fs.readFileSync(googleServiceInfoRootPath);
+  const current = fs.existsSync(googleServiceInfoAppPath)
+    ? fs.readFileSync(googleServiceInfoAppPath)
+    : null;
+  if (current && current.equals(source)) return true;
+
+  // GoogleService-Info.plist can be a binary plist. Copy its bytes unchanged;
+  // reading and writing it as UTF-8 corrupts binary plist control bytes.
+  fs.copyFileSync(googleServiceInfoRootPath, googleServiceInfoAppPath);
   return true;
 }
 

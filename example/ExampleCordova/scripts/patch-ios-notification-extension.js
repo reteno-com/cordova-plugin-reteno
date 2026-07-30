@@ -832,12 +832,15 @@ function isGoogleServiceInfoInResources(project, targetUuid) {
 function copyGoogleServiceInfoToAppFolder(appRoot, appDir) {
   const sourcePath = path.join(appRoot, 'GoogleService-Info.plist');
   const targetPath = path.join(appDir, 'GoogleService-Info.plist');
-  const source = readFileIfExists(sourcePath);
-  if (!source) return false;
+  if (!fs.existsSync(sourcePath)) return false;
 
-  const current = readFileIfExists(targetPath);
-  if (current === source) return true;
-  fs.writeFileSync(targetPath, source, 'utf8');
+  const source = fs.readFileSync(sourcePath);
+  const current = fs.existsSync(targetPath) ? fs.readFileSync(targetPath) : null;
+  if (current && current.equals(source)) return true;
+
+  // GoogleService-Info.plist can be a binary plist. Copy its bytes unchanged;
+  // reading and writing it as UTF-8 corrupts binary plist control bytes.
+  fs.copyFileSync(sourcePath, targetPath);
   return true;
 }
 

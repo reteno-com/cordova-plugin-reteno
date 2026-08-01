@@ -93,6 +93,10 @@ function onDeviceReady() {
     var lifecycleAllBtn = document.getElementById('retenoLifecycleAllBtn');
     var lifecycleNoneBtn = document.getElementById('retenoLifecycleNoneBtn');
     var notificationApplyBtn = document.getElementById('retenoNotificationApplyBtn');
+    var groupingPayloadKeyBtn = document.getElementById('retenoGroupingPayloadKeyBtn');
+    var groupingGroupIdBtn = document.getElementById('retenoGroupingGroupIdBtn');
+    var groupingDisableBtn = document.getElementById('retenoGroupingDisableBtn');
+    var groupingStatusEl = document.getElementById('retenoGroupingStatus');
     var pushReceivedListenerToggle = document.getElementById('retenoPushReceivedListenerToggle');
     var notificationClickedListenerToggle = document.getElementById('retenoNotificationClickedListenerToggle');
     var pushDismissedListenerToggle = document.getElementById('retenoPushDismissedListenerToggle');
@@ -198,6 +202,8 @@ function onDeviceReady() {
     var lifecycleSessionEndEl = document.getElementById('retenoLifecycleSessionEnd');
     var notificationNameEl = document.getElementById('retenoNotificationName');
     var notificationDescriptionEl = document.getElementById('retenoNotificationDescription');
+    var groupingPayloadKeyEl = document.getElementById('retenoGroupingPayloadKey');
+    var groupingGroupIdEl = document.getElementById('retenoGroupingGroupId');
     var iosNotificationHandlersEl = document.getElementById('retenoIosNotificationHandlers');
     var androidNotificationChannelFormEl = document.getElementById('retenoAndroidNotificationChannelForm');
     var pushDismissedListenerRowEl = document.getElementById('retenoPushDismissedListenerRow');
@@ -368,6 +374,12 @@ function onDeviceReady() {
     function setNotificationStatus(text) {
         if (notificationStatusEl) {
             notificationStatusEl.textContent = text;
+        }
+    }
+
+    function setGroupingStatus(text) {
+        if (groupingStatusEl) {
+            groupingStatusEl.textContent = text;
         }
     }
 
@@ -1301,6 +1313,60 @@ function onDeviceReady() {
             }, function (err) {
                 setNotificationStatus('Reteno init error: ' + (err && err.message ? err.message : String(err)));
             });
+        });
+    }
+
+    function applyNotificationGroupingRule(rule, successMessage) {
+        var sdk = getRetenoSdk();
+        if (!sdk || typeof sdk.setNotificationGroupingRule !== 'function') {
+            setGroupingStatus('Reteno setNotificationGroupingRule is not available.');
+            return;
+        }
+
+        setGroupingStatus('Applying...');
+        sdk.setNotificationGroupingRule(rule)
+            .then(function () {
+                setGroupingStatus(successMessage);
+            })
+            .catch(function (err) {
+                setGroupingStatus(
+                    'setNotificationGroupingRule: error: ' +
+                        (err && err.message ? err.message : String(err))
+                );
+            });
+    }
+
+    if (groupingPayloadKeyBtn) {
+        groupingPayloadKeyBtn.addEventListener('click', function () {
+            var payloadKey = groupingPayloadKeyEl ? String(groupingPayloadKeyEl.value || '').trim() : '';
+            if (!payloadKey) {
+                setGroupingStatus('Please provide a push payload key.');
+                return;
+            }
+            applyNotificationGroupingRule(
+                { payloadKey: payloadKey, showSummary: true },
+                'Grouping by payload key: ' + payloadKey
+            );
+        });
+    }
+
+    if (groupingGroupIdBtn) {
+        groupingGroupIdBtn.addEventListener('click', function () {
+            var groupId = groupingGroupIdEl ? String(groupingGroupIdEl.value || '').trim() : '';
+            if (!groupId) {
+                setGroupingStatus('Please provide a constant group ID.');
+                return;
+            }
+            applyNotificationGroupingRule(
+                { groupId: groupId, showSummary: true },
+                'Constant group ID: ' + groupId
+            );
+        });
+    }
+
+    if (groupingDisableBtn) {
+        groupingDisableBtn.addEventListener('click', function () {
+            applyNotificationGroupingRule(null, 'Notification grouping disabled.');
         });
     }
 

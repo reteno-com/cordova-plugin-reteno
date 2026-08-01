@@ -27,6 +27,40 @@
         Apply
       </ion-button>
     </form>
+
+    <form [formGroup]="groupingForm">
+      <ion-list>
+        <ion-list-header>
+          <ion-label>setNotificationGroupingRule</ion-label>
+        </ion-list-header>
+        <ion-item>
+          <ion-input
+            label="Push payload key"
+            labelPlacement="stacked"
+            formControlName="payloadKey"
+            placeholder="chatId"
+          ></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-input
+            label="Constant group ID"
+            labelPlacement="stacked"
+            formControlName="groupId"
+            placeholder="messages"
+          ></ion-input>
+        </ion-item>
+      </ion-list>
+
+      <ion-button expand="block" (click)="groupByPayloadKey()">Group by payload key</ion-button>
+      <ion-button expand="block" (click)="groupByConstantId()">Use constant group</ion-button>
+      <ion-button expand="block" fill="outline" (click)="disableGrouping()">Disable grouping</ion-button>
+    </form>
+
+    @if (groupingStatus) {
+      <ion-text class="status">
+        <p>{{ groupingStatus }}</p>
+      </ion-text>
+    }
   }
 
 <ion-list>

@@ -2,7 +2,7 @@ import { Component, NgZone, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AppHeaderComponent } from '../shared/app-header/app-header.component';
 import { IonicModule, Platform } from '@ionic/angular';
-import { RetenoService } from '../services/reteno.service';
+import { NotificationGroupingRule, RetenoService } from '../services/reteno.service';
 
 type NotificationsUiState = {
   isPushListenerEnabled: boolean;
@@ -27,6 +27,7 @@ export class NotificationsPage implements OnInit, OnDestroy {
   pushListenerStatus: string | null = null;
   clickListenerStatus: string | null = null;
   iosNotificationStatus: string | null = null;
+  groupingStatus: string | null = null;
   pushReceivedEvents: { key: string; text: string }[] = [];
   notificationClickedEvents: { key: string; text: string }[] = [];
   pushDismissedEvents: { key: string; text: string }[] = [];
@@ -66,6 +67,11 @@ export class NotificationsPage implements OnInit, OnDestroy {
       validators: [Validators.required],
       nonNullable: true,
     }),
+  });
+
+  groupingForm = this.formBuilder.group({
+    payloadKey: this.formBuilder.control<string>('chatId', { nonNullable: true }),
+    groupId: this.formBuilder.control<string>('messages', { nonNullable: true }),
   });
 
   ngOnInit(): void {
@@ -160,6 +166,45 @@ export class NotificationsPage implements OnInit, OnDestroy {
         this.status = 'updateDefaultNotificationChannel: ERROR (see console)';
         // eslint-disable-next-line no-console
         console.error('updateDefaultNotificationChannel: ERROR', err);
+      });
+  }
+
+  groupByPayloadKey(): void {
+    const payloadKey = this.groupingForm.controls.payloadKey.value.trim();
+    if (!payloadKey) {
+      this.groupingStatus = 'Please provide a push payload key.';
+      return;
+    }
+    this.applyGroupingRule(
+      { payloadKey, showSummary: true },
+      `Grouping by payload key: ${payloadKey}`
+    );
+  }
+
+  groupByConstantId(): void {
+    const groupId = this.groupingForm.controls.groupId.value.trim();
+    if (!groupId) {
+      this.groupingStatus = 'Please provide a constant group ID.';
+      return;
+    }
+    this.applyGroupingRule({ groupId, showSummary: true }, `Constant group ID: ${groupId}`);
+  }
+
+  disableGrouping(): void {
+    this.applyGroupingRule(null, 'Notification grouping disabled.');
+  }
+
+  private applyGroupingRule(rule: NotificationGroupingRule | null, successMessage: string): void {
+    this.groupingStatus = 'Applying...';
+    this.reteno
+      .setNotificationGroupingRule(rule)
+      .then(() => {
+        this.groupingStatus = successMessage;
+      })
+      .catch((err) => {
+        this.groupingStatus = 'setNotificationGroupingRule: ERROR (see console)';
+        // eslint-disable-next-line no-console
+        console.error('setNotificationGroupingRule: ERROR', err);
       });
   }
 

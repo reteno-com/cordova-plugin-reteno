@@ -376,6 +376,41 @@
                     </button>
 
                     <pre id="retenoNotificationStatus" class="reteno-status" aria-live="polite"></pre>
+
+                    <div class="reteno-section">
+                        <div class="reteno-section-title">setNotificationGroupingRule</div>
+
+                        <label class="reteno-label" for="retenoGroupingPayloadKey">Push payload key</label>
+                        <input
+                            id="retenoGroupingPayloadKey"
+                            class="reteno-input"
+                            type="text"
+                            value="chatId"
+                            placeholder="chatId"
+                            autocomplete="off"
+                        />
+                        <button id="retenoGroupingPayloadKeyBtn" class="reteno-button" type="button">
+                            Group by payload key
+                        </button>
+
+                        <label class="reteno-label" for="retenoGroupingGroupId">Constant group ID</label>
+                        <input
+                            id="retenoGroupingGroupId"
+                            class="reteno-input"
+                            type="text"
+                            value="messages"
+                            placeholder="messages"
+                            autocomplete="off"
+                        />
+                        <button id="retenoGroupingGroupIdBtn" class="reteno-button" type="button">
+                            Use constant group
+                        </button>
+
+                        <button id="retenoGroupingDisableBtn" class="reteno-button secondary" type="button">
+                            Disable grouping
+                        </button>
+                        <pre id="retenoGroupingStatus" class="reteno-status" aria-live="polite"></pre>
+                    </div>
                 </div>
 
                 <div class="reteno-form" aria-label="Reteno notification listeners">

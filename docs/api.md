@@ -53,6 +53,7 @@ Notes:
 | [setWillPresentNotificationOptions](../www/cordova-plugin-reteno.js)         | iOS                | Sets presentation options for foreground notifications. Optionally emits `reteno-push-received`. [Types](../types/index.ts)                                                                                                                                                                                                                                                       |
 | [setDidReceiveNotificationResponseHandler](../www/cordova-plugin-reteno.js)  | iOS                | Enables a response handler for notification taps. Optionally emits `reteno-notification-clicked`. [Types](../types/index.ts)                                                                                                                                                                                                                                                      |
 | [updateDefaultNotificationChannel](../www/cordova-plugin-reteno.js)          | Android            | Updates the default notification channel name and description for existing users. [Types](../types/index.ts)                                                                                                                                                                                                                                                                      |
+| [setNotificationGroupingRule](../www/cordova-plugin-reteno.js)               | Android            | Groups notifications by a push payload field or a constant group ID. The rule is persisted natively and restored before background push handling. Pass `null` to disable. [Types](../types/index.ts)                                                                                                                                                                              |
 
 ### In-app messages
 
@@ -566,6 +567,23 @@ RetenoPlugin.updateDefaultNotificationChannel({
   .then(() => console.log('updateDefaultNotificationChannel: OK'))
   .catch((err) => console.error('updateDefaultNotificationChannel: ERROR', err));
 ```
+
+### setNotificationGroupingRule example
+
+Configures Android notification grouping without a JavaScript callback, so the rule also works when the WebView is not running. Payload type: `NotificationGroupingRule` in [types](../types/index.ts).
+
+```js
+// Use the value of `chatId` from each push payload as its Android group key.
+await RetenoPlugin.setNotificationGroupingRule({ payloadKey: 'chatId' });
+
+// Or put every Reteno notification into one constant group.
+await RetenoPlugin.setNotificationGroupingRule({ groupId: 'messages' });
+
+// Disable grouping.
+await RetenoPlugin.setNotificationGroupingRule(null);
+```
+
+The SDK assigns `NotificationCompat.Builder.setGroup(...)`; displaying a group-summary notification remains the application's responsibility.
 
 ### getAppInboxMessages example
 

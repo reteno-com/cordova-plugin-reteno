@@ -1,6 +1,6 @@
 apply plugin: 'com.android.application'
 
-def retenoFcmVersion = '2.9.6'
+def retenoFcmVersion = '2.10.1'
 
 android {
     namespace 'com.reteno.plugin'

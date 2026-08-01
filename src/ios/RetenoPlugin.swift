@@ -117,7 +117,7 @@ class RetenoPlugin: CDVPlugin {
       isAutomaticScreenReportingEnabled: screenReportingEnabled,
       isAutomaticAppLifecycleReportingEnabled: lifecycleAppEnabled,
       isApplicationForegroundLifecycleReportingEnabled: lifecycleForegroundEnabled,
-      isAutomaticPushSubsriptionReportingEnabled: lifecyclePushEnabled,
+      isAutomaticPushSubscriptionReportingEnabled: lifecyclePushEnabled,
       sessionConfiguration: RetenoSessionConfiguration(
         sessionDuration: sessionDurationSeconds,
         isSessionStartReportingEnabled: lifecycleSessionStartEnabled,

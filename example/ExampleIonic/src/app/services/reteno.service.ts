@@ -26,9 +26,15 @@ export { LifecycleTrackingOptions };
 
 type PageUiState = Record<string, unknown>;
 
+export type NotificationGroupingRule =
+  | { payloadKey: string; groupId?: never; showSummary?: boolean }
+  | { groupId: string; payloadKey?: never; showSummary?: boolean };
+
 declare global {
   interface Window {
-    RetenoPlugin?: unknown;
+    RetenoPlugin?: {
+      setNotificationGroupingRule(rule: NotificationGroupingRule | null): Promise<unknown>;
+    };
   }
 }
 
@@ -298,6 +304,14 @@ export class RetenoService {
 
   updateDefaultNotificationChannel(config: NotificationChannelConfig): Promise<any> {
     return this.withInit(() => this.reteno.updateDefaultNotificationChannel(config));
+  }
+
+  setNotificationGroupingRule(rule: NotificationGroupingRule | null): Promise<unknown> {
+    const plugin = window.RetenoPlugin;
+    if (!plugin || typeof plugin.setNotificationGroupingRule !== 'function') {
+      return Promise.reject(new Error('Reteno setNotificationGroupingRule is not available.'));
+    }
+    return plugin.setNotificationGroupingRule(rule);
   }
 
   pauseInAppMessages(isPaused: boolean): Promise<any> {

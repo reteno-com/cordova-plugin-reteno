@@ -68,7 +68,8 @@ import java.util.Map;
 public class RetenoPlugin extends CordovaPlugin {
   private static final int REQ_CODE_POST_NOTIFICATIONS = 10001;
   private static final String PERMISSION_POST_NOTIFICATIONS = "android.permission.POST_NOTIFICATIONS";
-  private static final String SDK_ACCESS_KEY_META = "com.reteno.SDK_ACCESS_KEY";
+  private static final String RETENO_ACCESS_KEY_META = "com.reteno.RETENO_ACCESS_KEY";
+  private static final String LEGACY_SDK_ACCESS_KEY_META = "com.reteno.SDK_ACCESS_KEY";
 
   private static volatile RetenoPlugin activeInstance;
 
@@ -561,9 +562,9 @@ public class RetenoPlugin extends CordovaPlugin {
       }
       if (TextUtils.isEmpty(accessKey)) {
         callbackContext.error(
-          "Missing SDK_ACCESS_KEY. Provide it when installing the Cordova plugin " +
-          "(e.g. --variable SDK_ACCESS_KEY=YOUR_KEY), pass it to RetenoPlugin.init({accessKey: ...}), " +
-          "or set AndroidManifest meta-data 'com.reteno.SDK_ACCESS_KEY'."
+          "Missing RETENO_ACCESS_KEY. Provide it when installing the Cordova plugin " +
+          "(e.g. --variable RETENO_ACCESS_KEY=YOUR_KEY), pass it to RetenoPlugin.init({accessKey: ...}), " +
+          "or set AndroidManifest meta-data 'com.reteno.RETENO_ACCESS_KEY'."
         );
         return;
       }
@@ -779,7 +780,9 @@ public class RetenoPlugin extends CordovaPlugin {
     if (options == null) {
       return null;
     }
-    String[] keys = new String[] {"accessKey", "access_key", "sdkAccessKey", "SDK_ACCESS_KEY"};
+    String[] keys = new String[] {
+      "accessKey", "access_key", "retenoAccessKey", "RETENO_ACCESS_KEY", "sdkAccessKey", "SDK_ACCESS_KEY"
+    };
     for (String keyName : keys) {
       String raw = options.optString(keyName, null);
       String normalized = normalizeAccessKey(raw);
@@ -1262,8 +1265,14 @@ public class RetenoPlugin extends CordovaPlugin {
       if (info == null || info.metaData == null) {
         return readAccessKeyFromCordovaPreferences();
       }
-      String key = info.metaData.getString(SDK_ACCESS_KEY_META);
+      String key = info.metaData.getString(RETENO_ACCESS_KEY_META);
       String normalized = normalizeAccessKey(key);
+      if (normalized != null) {
+        return normalized;
+      }
+
+      key = info.metaData.getString(LEGACY_SDK_ACCESS_KEY_META);
+      normalized = normalizeAccessKey(key);
       if (normalized != null) {
         return normalized;
       }
@@ -1276,8 +1285,13 @@ public class RetenoPlugin extends CordovaPlugin {
 
   private String readAccessKeyFromCordovaPreferences() {
     try {
-      String key = this.preferences != null ? this.preferences.getString("SDK_ACCESS_KEY", null) : null;
-      return normalizeAccessKey(key);
+      if (this.preferences == null) {
+        return null;
+      }
+      String key = normalizeAccessKey(this.preferences.getString("RETENO_ACCESS_KEY", null));
+      return key != null
+        ? key
+        : normalizeAccessKey(this.preferences.getString("SDK_ACCESS_KEY", null));
     } catch (Exception ignored) {
       return null;
     }
@@ -1288,7 +1302,7 @@ public class RetenoPlugin extends CordovaPlugin {
       return null;
     }
     key = key.trim();
-    if (key.length() == 0 || "$SDK_ACCESS_KEY".equals(key) || "MISSING".equals(key)) {
+    if (key.length() == 0 || "$RETENO_ACCESS_KEY".equals(key) || "$SDK_ACCESS_KEY".equals(key) || "MISSING".equals(key)) {
       return null;
     }
     return key;

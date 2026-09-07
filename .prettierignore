@@ -1,5 +1,8 @@
 node_modules/
 example/
+# Synchronized from reteno-mobile-documentation; formatting is owned there.
+docs/Cordova/
+docs/Ionic/
 src/android/
 src/ios/
 **/*.png

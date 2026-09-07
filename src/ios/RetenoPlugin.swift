@@ -42,12 +42,14 @@ class RetenoPlugin: CDVPlugin {
   func initialize(_ command: CDVInvokedUrlCommand) {
     let options = (command.arguments.first as? [String: Any]) ?? [:]
 
-    let providedKey = (options["accessKey"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
-    let preferenceKey = getPreference("sdk_access_key")?.trimmingCharacters(in: .whitespacesAndNewlines)
-    let accessKey = (providedKey?.isEmpty == false) ? providedKey : preferenceKey
+    let providedKey = normalizedAccessKey(options["accessKey"] as? String)
+    let retenoPreferenceKey = normalizedAccessKey(getPreference("reteno_access_key"))
+    let legacyPreferenceKey = normalizedAccessKey(getPreference("sdk_access_key"))
+    let preferenceKey = retenoPreferenceKey ?? legacyPreferenceKey
+    let accessKey = providedKey ?? preferenceKey
 
     guard let apiKey = accessKey, !apiKey.isEmpty else {
-      sendError("Missing SDK access key. Provide options.accessKey or set preference SDK_ACCESS_KEY.", to: command)
+      sendError("Missing SDK access key. Provide options.accessKey or set preference RETENO_ACCESS_KEY.", to: command)
       return
     }
 
@@ -1329,6 +1331,17 @@ class RetenoPlugin: CDVPlugin {
     let upper = key.uppercased()
     if let value = commandDelegate.settings[upper] as? String { return value }
     return nil
+  }
+
+  private func normalizedAccessKey(_ key: String?) -> String? {
+    guard let value = key?.trimmingCharacters(in: .whitespacesAndNewlines),
+          !value.isEmpty,
+          value != "MISSING",
+          value != "$RETENO_ACCESS_KEY",
+          value != "$SDK_ACCESS_KEY" else {
+      return nil
+    }
+    return value
   }
 
   private func sendError(_ message: String, to command: CDVInvokedUrlCommand) {

@@ -5,6 +5,8 @@
         <engine name="cordova-android" version=">=12.0.0" />
         <engine name="cordova-ios" version=">=8.0.0" />
     </engines>
+    <preference name="RETENO_ACCESS_KEY" default="MISSING" />
+    <!-- Deprecated compatibility alias. Use RETENO_ACCESS_KEY for new integrations. -->
     <preference name="SDK_ACCESS_KEY" default="MISSING" />
     <preference name="IOS_DEVICE_TOKEN_HANDLING_MODE" default="manual" />
     <hook type="before_plugin_install" src="scripts/validate-install.js" />
@@ -21,6 +23,8 @@
     </config-file>
 
     <config-file target="AndroidManifest.xml" parent="/manifest/application">
+        <meta-data android:name="com.reteno.RETENO_ACCESS_KEY" android:value="$RETENO_ACCESS_KEY" />
+        <!-- Deprecated compatibility alias. -->
         <meta-data android:name="com.reteno.SDK_ACCESS_KEY" android:value="$SDK_ACCESS_KEY" />
         <provider
             android:name="com.reteno.plugin.RetenoNotificationGroupingRuleProvider"

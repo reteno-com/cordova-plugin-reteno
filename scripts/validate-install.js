@@ -79,17 +79,45 @@ module.exports = function (context) {
     (opts.options && opts.options.options && opts.options.options.cli_variables) ||
     {};
 
-  const accessKey =
-    variables.SDK_ACCESS_KEY ||
-    readVarFromCmdLine('SDK_ACCESS_KEY') ||
-    readVarFromPackageJson('SDK_ACCESS_KEY') ||
-    process.env.SDK_ACCESS_KEY;
-  const accessKeyStr = accessKey == null ? '' : String(accessKey).trim();
+  function firstValidValue(candidates) {
+    for (const candidate of candidates) {
+      const value = candidate == null ? '' : String(candidate).trim();
+      if (
+        value.length > 0 &&
+        value !== 'MISSING' &&
+        value !== '$RETENO_ACCESS_KEY' &&
+        value !== '$SDK_ACCESS_KEY'
+      ) {
+        return value;
+      }
+    }
+    return '';
+  }
 
-  if (accessKeyStr.length === 0 || accessKeyStr === 'MISSING') {
+  const retenoAccessKey = firstValidValue([
+    variables.RETENO_ACCESS_KEY,
+    readVarFromCmdLine('RETENO_ACCESS_KEY'),
+    readVarFromPackageJson('RETENO_ACCESS_KEY'),
+    process.env.RETENO_ACCESS_KEY,
+  ]);
+  const legacyAccessKey = firstValidValue([
+    variables.SDK_ACCESS_KEY,
+    readVarFromCmdLine('SDK_ACCESS_KEY'),
+    readVarFromPackageJson('SDK_ACCESS_KEY'),
+    process.env.SDK_ACCESS_KEY,
+  ]);
+  const accessKey = retenoAccessKey || legacyAccessKey;
+
+  if (!accessKey) {
     throw new Error(
-      'cordova-plugin-reteno: SDK_ACCESS_KEY is required. Install with: ' +
-        'cordova plugin add cordova-plugin-reteno --variable SDK_ACCESS_KEY=YOUR_KEY'
+      'cordova-plugin-reteno: RETENO_ACCESS_KEY is required. Install with: ' +
+        'cordova plugin add cordova-plugin-reteno --variable RETENO_ACCESS_KEY=YOUR_KEY'
+    );
+  }
+
+  if (!retenoAccessKey && legacyAccessKey) {
+    console.warn(
+      'cordova-plugin-reteno: SDK_ACCESS_KEY is deprecated; use RETENO_ACCESS_KEY instead.'
     );
   }
 };

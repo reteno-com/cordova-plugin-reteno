@@ -166,13 +166,18 @@ Install the Ionic wrapper from npm:
 npm install awesome-cordova-plugins-reteno @awesome-cordova-plugins/core
 ```
 
-### 2. Configure preferences in `capacitor.config.ts`
+### 2. Configure preferences and notification handling in `capacitor.config.ts`
 
 ```ts
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   // ...
+  ios: {
+    // Reteno must remain UNUserNotificationCenter.delegate to capture the push
+    // response that cold-launched the app.
+    handleApplicationNotifications: false,
+  },
   cordova: {
     preferences: {
       RETENO_ACCESS_KEY: 'YOUR_RETENO_ACCESS_KEY',
@@ -189,6 +194,10 @@ Run:
 ```sh
 npx cap sync ios
 ```
+
+Capacitor installs its own `UNUserNotificationCenter` delegate by default. The `handleApplicationNotifications: false` setting prevents that router from replacing Reteno, allowing Reteno to capture a cold-start push response and replay its linked in-app after JavaScript initialization.
+
+> This setting is required for push-linked in-app messages on a cold start. If the app uses Capacitor push or local-notification plugins, their notification callbacks must instead be forwarded explicitly because Capacitor's notification router is disabled.
 
 ### 3. Podfile path and extension pods
 

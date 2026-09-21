@@ -11,6 +11,7 @@ import FirebaseMessaging
 @objc(RetenoPlugin)
 class RetenoPlugin: CDVPlugin {
   private static weak var activeInstance: RetenoPlugin?
+  private static var hasStartedDelayedInitialization = false
   private var inboxCountCallbackId: String?
   private var isManualTokenMode = false
   #if canImport(FirebaseMessaging)
@@ -21,11 +22,24 @@ class RetenoPlugin: CDVPlugin {
 
   override func pluginInitialize() {
     RetenoPlugin.activeInstance = self
+    // The Objective-C bootstrap normally calls this from AppDelegate's
+    // didFinishLaunchingWithOptions. Keep this call as an idempotent fallback
+    // for unusual hosts that replace or bypass UIApplication's delegate setup.
+    RetenoPlugin.delayedStartIfNeeded()
     #if canImport(FirebaseMessaging)
     if let messaging = messagingIfAvailable() {
       messaging.delegate = self
     }
     #endif
+  }
+
+  /// Called by RetenoPluginBootstrap from didFinishLaunchingWithOptions.
+  /// The Objective-C entry point lets Cordova and Capacitor start notification
+  /// response buffering before either framework lazily creates the plugin.
+  @objc static func delayedStartIfNeeded() {
+    guard !hasStartedDelayedInitialization else { return }
+    hasStartedDelayedInitialization = true
+    Reteno.delayedStart()
   }
 
   override func onAppTerminate() {
@@ -133,7 +147,12 @@ class RetenoPlugin: CDVPlugin {
     self.isManualTokenMode = (deviceTokenMode == .manual)
 
     DispatchQueue.main.async {
-      Reteno.start(apiKey: apiKey, deviceTokenHandlingMode: deviceTokenMode, configuration: configuration)
+      // delayedSetup (paired with delayedStartIfNeeded() during native bootstrap)
+      // completes initialization and replays any push response buffered since
+      // launch -- e.g. a push-linked in-app opened while the SDK was still
+      // cold-starting. Requires delayedStart() to have run first, or this is a
+      // silent no-op (see Reteno.delayedSetup's IsDelayedInitialization guard).
+      Reteno.delayedSetup(apiKey: apiKey, deviceTokenHandlingMode: deviceTokenMode, configuration: configuration)
 
       // When IOS_DEVICE_TOKEN_HANDLING_MODE is manual and FirebaseMessaging is available,
       // configure Firebase if the developer hasn't done it yet, then hook FCM

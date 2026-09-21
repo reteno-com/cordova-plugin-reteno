@@ -73,6 +73,17 @@
   </config-file>
 
   <podspec>
+    <!--
+      Empty <config/> is required even without <source> entries: cordova-ios's
+      Api.js#removePodSpecs does `Object.keys(obj.sources)` unconditionally (unlike
+      addPodSpecs, which guards it) and crashes with "Cannot convert undefined or
+      null to object" on `cordova plugin rm` when <config> is absent, since
+      PluginInfo#getPodSpecs() then returns `sources: undefined` instead of `{}`.
+      That crash aborts the uninstall before it finishes, which then leaves iOS
+      plugin bookkeeping (plugins/ios.json) stale so a later reinstall thinks the
+      plugin is "already installed" and skips re-copying its www/ bridge file.
+    -->
+    <config></config>
     <pods>
       <pod name="Reteno" spec="2.7.4" />
       <pod name="FirebaseMessaging" />
@@ -80,5 +91,6 @@
   </podspec>
 
   <source-file src="src/ios/RetenoPlugin.swift" />
+  <source-file src="src/ios/RetenoPluginBootstrap.m" />
 </platform>
 </plugin>

@@ -7,6 +7,12 @@ const config: CapacitorConfig = {
   server: {
     androidScheme: 'https'
   },
+  ios: {
+    // Reteno must remain UNUserNotificationCenter.delegate to capture the push
+    // response that cold-launched the app. Capacitor's default notification
+    // router would otherwise replace it when the bridge is created.
+    handleApplicationNotifications: false,
+  },
   cordova: {
     preferences: {
       RETENO_ACCESS_KEY: '630A66AF-C1D3-4F2A-ACC1-0D51C38D2B05',

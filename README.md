@@ -12,8 +12,6 @@ npm install cordova-plugin-reteno
 
 ## Documentation
 
-- [Bundled Cordova documentation](docs/Cordova/SetupGuide/README.md)
-- [Bundled Ionic documentation](docs/Ionic/SetupGuide/README.md)
 - [Cordova SDK Overview](https://docs.reteno.com/reference/cordova-sdk-setup)
 - [Ionic SDK Overview](https://docs.reteno.com/reference/ionic-sdk)
 
@@ -23,10 +21,6 @@ npm install cordova-plugin-reteno
 - [Cordova Android SDK Setup](https://docs.reteno.com/reference/cordova-android-sdk-setup)
 - [Ionic iOS SDK Setup](https://docs.reteno.com/reference/ionic-ios-sdk-setup)
 - [Ionic Android SDK Setup](https://docs.reteno.com/reference/ionic-ios-sdk-android)
-
-### Additional
-
-- [Release Notes](https://github.com/reteno-com/cordova-plugin-reteno/releases)
 
 ## License
 

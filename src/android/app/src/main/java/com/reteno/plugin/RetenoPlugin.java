@@ -1249,6 +1249,12 @@ public class RetenoPlugin extends CordovaPlugin {
     if (extras == null || extras.isEmpty()) {
       return;
     }
+    // Reteno uses the interaction id as the canonical identifier for push interactions.
+    // App/deep-link SDK extras (for example Branch) must not be exposed as an initial
+    // Reteno notification.
+    if (!extras.containsKey("es_interaction_id")) {
+      return;
+    }
 
     initialNotification = RetenoUtil.bundleToJson(extras);
   }

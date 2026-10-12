@@ -15,6 +15,11 @@ RetenoPlugin.requestNotificationPermission()
 
 When app starts from push tap, get payload with `getInitialNotification()`:
 
+On Android, the method returns only a Reteno push payload identified by
+`es_interaction_id`. Intent extras from Branch or other deeplink SDKs are
+ignored. If the app was not opened from a Reteno push, the method returns an
+empty object.
+
 ```js
 RetenoPlugin.getInitialNotification()
   .then((data) => console.log('getInitialNotification', data))

@@ -9,6 +9,11 @@ console.log('Permission result:', granted);
 
 ## Get initial notification
 
+On Android, `getInitialNotification()` returns only a Reteno push payload
+identified by `es_interaction_id`. Intent extras from Branch or other deeplink
+SDKs are ignored. If the app was not opened from a Reteno push, the method
+returns an empty object.
+
 ```ts
 const initial = await this.reteno.getInitialNotification();
 console.log('Initial push payload:', initial);

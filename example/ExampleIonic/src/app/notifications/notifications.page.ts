@@ -28,6 +28,7 @@ export class NotificationsPage implements OnInit, OnDestroy {
   clickListenerStatus: string | null = null;
   iosNotificationStatus: string | null = null;
   groupingStatus: string | null = null;
+  initialNotificationStatus: string | null = null;
   pushReceivedEvents: { key: string; text: string }[] = [];
   notificationClickedEvents: { key: string; text: string }[] = [];
   pushDismissedEvents: { key: string; text: string }[] = [];
@@ -166,6 +167,27 @@ export class NotificationsPage implements OnInit, OnDestroy {
         this.status = 'updateDefaultNotificationChannel: ERROR (see console)';
         // eslint-disable-next-line no-console
         console.error('updateDefaultNotificationChannel: ERROR', err);
+      });
+  }
+
+  getInitialNotification(): void {
+    this.initialNotificationStatus = 'Loading...';
+    this.reteno
+      .getInitialNotification()
+      .then((data) => {
+        this.zone.run(() => {
+          const isEmpty = !data || (typeof data === 'object' && Object.keys(data).length === 0);
+          this.initialNotificationStatus = isEmpty
+            ? 'getInitialNotification: empty (app was not opened from a Reteno push, or the value was already consumed)'
+            : `getInitialNotification:\n${JSON.stringify(data, null, 2)}`;
+        });
+      })
+      .catch((err) => {
+        this.zone.run(() => {
+          this.initialNotificationStatus = 'getInitialNotification: ERROR (see console)';
+        });
+        // eslint-disable-next-line no-console
+        console.error('getInitialNotification: ERROR', err);
       });
   }
 

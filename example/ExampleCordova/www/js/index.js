@@ -93,6 +93,8 @@ function onDeviceReady() {
     var lifecycleAllBtn = document.getElementById('retenoLifecycleAllBtn');
     var lifecycleNoneBtn = document.getElementById('retenoLifecycleNoneBtn');
     var notificationApplyBtn = document.getElementById('retenoNotificationApplyBtn');
+    var initialNotificationBtn = document.getElementById('retenoInitialNotificationBtn');
+    var initialNotificationStatusEl = document.getElementById('retenoInitialNotificationStatus');
     var groupingPayloadKeyBtn = document.getElementById('retenoGroupingPayloadKeyBtn');
     var groupingGroupIdBtn = document.getElementById('retenoGroupingGroupIdBtn');
     var groupingDisableBtn = document.getElementById('retenoGroupingDisableBtn');
@@ -1312,6 +1314,42 @@ function onDeviceReady() {
                     });
             }, function (err) {
                 setNotificationStatus('Reteno init error: ' + (err && err.message ? err.message : String(err)));
+            });
+        });
+    }
+
+    function setInitialNotificationStatus(text) {
+        if (initialNotificationStatusEl) {
+            initialNotificationStatusEl.textContent = text;
+        }
+    }
+
+    if (initialNotificationBtn) {
+        initialNotificationBtn.addEventListener('click', function () {
+            withInit(function () {
+                var sdk = getRetenoSdk();
+                if (!sdk || typeof sdk.getInitialNotification !== 'function') {
+                    setInitialNotificationStatus('Reteno getInitialNotification is not available.');
+                    return;
+                }
+
+                setInitialNotificationStatus('Loading...');
+                sdk.getInitialNotification()
+                    .then(function (data) {
+                        var isEmpty = !data || (typeof data === 'object' && Object.keys(data).length === 0);
+                        setInitialNotificationStatus(
+                            isEmpty
+                                ? 'getInitialNotification: empty (app was not opened from a Reteno push, or the value was already consumed)'
+                                : 'getInitialNotification:\n' + JSON.stringify(data, null, 2)
+                        );
+                    })
+                    .catch(function (err) {
+                        setInitialNotificationStatus(
+                            'getInitialNotification: error: ' + (err && err.message ? err.message : String(err))
+                        );
+                    });
+            }, function (err) {
+                setInitialNotificationStatus('Reteno init error: ' + (err && err.message ? err.message : String(err)));
             });
         });
     }

@@ -2,7 +2,7 @@
 
 Reteno SDK for Cordova and Capacitor apps.
 
-Version 2.2.1 includes Reteno Android SDK 2.10.2 and Reteno iOS SDK 2.7.4.
+Version 2.2.2 includes Reteno Android SDK 2.10.2 and Reteno iOS SDK 2.7.6.
 
 ## Installation
 

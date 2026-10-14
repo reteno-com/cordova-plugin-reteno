@@ -64,6 +64,18 @@
   }
 
 <ion-list>
+  <ion-list-header>
+    <ion-label>getInitialNotification</ion-label>
+  </ion-list-header>
+</ion-list>
+<ion-button expand="block" (click)="getInitialNotification()">Get initial notification</ion-button>
+@if (initialNotificationStatus) {
+  <ion-text class="status">
+    <pre>{{ initialNotificationStatus }}</pre>
+  </ion-text>
+}
+
+<ion-list>
   <ion-item>
     <ion-toggle
       [checked]="isPushListenerEnabled"

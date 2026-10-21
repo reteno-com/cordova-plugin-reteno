@@ -83,12 +83,12 @@ For extension targets add in `platforms/ios/Podfile`:
 target 'App' do
   target 'NotificationServiceExtension' do
     inherit! :search_paths
-    pod 'Reteno', '2.7.6'
+    pod 'Reteno', '2.7.7'
   end
 
   target 'NotificationContentExtension' do
     inherit! :search_paths
-    pod 'Reteno', '2.7.6'
+    pod 'Reteno', '2.7.7'
   end
 end
 ```
@@ -211,12 +211,12 @@ target 'App' do
 
   target 'NotificationServiceExtension' do
     inherit! :search_paths
-    pod 'Reteno', '2.7.6'
+    pod 'Reteno', '2.7.7'
   end
 
   target 'NotificationContentExtension' do
     inherit! :search_paths
-    pod 'Reteno', '2.7.6'
+    pod 'Reteno', '2.7.7'
   end
 end
 ```

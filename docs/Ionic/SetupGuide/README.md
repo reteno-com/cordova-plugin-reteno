@@ -12,7 +12,7 @@
 - iOS 15.0+
 - Android with `cordova-android >= 12.0.0`
 
-`cordova-plugin-reteno@2.2.2` includes Reteno Android SDK 2.10.2 and Reteno iOS SDK 2.7.6.
+`cordova-plugin-reteno@2.2.3` includes Reteno Android SDK 2.10.2 and Reteno iOS SDK 2.7.7.
 
 ## Install plugin and wrapper
 
